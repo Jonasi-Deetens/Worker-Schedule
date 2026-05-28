@@ -1,0 +1,750 @@
+{
+  "app": {
+    "name": "Tattoogenda",
+    "tagline": "Planning d'équipe pour l'horeca"
+  },
+  "me": {
+    "greeting": "Aujourd’hui",
+    "subtitle": "Vos shifts, broadcasts et raccourcis en un seul endroit.",
+    "nextShift": "Votre prochain shift",
+    "noNextShift": "Aucun shift à venir pour l’instant.",
+    "findShifts": "Voir les créneaux ouverts →",
+    "clockIn": "Pointer",
+    "openCalendar": "Ouvrir l’agenda",
+    "pendingApplications": "En attente",
+    "unread": "Non lus",
+    "weekHours": "Heures cette semaine",
+    "quickLinks": "Raccourcis",
+    "quickAvailability": "Touchez pour vous déclarer disponible",
+    "quickAvailabilityHelp": "Créneau par défaut 09:00–17:00 · touchez à nouveau pour effacer",
+    "now": "ça commence",
+    "inMinutes": "dans {count} min",
+    "inHours": "dans {count} h",
+    "inDays": "dans {count} j"
+  },
+  "swap": {
+    "title": "Échanges de shift",
+    "offerSwap": "Proposer ce shift à un collègue",
+    "offerHelp": "Choisissez un collègue qui reprendra ce shift. Il recevra une notification et pourra accepter ou refuser.",
+    "toColleague": "À un collègue",
+    "pickColleague": "Choisir un collègue…",
+    "noCandidates": "Personne n’est libre pour ce créneau pour l’instant.",
+    "message": "Message (facultatif)",
+    "messagePlaceholder": "Pourquoi cette demande ?",
+    "send": "Envoyer la demande",
+    "offered": "Demande d’échange envoyée"
+  },
+  "suggestions": {
+    "title": "Employés suggérés",
+    "loading": "Évaluation des candidats…",
+    "assign": "Affecter"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "signingIn": "Connexion…",
+    "register": "S'inscrire",
+    "createAccount": "Créer un compte",
+    "creating": "Création…",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "name": "Nom complet",
+    "iAmA": "Je suis",
+    "owner": "Propriétaire",
+    "worker": "Travailleur",
+    "manager": "Manager",
+    "businessName": "Nom de l'établissement",
+    "businessId": "ID de l'établissement",
+    "businessIdHelp": "Demandez cet identifiant à votre manager.",
+    "invalidCredentials": "E-mail ou mot de passe invalide.",
+    "noAccount": "Pas de compte?",
+    "alreadyHaveAccount": "Déjà un compte?"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "ownerTitle": "Calendrier de l'équipe",
+    "workerTitle": "Mon calendrier",
+    "ownerSubtitle": "Créez des shifts et approuvez les candidatures.",
+    "workerSubtitle": "Indiquez vos disponibilités et postulez aux shifts.",
+    "newShift": "Nouveau shift",
+    "setAvailability": "Disponibilité",
+    "today": "Aujourd'hui",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "moreItems": "+{count} autres",
+    "empty": "Rien de prévu sur cette plage.",
+    "loading": "Chargement…",
+    "errorTitle": "Impossible de charger le calendrier.",
+    "errorRetry": "Réessayer",
+    "draft": "Brouillon",
+    "publishWeek": "Publier la semaine",
+    "published": "{count} shifts publiés",
+    "kpi": {
+      "open": "Ouverts",
+      "pending": "En attente",
+      "filled": "Complets",
+      "capacity": "Couverture",
+      "labourCost": "Coût de main-d'œuvre",
+      "costPerHour": "Coût/heure"
+    },
+    "filters": {
+      "label": "Filtres",
+      "role": "Rôle",
+      "status": "Statut",
+      "worker": "Travailleur",
+      "any": "Tous",
+      "clear": "Effacer",
+      "showAvailability": "Afficher les disponibilités"
+    }
+  },
+  "status": {
+    "open": "Ouvert",
+    "pending": "En attente",
+    "approved": "Approuvé",
+    "filled": "Complet",
+    "rejected": "Refusé",
+    "withdrawn": "Retiré",
+    "cancelled": "Annulé"
+  },
+  "shift": {
+    "title": "Shift",
+    "create": "Créer un shift",
+    "edit": "Modifier le shift",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "date": "Date",
+    "start": "Début",
+    "end": "Fin",
+    "role": "Rôle",
+    "rolePlaceholder": "ex. Barman",
+    "requiredSpots": "Places requises",
+    "requiredSkill": "Compétence requise",
+    "noSkill": "Aucune",
+    "notes": "Notes (optionnel)",
+    "notesPlaceholder": "Info complémentaire",
+    "broadcast": "Diffuser à tous les éligibles",
+    "broadcastSent": "{count} employés notifiés",
+    "acceptBroadcast": "Accepter ce créneau ouvert",
+    "filledCount": "{filled}/{required} complets",
+    "apply": "Postuler",
+    "withdraw": "Retirer la candidature",
+    "cancel": "Annuler le shift",
+    "close": "Fermer",
+    "applications": "Candidatures",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "assign": "Assigner un travailleur",
+    "assigning": "Assignation…",
+    "publish": "Publier",
+    "repeatWeekly": "Répéter chaque semaine",
+    "repeatUntil": "Répéter jusqu'au",
+    "publishNow": "Publier immédiatement",
+    "template": "Modèle",
+    "templateNone": "Aucun",
+    "offerSwap": "Proposer à un collègue",
+    "swap": "Échanger"
+  },
+  "availability": {
+    "title": "Disponibilité",
+    "youAreAvailable": "Vous êtes disponible",
+    "save": "Enregistrer",
+    "available": "Disponible",
+    "remove": "Supprimer la disponibilité",
+    "removing": "Suppression…",
+    "removeHelp": "En supprimant ce bloc, les responsables ne vous verront plus comme disponible. Vous pouvez toujours en ajouter un nouveau.",
+    "templates": "Disponibilité récurrente",
+    "templatesEmpty": "Aucune disponibilité récurrente."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "loading": "Chargement…",
+    "markRead": "Marquer comme lu",
+    "markAllRead": "Tout marquer comme lu",
+    "unreadAria": "Notifications, {count} non lues",
+    "ariaLabel": "Notifications"
+  },
+  "confirm": {
+    "cancelShiftTitle": "Annuler ce shift?",
+    "cancelShiftBody": "Les candidats seront prévenus. Action irréversible.",
+    "removeAvailabilityTitle": "Supprimer cette disponibilité?",
+    "removeAvailabilityBody": "Les responsables ne vous verront plus comme disponible sur ce créneau.",
+    "yes": "Oui, continuer",
+    "no": "Non, garder"
+  },
+  "toast": {
+    "shiftCreated": "Shift créé",
+    "shiftUpdated": "Shift mis à jour",
+    "shiftCancelled": "Shift annulé",
+    "shiftPublished": "Shifts publiés",
+    "shiftAssigned": "Travailleur assigné",
+    "availabilitySet": "Disponibilité enregistrée",
+    "availabilityRemoved": "Disponibilité supprimée",
+    "applicationSubmitted": "Candidature envoyée",
+    "applicationWithdrawn": "Candidature retirée",
+    "applicationApproved": "Candidature approuvée",
+    "applicationRejected": "Candidature refusée",
+    "notificationsRead": "Marqué comme lu",
+    "inviteSent": "Invitation envoyée",
+    "inviteRevoked": "Invitation révoquée",
+    "skillSaved": "Compétence enregistrée",
+    "skillRemoved": "Compétence supprimée",
+    "workerUpdated": "Travailleur mis à jour",
+    "timeOffRequested": "Congé demandé",
+    "timeOffApproved": "Congé approuvé",
+    "timeOffRejected": "Congé refusé",
+    "templateSaved": "Modèle enregistré",
+    "profileSaved": "Profil enregistré",
+    "passwordChanged": "Mot de passe modifié",
+    "swapOffered": "Échange proposé",
+    "swapAccepted": "Échange accepté",
+    "swapRejected": "Échange refusé",
+    "clockedIn": "Pointage entrée",
+    "clockedOut": "Pointage sortie",
+    "timeEntriesApproved": "Heures approuvées",
+    "rosterApplied": "Roster appliqué"
+  },
+  "applications": {
+    "title": "Mes candidatures",
+    "subtitle": "Suivez chaque shift auquel vous avez postulé.",
+    "empty": "Vous n'avez postulé à aucun shift.",
+    "groupPending": "En attente",
+    "groupApproved": "Approuvé",
+    "groupRejected": "Refusé ou retiré",
+    "viewOnCalendar": "Voir dans le calendrier",
+    "broadcastsTitle": "Créneaux ouverts qui vous sont proposés",
+    "broadcastAccepted": "Vous êtes planifié"
+  },
+  "workers": {
+    "title": "Équipe",
+    "subtitle": "Invitez des travailleurs et gérez leur profil.",
+    "inviteCta": "Inviter un travailleur",
+    "empty": "Aucun travailleur. Invitez le premier pour démarrer.",
+    "active": "Actif",
+    "suspended": "Suspendu",
+    "archived": "Archivé",
+    "suspend": "Suspendre",
+    "archive": "Archiver",
+    "reactivate": "Réactiver",
+    "skills": "Compétences",
+    "contractType": "Contrat",
+    "hoursThisMonth": "Heures ce mois",
+    "hoursThisYear": "Heures cette année",
+    "noContract": "Non défini",
+    "hourlyRate": "Taux horaire",
+    "weeklyCap": "Limite hebdo",
+    "phone": "Téléphone",
+    "birthDate": "Date de naissance",
+    "saveProfile": "Enregistrer le profil",
+    "upcoming": "À venir",
+    "noShowRate": "Taux d'absences (90j)",
+    "noShowsBadge": "{count, plural, one {# absence} other {# absences}}",
+    "docsAttention": "Documents à surveiller",
+    "docsExpired": "Expiré le {date}",
+    "docsExpiringOn": "Expire le {date}"
+  },
+  "invite": {
+    "title": "Rejoindre votre équipe",
+    "subtitle": "Configurez votre compte pour prendre des shifts.",
+    "expired": "Cette invitation a expiré ou a déjà été acceptée.",
+    "accept": "Accepter et créer le compte",
+    "accepting": "Création…",
+    "fromBusiness": "Invitation pour {business}",
+    "linkLabel": "Lien d'invitation",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié",
+    "sendEmail": "Envoyer par e-mail",
+    "expiresAt": "Expire le {date}"
+  },
+  "skills": {
+    "title": "Compétences",
+    "subtitle": "Définissez les rôles et certifications de votre équipe.",
+    "add": "Ajouter",
+    "name": "Nom",
+    "color": "Couleur",
+    "empty": "Aucune compétence.",
+    "emptyCatalog": "Aucune compétence définie pour votre entreprise.",
+    "manageLink": "Gérer les compétences",
+    "workerCount": "{count, plural, =0 {Aucun travailleur} =1 {1 travailleur} other {# travailleurs}}"
+  },
+  "timeOff": {
+    "title": "Congés",
+    "workerSubtitle": "Demandez à ne pas être planifié sur une période.",
+    "ownerSubtitle": "Approuvez ou refusez les demandes.",
+    "newRequest": "Demander un congé",
+    "from": "Du",
+    "to": "Au",
+    "reason": "Motif (optionnel)",
+    "submit": "Envoyer",
+    "empty": "Aucune demande.",
+    "ownerEmpty": "Rien à traiter.",
+    "groupPending": "En attente",
+    "groupApproved": "Approuvé",
+    "groupRejected": "Refusé",
+    "approve": "Approuver",
+    "reject": "Refuser"
+  },
+  "attendance": {
+    "title": "Présence",
+    "ON_TIME": "À l’heure",
+    "LATE": "En retard",
+    "NO_SHOW": "Absent",
+    "EXCUSED": "Excusé",
+    "noShowRate": "Taux d’absentéisme"
+  },
+  "shiftChat": {
+    "title": "Conversation",
+    "empty": "Aucun message. Lancez la conversation.",
+    "placeholder": "Écrivez un message…",
+    "send": "Envoyer"
+  },
+  "insights": {
+    "title": "Indicateurs",
+    "subtitle": "Taux de remplissage, masse salariale et ratio coût/CA.",
+    "scheduled": "Planifié",
+    "fillRate": "Taux de remplissage",
+    "labourCost": "Masse salariale",
+    "costRevenue": "Coût / CA",
+    "week": "Semaine",
+    "filled": "Pourvu",
+    "cost": "Coût",
+    "revenue": "Chiffre d’affaires",
+    "costToRevenue": "Coût/CA"
+  },
+  "myData": {
+    "title": "Vos données",
+    "subtitle": "Conformément au RGPD, vous pouvez exporter toutes vos données et supprimer votre compte à tout moment.",
+    "exportTitle": "Exporter",
+    "exportHelp": "Télécharge un fichier JSON contenant votre profil, vos disponibilités, candidatures, affectations et notifications. Les identifiants sensibles sont exclus.",
+    "exportCta": "Télécharger mes données",
+    "exportPreparing": "Préparation…",
+    "deleteTitle": "Supprimer le compte",
+    "deleteHelp": "Votre compte est suspendu immédiatement et définitivement supprimé après 90 jours. Les futures affectations sont annulées. L’historique légal est conservé.",
+    "deleteConfirmLabel": "Tapez DELETE pour confirmer",
+    "deleteCta": "Supprimer mon compte"
+  },
+  "docs": {
+    "title": "Mes documents",
+    "help": "Importez vos papiers d'identité, contrats et certificats. Visibles uniquement par vous et l'employeur.",
+    "kind": "Type",
+    "expiresOn": "Expire le (facultatif)",
+    "dropzone": "Glissez un fichier ici ou cliquez pour téléverser (PDF, JPG, PNG · max 10 MB)",
+    "uploading": "Envoi en cours…",
+    "uploaded": "Document téléversé",
+    "empty": "Aucun document.",
+    "kind_ID_CARD": "Carte d'identité",
+    "kind_WORK_CONTRACT": "Contrat de travail",
+    "kind_RESIDENCE_PERMIT": "Titre de séjour",
+    "kind_FOOD_SAFETY": "Attestation hygiène alimentaire",
+    "kind_OTHER": "Autre"
+  },
+  "profile": {
+    "title": "Mon profil",
+    "subtitle": "Mettez à jour vos infos et préférences.",
+    "displayName": "Nom affiché",
+    "phone": "Téléphone",
+    "locale": "Langue",
+    "notifications": "Notifications",
+    "notificationsHelp": "Choisissez les e-mails que vous recevez.",
+    "save": "Enregistrer",
+    "password": "Mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "changePassword": "Changer le mot de passe",
+    "push": "Notifications push",
+    "pushHelp": "Recevez une alerte sur votre téléphone pour les nouvelles affectations, demandes d’échange et rappels 24 h.",
+    "pushEnable": "Activer les notifications",
+    "pushDisable": "Désactiver les notifications",
+    "pushUnsupported": "Ce navigateur ne prend pas en charge les notifications push.",
+    "pushDenied": "Vous avez bloqué les notifications. Réactivez-les dans les paramètres de votre navigateur.",
+    "calendarFeed": "Abonnement calendrier",
+    "calendarHelp": "Abonnez-vous à cette URL depuis Apple Calendar, Google Agenda ou Outlook pour voir vos shifts.",
+    "calendarRotate": "Révoquer et régénérer l’URL",
+    "calendarRotated": "URL du calendrier régénérée",
+    "calendarCopied": "Copié",
+    "copy": "Copier",
+    "twoFactor": "Authentification à deux facteurs",
+    "twoFactorHelp": "Ajoutez un code à usage unique de votre application d’authentification en plus de votre mot de passe.",
+    "twoFactorSetup": "Configurer l’authentificateur",
+    "twoFactorScan": "Scannez ce code avec Google Authenticator ou 1Password, puis saisissez le code à 6 chiffres.",
+    "twoFactorEnable": "Activer",
+    "twoFactorDisable": "Désactiver",
+    "twoFactorEnabled": "Authentification à deux facteurs activée",
+    "twoFactorDisabled": "Authentification à deux facteurs désactivée",
+    "locales": {
+      "en": "English",
+      "nl": "Nederlands",
+      "fr": "Français"
+    }
+  },
+  "hours": {
+    "title": "Mes heures",
+    "subtitle": "Heures planifiées via shifts approuvés.",
+    "thisWeek": "Cette semaine",
+    "thisMonth": "Ce mois",
+    "thisYear": "Cette année",
+    "loading": "Chargement…",
+    "noBusiness": "Vous n'êtes pas encore lié à un établissement."
+  },
+  "clock": {
+    "title": "Pointage",
+    "clockIn": "Pointer entrée",
+    "clockOut": "Pointer sortie",
+    "running": "En cours depuis {minutes} min",
+    "break": "Minutes de pause",
+    "notes": "Notes",
+    "noActiveShift": "Pas lié à un shift",
+    "noBusiness": "Vous n'êtes pas encore lié à un établissement.",
+    "pendingTitle": "Heures à approuver",
+    "approveSelected": "Approuver la sélection",
+    "noPending": "Rien en attente."
+  },
+  "payroll": {
+    "title": "Paie & heures",
+    "subtitle": "Approuvez les heures et exportez les fichiers de paie.",
+    "export": "Télécharger CSV",
+    "exportXlsx": "Télécharger XLSX",
+    "noRows": "Aucune heure approuvée sur cette plage."
+  },
+  "templates": {
+    "title": "Modèles de shifts",
+    "subtitle": "Préréglages utilisés à la création de shifts.",
+    "create": "Nouveau modèle",
+    "empty": "Aucun modèle.",
+    "name": "Nom du modèle"
+  },
+  "rosters": {
+    "title": "Plannings hebdo",
+    "subtitle": "Planifiez une semaine type et appliquez-la en un clic.",
+    "create": "Nouveau roster",
+    "apply": "Appliquer à la semaine",
+    "weekOf": "Semaine du {date}",
+    "empty": "Aucun roster. Créez-en un pour accélérer la planification.",
+    "shiftCount": "{count} shifts",
+    "addShift": "Ajouter un shift"
+  },
+  "bulk": {
+    "duplicateWeek": "Dupliquer cette semaine",
+    "duplicateWeekHint": "Copier les shifts de cette semaine en brouillon pour la semaine suivante.",
+    "duplicated": "{count} shifts dupliqués",
+    "cancelDay": "Annuler aujourd'hui",
+    "cancelDayHint": "Annuler tous les shifts qui démarrent aujourd'hui.",
+    "confirmCancelToday": "Annuler tous les shifts d'aujourd'hui ?",
+    "cancelled": "{count} shifts annulés"
+  },
+  "audit": {
+    "title": "Journal d’audit",
+    "subtitle": "Journal consultable de toutes les actions dans votre établissement.",
+    "search": "Rechercher action, entité ou utilisateur…",
+    "allActions": "Toutes les actions",
+    "allUsers": "Tous les utilisateurs",
+    "from": "Du",
+    "to": "Au",
+    "clear": "Effacer les filtres",
+    "empty": "Aucun événement ne correspond à ces filtres.",
+    "action": "Action",
+    "user": "Utilisateur",
+    "entity": "Entité",
+    "when": "Quand"
+  },
+  "help": {
+    "title": "Aide & mode d'emploi",
+    "subtitle": "Tout ce que Tattoogenda peut faire pour vous, expliqué simplement.",
+    "tocAria": "Table des matières",
+    "tipLabel": "Astuce :",
+    "empty": "Aucune section d'aide n'est disponible pour votre rôle.",
+    "badge": {
+      "worker": "Travailleur",
+      "manager": "Manager",
+      "owner": "Gérant",
+      "all": "Tous"
+    },
+    "s": {
+      "gettingStarted": {
+        "title": "Démarrer",
+        "intro": "Une visite de 60 secondes de Tattoogenda et de la connexion.",
+        "steps": {
+          "1": "Les gérants créent une entreprise à l'inscription. Travailleurs et managers rejoignent via un lien d'invitation.",
+          "2": "Connectez-vous par e-mail + mot de passe, ou via Google si activé. La 2FA est disponible par compte.",
+          "3": "Votre rôle détermine ce que vous voyez : les travailleurs arrivent sur une page perso, les gérants sur l'agenda.",
+          "4": "Choisissez la langue (français, néerlandais, anglais) dans Paramètres → Profil pour aligner dates et libellés."
+        }
+      },
+      "calendar": {
+        "title": "L'agenda",
+        "intro": "L'agenda partagé montre chaque shift coloré par statut. Fonctionne sur mobile, tablette et ordinateur.",
+        "steps": {
+          "1": "Changez de vue avec la barre d'outils : mois, semaine, jour ou liste. Les flèches naviguent rapidement.",
+          "2": "Cliquez sur un shift pour ouvrir le panneau : assignations, candidatures, présence et chat.",
+          "3": "Couleurs : shifts ouverts en bleu, candidatures en orange, shifts remplis en vert, annulés en gris.",
+          "4": "Les travailleurs ne voient que les shifts publiés ; gérants et managers voient aussi les brouillons."
+        },
+        "tip": "Maintenez Shift en cliquant pour sélectionner plusieurs shifts — pratique avec les actions groupées."
+      },
+      "myHome": {
+        "title": "Votre accueil (/me)",
+        "intro": "Un tableau de bord pensé mobile avec tout ce qu'il faut avant un shift.",
+        "steps": {
+          "1": "La grande carte affiche votre prochain shift : heure, rôle, lieu et compte à rebours relatif.",
+          "2": "Le pointage devient actif 15 min avant le shift et disparaît dès que vous avez clôturé.",
+          "3": "Les tuiles montrent candidatures en attente, notifications non lues et heures prévues cette semaine.",
+          "4": "Les broadcasts ouverts apparaissent en haut — appuyez sur Accepter pour prendre un shift premier-arrivé."
+        }
+      },
+      "availability": {
+        "title": "Indiquer vos disponibilités",
+        "intro": "Dites à votre gérant quand vous pouvez travailler pour éviter qu'il devine.",
+        "steps": {
+          "1": "Sur /me, la bande de 14 jours permet d'un tap d'indiquer que vous êtes dispo de 09:00 à 17:00.",
+          "2": "Pour d'autres horaires : ouvrez l'agenda, cliquez sur un créneau libre et choisissez 'Définir disponibilité'.",
+          "3": "Les modèles de disponibilité (Paramètres) servent pour des motifs récurrents comme les week-ends."
+        },
+        "tip": "Ajouter une disponibilité ne vous assigne pas — vous choisissez toujours sur quels shifts postuler."
+      },
+      "applications": {
+        "title": "Postuler à des shifts",
+        "intro": "Choisissez les shifts que vous voulez et attendez la validation du gérant.",
+        "steps": {
+          "1": "Cliquez sur un shift ouvert et choisissez 'Postuler'. Le statut s'affiche en temps réel.",
+          "2": "Les candidatures en attente apparaissent sur /me et sur la page /applications.",
+          "3": "Vous pouvez retirer une candidature à tout moment. Une fois approuvée, seul un échange permet de céder le shift."
+        }
+      },
+      "swaps": {
+        "title": "Échanges de shifts",
+        "intro": "Cédez un shift confirmé à un collègue en cas d'imprévu.",
+        "steps": {
+          "1": "Ouvrez le shift et choisissez 'Proposer un échange'. Sélectionnez un collègue éligible.",
+          "2": "Le collègue reçoit une notif. S'il accepte, l'assignation bascule et tout le monde voit le changement en direct.",
+          "3": "Gérants et managers voient chaque échange dans l'audit et peuvent le bloquer s'il enfreint une règle."
+        }
+      },
+      "broadcasts": {
+        "title": "Broadcast de shifts ouverts",
+        "intro": "Comblez un trou de dernière minute en sollicitant tous les travailleurs éligibles d'un coup.",
+        "steps": {
+          "1": "Gérants/managers : ouvrez un shift sous-effectif et cliquez 'Broadcast'. Tous les profils compatibles sont notifiés.",
+          "2": "Travailleurs : un broadcast arrive en notification push et en haut de /me avec un bouton Accepter.",
+          "3": "Le premier à accepter remporte — opération atomique, donc pas de double-booking même en cas de taps simultanés."
+        }
+      },
+      "timeClock": {
+        "title": "Pointage",
+        "intro": "Enregistrez les heures réelles pour que la paie corresponde à la réalité.",
+        "steps": {
+          "1": "Travailleurs : depuis /clock ou /me, appuyez 'Pointer' au début, 'Dépointer' à la fin.",
+          "2": "Oublié ? Le gérant peut corriger après coup ; le tampon initial reste dans l'audit.",
+          "3": "Gérants/managers valident les entrées sur /clock ; seules les entrées approuvées partent en paie."
+        }
+      },
+      "timeOff": {
+        "title": "Congés",
+        "intro": "Demandez des jours de congé et laissez la planification les respecter automatiquement.",
+        "steps": {
+          "1": "Travailleurs : sur /timeoff, choisissez une période et un motif. Les conflits avec des shifts sont signalés.",
+          "2": "Gérants/managers approuvent ou refusent sur la même page. Le congé approuvé bloque toute nouvelle assignation.",
+          "3": "Les règles de planification traitent un congé approuvé comme un 'non' ferme : suggestions IA et bulk l'évitent."
+        }
+      },
+      "documents": {
+        "title": "Documents (CI, contrat, certificats)",
+        "intro": "Conservez carte d'identité, contrat et attestation hygiène en un seul endroit.",
+        "steps": {
+          "1": "Paramètres → Profil : glissez un PDF ou une photo (max 10 Mo) dans la zone, ou cliquez pour choisir.",
+          "2": "Choisissez le type et éventuellement une date d'expiration. Vous et votre gérant seul·e·s les voyez.",
+          "3": "Les documents expirant dans 30 jours apparaissent en avertissement sur la fiche travailleur.",
+          "4": "Cette fonction est optionnelle — si le gérant n'a pas configuré S3/R2, la section reste cachée."
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "intro": "Trois canaux : in-app, push web et e-mail. Vous décidez quoi recevoir.",
+        "steps": {
+          "1": "La cloche dans le header montre les non-lus. Cliquez pour sauter au shift ou à la demande concernée.",
+          "2": "Activez les notifications push dans Paramètres → Profil pour recevoir des alertes même onglet fermé.",
+          "3": "Les préférences e-mail sont par événement (invitations, rappels, décisions) sur la même page."
+        }
+      },
+      "icsFeed": {
+        "title": "Abonnement calendrier (ICS)",
+        "intro": "Vos shifts Tattoogenda dans Google, Apple ou Outlook — toujours à jour.",
+        "steps": {
+          "1": "Paramètres → Profil : copiez votre URL de calendrier personnelle.",
+          "2": "Collez-la dans votre app comme nouvel abonnement (n'importez pas, sinon ce serait figé).",
+          "3": "Appareil perdu ou partagé par erreur ? Cliquez 'Révoquer et régénérer' pour invalider l'ancien lien."
+        },
+        "tip": "Ne partagez pas l'URL — elle contient un jeton signé qui donne accès à votre planning."
+      },
+      "profile": {
+        "title": "Votre profil",
+        "intro": "Nom, téléphone, langue, sécurité et préférences.",
+        "steps": {
+          "1": "Modifiez nom, téléphone et langue quand vous le souhaitez. Effet immédiat.",
+          "2": "Changez votre mot de passe ici aussi ; l'actuel est demandé pour vérifier l'identité.",
+          "3": "La double authentification (TOTP) ajoute un code depuis une appli — fortement recommandé aux gérants."
+        }
+      },
+      "workersDirectory": {
+        "title": "Annuaire des travailleurs",
+        "intro": "Gérez l'équipe, leurs rôles, compétences et statuts.",
+        "steps": {
+          "1": "Invitez un travailleur depuis /workers. Il reçoit un lien à usage unique valable 7 jours.",
+          "2": "Cliquez sur un travailleur pour sa fiche : heures, contrat, compétences, taux d'absences, docs à renouveler.",
+          "3": "Suspendez ou réactivez sans supprimer l'historique. Un travailleur suspendu ne peut ni postuler ni être assigné.",
+          "4": "Promouvez un travailleur en manager via sa fiche si vous voulez qu'il planifie sans gérer l'entreprise."
+        }
+      },
+      "shiftsPlanner": {
+        "title": "Planification des shifts",
+        "intro": "Créez, modifiez et publiez des shifts depuis l'agenda.",
+        "steps": {
+          "1": "Cliquez sur un créneau vide ou utilisez 'Nouveau shift' pour un dialogue détaillé.",
+          "2": "Indiquez rôle, nombre de places, plage horaire, lieu optionnel et compétence requise.",
+          "3": "Les shifts naissent en brouillon. Les travailleurs ne les voient qu'après 'Publier la semaine' ou publication individuelle.",
+          "4": "Glissez un shift pour le déplacer ; tirez son bord pour redimensionner. Sauvegarde automatique.",
+          "5": "Les conflits (surcapacité, chevauchement, congé, plafond hebdo, repos, âge) sont bloqués avec un message clair."
+        },
+        "tip": "Créez un modèle de roster une fois pour une semaine type, puis appliquez-le à n'importe quelle semaine."
+      },
+      "bulkOps": {
+        "title": "Actions groupées",
+        "intro": "Déplacez plusieurs shifts à la fois pour gagner du temps.",
+        "steps": {
+          "1": "Dupliquer cette semaine : copie chaque shift de la semaine courante en brouillon dans la suivante.",
+          "2": "Annuler aujourd'hui : marque chaque shift d'aujourd'hui comme annulé. Les travailleurs sont notifiés.",
+          "3": "Replanifier en masse : sélectionnez des shifts et décalez-les d'un nombre fixe de minutes. Jamais dans le passé."
+        }
+      },
+      "aiSuggestions": {
+        "title": "Suggestions IA de staffing",
+        "intro": "Classement basé sur des règles : qui devrait combler un shift sous-effectif.",
+        "steps": {
+          "1": "Ouvrez un shift non rempli ; le panneau affiche les meilleurs travailleurs avec un score et les raisons.",
+          "2": "Le classement prend en compte dispo, compétences, heures déjà prévues, repos et absences récentes.",
+          "3": "Cliquez 'Assigner' sur une suggestion pour remplir directement sans passer par la flow de candidature."
+        }
+      },
+      "approvals": {
+        "title": "Approuver les candidatures",
+        "intro": "Décidez qui travaille quel shift.",
+        "steps": {
+          "1": "Ouvrez un shift pour voir les candidatures, avec les heures effectuées et la correspondance de compétences.",
+          "2": "Approuvez ou refusez en un clic. Le travailleur est notifié immédiatement et le statut se met à jour partout.",
+          "3": "Vous ne pouvez pas dépasser le nombre de places — le système bloque. Augmentez d'abord la capacité si besoin."
+        }
+      },
+      "attendance": {
+        "title": "Présence",
+        "intro": "Suivez qui est venu, qui était en retard et qui était absent.",
+        "steps": {
+          "1": "Pour un shift passé, ouvrez le panneau et choisissez par travailleur : À l'heure, En retard, Absent ou Excusé.",
+          "2": "Les absences comptent dans le taux d'absences 90 jours affiché sur la fiche et le tableau d'insights.",
+          "3": "Vous pouvez recliquer si vous vous trompez — l'audit conserve l'historique."
+        }
+      },
+      "skillsRoster": {
+        "title": "Compétences et modèles de roster",
+        "intro": "Briques réutilisables pour planifier vite.",
+        "steps": {
+          "1": "Définissez vos compétences (bar, cuisine, accueil…) dans Paramètres → Skills, avec une couleur.",
+          "2": "Étiquetez chaque shift avec une compétence requise pour que seuls les profils adéquats puissent postuler.",
+          "3": "Les modèles de roster (Paramètres → Rosters) figent une semaine entière pour la réutiliser en un clic."
+        }
+      },
+      "insights": {
+        "title": "Insights",
+        "intro": "Vue hebdomadaire de la santé de votre entreprise.",
+        "steps": {
+          "1": "/insights affiche shifts publiés, heures prévues, taux de remplissage et taux d'absences par semaine.",
+          "2": "Comparez les semaines pour repérer les jours sous-effectifs ou les pics d'absences inhabituels.",
+          "3": "Tous les chiffres sont calculés en direct depuis vos données — rien à configurer."
+        }
+      },
+      "payroll": {
+        "title": "Export paie",
+        "intro": "Exportez les heures approuvées vers votre secrétariat social.",
+        "steps": {
+          "1": "Sur /payroll/time-entries, choisissez une période et un format (SD Worx, Securex ou générique).",
+          "2": "Seules les entrées approuvées sont incluses. Les éléments en attente sont mis en évidence pour éviter d'envoyer un fichier incomplet.",
+          "3": "Téléchargez le CSV prêt à charger sur le portail de votre prestataire."
+        }
+      },
+      "dimona": {
+        "title": "Déclarations Dimona",
+        "intro": "Dimona ONSS automatique à l'entrée et la sortie des shifts.",
+        "steps": {
+          "1": "Saisissez vos identifiants Dimona une fois dans Paramètres → Developers (chiffrés au repos).",
+          "2": "Mettez DIMONA_ENV à 'sandbox' pour tester sans déclaration réelle, puis 'prod' une fois prêt.",
+          "3": "Les déclarations partent automatiquement ; les jobs de réconciliation retentent les échecs et les remontent dans /audit."
+        },
+        "tip": "Gardez DIMONA_ENV sur 'mock' en dev — l'app logue l'intention sans contacter l'ONSS."
+      },
+      "messaging": {
+        "title": "Chat de shift",
+        "intro": "Messages rapides liés à un shift précis.",
+        "steps": {
+          "1": "Dans le panneau d'un shift, descendez jusqu'au chat. Travailleurs assignés et managers peuvent lire et écrire.",
+          "2": "Idéal pour les infos de dernière minute (dress code, entrée) au lieu d'un groupe WhatsApp séparé.",
+          "3": "Les messages persistent tant que le shift existe ; supprimer le shift supprime le chat."
+        }
+      },
+      "audit": {
+        "title": "Journal d'audit",
+        "intro": "Historique searchable de chaque action significative.",
+        "steps": {
+          "1": "Filtrez par utilisateur, type d'action, texte libre ou plage de dates pour retrouver un changement précis.",
+          "2": "Chaque create / update / delete sur shifts, assignations, congés, présence et paramètres est enregistré.",
+          "3": "Les journaux sont conservés indéfiniment — pratique pour les demandes RGPD et résoudre des litiges."
+        }
+      },
+      "developers": {
+        "title": "Developers — API & webhooks",
+        "intro": "Construisez des intégrations sur vos données.",
+        "steps": {
+          "1": "Créez des clés API avec le plus petit jeu de scopes (shifts:read, shifts:write…) par intégration.",
+          "2": "Envoyez un en-tête Idempotency-Key sur les POST pour pouvoir réessayer sans créer de doublons.",
+          "3": "Abonnez des webhooks à des events comme shift.created et shift.cancelled. Payloads signés en HMAC-SHA256.",
+          "4": "Consultez l'OpenAPI complet sur /api/v1/openapi pour chaque endpoint, schéma et limite."
+        },
+        "tip": "Limites par clé : 600 lectures/min, 120 écritures/min. Au-delà : 429 avec Retry-After."
+      },
+      "settings": {
+        "title": "Paramètres de l'entreprise",
+        "intro": "Lieux, infos de facturation et défauts opérationnels.",
+        "steps": {
+          "1": "Ajoutez plusieurs lieux si vous gérez plusieurs établissements ; chaque shift peut en porter un.",
+          "2": "Réglez les défauts (repos min, plafond hebdo, limite d'âge étudiant) une seule fois pour toute l'entreprise.",
+          "3": "Les outils RGPD permettent d'exporter ou supprimer toutes les données d'un utilisateur depuis /me/data."
+        }
+      },
+      "security": {
+        "title": "Sécurité & confidentialité",
+        "intro": "Comment vos données sont protégées.",
+        "steps": {
+          "1": "Mots de passe hashés en bcrypt. 2FA via TOTP standard — couplez avec n'importe quelle appli authenticator.",
+          "2": "Les identifiants sensibles (Dimona) sont chiffrés au repos en AES-256-GCM et jamais journalisés en clair.",
+          "3": "Chaque action privilégiée est journalisée. Appareil perdu ? Révoquez l'URL agenda et réinitialisez le mot de passe."
+        }
+      }
+    }
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "endBeforeStart": "L'heure de fin doit être après le début.",
+    "capacityFull": "Ce shift est déjà complet.",
+    "overlap": "Le travailleur a déjà un shift approuvé qui chevauche.",
+    "duplicateApplication": "Vous avez déjà postulé à ce shift.",
+    "shiftCancelled": "Ce shift a été annulé.",
+    "timeOffConflict": "Le travailleur a un congé approuvé sur cette période.",
+    "minRest": "Moins de 11 h de repos entre shifts.",
+    "weeklyCap": "Limite hebdomadaire dépassée.",
+    "ageRestricted": "Le travailleur est trop jeune pour ce shift.",
+    "forbidden": "Vous n’avez pas la permission d’effectuer cette action.",
+    "notFound": "Cet élément est introuvable.",
+    "rateLimit": "Trop de requêtes. Veuillez ralentir.",
+    "invalidInput": "Certains champs sont invalides. Vérifiez et réessayez.",
+    "dimona": "La déclaration Dimona a échoué. Vérifiez le NISS du travailleur.",
+    "network": "Problème réseau. Vérifiez votre connexion.",
+    "pastShift": "Ce shift a déjà commencé ou est terminé."
+  }
+}

@@ -1,0 +1,618 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  WORKER
+  MANAGER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum ContractType {
+  FLEXI
+  JOBSTUDENT
+  EMPLOYEE
+  EXTRA
+}
+
+enum ShiftStatus {
+  OPEN
+  PENDING
+  FILLED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum NotificationType {
+  NEW_SUBSCRIPTION
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  APPLICATION_WITHDRAWN
+  SHIFT_CANCELLED
+  INVITE_ACCEPTED
+  SHIFT_ASSIGNED
+  TIMEOFF_DECIDED
+  SHIFT_REMINDER_24H
+  SHIFT_SWAP_REQUESTED
+  SHIFT_SWAP_DECIDED
+  SHIFT_BROADCAST
+}
+
+enum AttendanceStatus {
+  ON_TIME
+  LATE
+  NO_SHOW
+  EXCUSED
+}
+
+enum AuditAction {
+  SHIFT_CREATED
+  SHIFT_UPDATED
+  SHIFT_DELETED
+  SHIFT_PUBLISHED
+  SHIFT_ASSIGNED
+  SUBSCRIPTION_APPLIED
+  SUBSCRIPTION_APPROVED
+  SUBSCRIPTION_REJECTED
+  SUBSCRIPTION_WITHDRAWN
+  AVAILABILITY_SET
+  AVAILABILITY_DELETED
+  INVITE_SENT
+  INVITE_ACCEPTED
+  WORKER_SUSPENDED
+  WORKER_ARCHIVED
+  TIMEOFF_REQUESTED
+  TIMEOFF_APPROVED
+  TIMEOFF_REJECTED
+  SWAP_REQUESTED
+  SWAP_DECIDED
+  TIME_ENTRY_APPROVED
+  DIMONA_DECLARED
+  ATTENDANCE_MARKED
+  SHIFT_BROADCAST_SENT
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum DimonaStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+model Business {
+  id                String   @id @default(cuid())
+  name              String
+  ownerId           String   @unique
+  owner             User     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  timezone          String   @default("Europe/Brussels")
+  weekStartsOn      Int      @default(1)
+  dimonaCredentials String?
+  dimonaEmployerId  String?
+  revenueWeeklyJson Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workers     User[]                @relation("BusinessWorkers")
+  shifts      Shift[]
+  templates   ShiftTemplate[]
+  skills      Skill[]
+  invites     Invite[]
+  rosters     RosterTemplate[]
+  locations   Location[]
+  memberships Membership[]
+  apiKeys     ApiKey[]
+  webhooks    WebhookSubscription[]
+
+  @@map("businesses")
+}
+
+model User {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  passwordHash      String
+  name              String
+  role              UserRole
+  status            UserStatus    @default(ACTIVE)
+  phone             String?
+  avatarUrl         String?
+  locale            String        @default("en")
+  contractType      ContractType?
+  hourlyRate        Decimal?      @db.Decimal(10, 2)
+  currency          String        @default("EUR")
+  weeklyHourCap     Int?
+  birthDate         DateTime?
+  notificationPrefs Json?
+  twoFactorSecret   String?
+  nationalNumber    String?
+  icsRotation       Int           @default(0)
+  businessId        String?
+  business          Business?     @relation("BusinessWorkers", fields: [businessId], references: [id])
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  ownedBusiness         Business?              @relation("BusinessOwner")
+  availabilities        Availability[]
+  availabilityTemplates AvailabilityTemplate[]
+  subscriptions         ShiftSubscription[]
+  assignments           ShiftAssignment[]      @relation("AssignmentWorker")
+  attendanceReviews     ShiftAssignment[]      @relation("AssignmentReviewer")
+  notifications         Notification[]
+  pushSubscriptions     PushSubscription[]
+  auditEvents           AuditEvent[]
+  invitesSent           Invite[]               @relation("InviteSentBy")
+  skills                UserSkill[]
+  timeOffRequests       TimeOffRequest[]       @relation("TimeOffRequester")
+  timeOffDecisions      TimeOffRequest[]       @relation("TimeOffDecider")
+  timeEntries           TimeEntry[]            @relation("TimeEntryUser")
+  timeEntryReviews      TimeEntry[]            @relation("TimeEntryReviewer")
+  swapsRequested        ShiftSwap[]            @relation("SwapTarget")
+  documents             Document[]
+  shiftMessages         ShiftMessage[]
+  memberships           Membership[]
+  webauthnCredentials   WebAuthnCredential[]
+
+  @@index([businessId])
+  @@index([status])
+  @@map("users")
+}
+
+model Shift {
+  id              String         @id @default(cuid())
+  businessId      String
+  business        Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  locationId      String?
+  location        Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startsAt        DateTime
+  endsAt          DateTime
+  roleLabel       String
+  requiredSpots   Int            @default(1)
+  notes           String?
+  status          ShiftStatus    @default(OPEN)
+  publishedAt     DateTime?
+  publishedById   String?
+  requiredSkillId String?
+  requiredSkill   Skill?         @relation(fields: [requiredSkillId], references: [id], onDelete: SetNull)
+  recurrenceRule  String?
+  templateId      String?
+  template        ShiftTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  reminderSentAt  DateTime?
+  broadcastAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  subscriptions      ShiftSubscription[]
+  assignments        ShiftAssignment[]
+  timeEntries        TimeEntry[]
+  messages           ShiftMessage[]
+  dimonaDeclarations DimonaDeclaration[]
+
+  @@index([businessId, startsAt, endsAt])
+  @@index([templateId])
+  @@index([publishedAt])
+  @@index([locationId])
+  @@map("shifts")
+}
+
+model ShiftTemplate {
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String
+  roleLabel     String
+  requiredSpots Int      @default(1)
+  defaultStart  String
+  defaultEnd    String
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  shifts Shift[]
+
+  @@index([businessId])
+  @@map("shift_templates")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, startsAt, endsAt])
+  @@map("availabilities")
+}
+
+model ShiftSubscription {
+  id        String             @id @default(cuid())
+  shiftId   String
+  shift     Shift              @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    SubscriptionStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  swaps ShiftSwap[] @relation("SwapFromSubscription")
+
+  @@unique([shiftId, userId])
+  @@index([shiftId, status])
+  @@index([userId, status])
+  @@map("shift_subscriptions")
+}
+
+model ShiftAssignment {
+  id                   String            @id @default(cuid())
+  shiftId              String
+  shift                Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User              @relation("AssignmentWorker", fields: [userId], references: [id], onDelete: Cascade)
+  attendance           AttendanceStatus?
+  attendanceNote       String?
+  attendanceMarkedAt   DateTime?
+  attendanceMarkedById String?
+  attendanceMarkedBy   User?             @relation("AssignmentReviewer", fields: [attendanceMarkedById], references: [id], onDelete: SetNull)
+  createdAt            DateTime          @default(now())
+
+  @@unique([shiftId, userId])
+  @@index([userId])
+  @@index([attendance])
+  @@map("shift_assignments")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model AuditEvent {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  email       String?
+  token       String    @unique
+  role        UserRole  @default(WORKER)
+  invitedById String
+  invitedBy   User      @relation("InviteSentBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([businessId])
+  @@index([expiresAt])
+  @@map("invites")
+}
+
+model Skill {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  color      String   @default("#6366f1")
+  createdAt  DateTime @default(now())
+
+  workers UserSkill[]
+  shifts  Shift[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@map("skills")
+}
+
+model UserSkill {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, skillId])
+  @@index([skillId])
+  @@map("user_skills")
+}
+
+model TimeOffRequest {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation("TimeOffRequester", fields: [userId], references: [id], onDelete: Cascade)
+  startsAt    DateTime
+  endsAt      DateTime
+  reason      String?
+  status      TimeOffStatus @default(PENDING)
+  decidedById String?
+  decidedBy   User?         @relation("TimeOffDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([startsAt, endsAt])
+  @@map("time_off_requests")
+}
+
+model AvailabilityTemplate {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  validFrom  DateTime  @default(now())
+  validUntil DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("availability_templates")
+}
+
+model TimeEntry {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation("TimeEntryUser", fields: [userId], references: [id], onDelete: Cascade)
+  shiftId      String?
+  shift        Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  clockInAt    DateTime
+  clockOutAt   DateTime?
+  breakMinutes Int       @default(0)
+  approvedAt   DateTime?
+  approvedById String?
+  approvedBy   User?     @relation("TimeEntryReviewer", fields: [approvedById], references: [id], onDelete: SetNull)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, clockInAt])
+  @@index([shiftId])
+  @@map("time_entries")
+}
+
+model ShiftSwap {
+  id                 String            @id @default(cuid())
+  fromSubscriptionId String
+  fromSubscription   ShiftSubscription @relation("SwapFromSubscription", fields: [fromSubscriptionId], references: [id], onDelete: Cascade)
+  toUserId           String
+  toUser             User              @relation("SwapTarget", fields: [toUserId], references: [id], onDelete: Cascade)
+  status             SwapStatus        @default(PENDING)
+  decidedAt          DateTime?
+  message            String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([fromSubscriptionId])
+  @@index([toUserId, status])
+  @@map("shift_swaps")
+}
+
+model RosterTemplate {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  shifts RosterTemplateShift[]
+
+  @@index([businessId])
+  @@map("roster_templates")
+}
+
+model RosterTemplateShift {
+  id            String         @id @default(cuid())
+  rosterId      String
+  roster        RosterTemplate @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  dayOfWeek     Int
+  startTime     String
+  endTime       String
+  roleLabel     String
+  requiredSpots Int            @default(1)
+  notes         String?
+
+  @@index([rosterId])
+  @@map("roster_template_shifts")
+}
+
+model Location {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name            String
+  address         String?
+  timezone        String   @default("Europe/Brussels")
+  geofenceLat     Decimal? @db.Decimal(10, 7)
+  geofenceLng     Decimal? @db.Decimal(10, 7)
+  geofenceRadiusM Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shifts Shift[]
+
+  @@index([businessId])
+  @@map("locations")
+}
+
+model Membership {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  role       UserRole
+  status     UserStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@map("memberships")
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String
+  url         String
+  fileName    String
+  contentType String?
+  sizeBytes   Int?
+  expiresOn   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresOn])
+  @@map("documents")
+}
+
+model ShiftMessage {
+  id        String   @id @default(cuid())
+  shiftId   String
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([shiftId, createdAt])
+  @@map("shift_messages")
+}
+
+model DimonaDeclaration {
+  id              String       @id @default(cuid())
+  shiftId         String
+  shift           Shift        @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  workerId        String
+  dimonaPeriodId  String?
+  status          DimonaStatus @default(PENDING)
+  requestPayload  Json?
+  responsePayload Json?
+  errorMessage    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([shiftId])
+  @@index([workerId, status])
+  @@map("dimona_declarations")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  hashedKey  String    @unique
+  prefix     String
+  scopes     String[]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([businessId])
+  @@map("api_keys")
+}
+
+model WebhookSubscription {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  events     String[]
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([businessId])
+  @@map("webhook_subscriptions")
+}
+
+model WebAuthnCredential {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String[]
+  deviceName   String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+  @@map("webauthn_credentials")
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}

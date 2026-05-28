@@ -1,0 +1,750 @@
+{
+  "app": {
+    "name": "Tattoogenda",
+    "tagline": "Calendar-first staffing for horeca teams"
+  },
+  "me": {
+    "greeting": "Today",
+    "subtitle": "Your shifts, broadcasts and quick actions in one place.",
+    "nextShift": "Your next shift",
+    "noNextShift": "No upcoming shifts yet.",
+    "findShifts": "Browse open shifts →",
+    "clockIn": "Clock in",
+    "openCalendar": "Open calendar",
+    "pendingApplications": "Pending",
+    "unread": "Unread",
+    "weekHours": "Hours this week",
+    "quickLinks": "Quick links",
+    "quickAvailability": "Tap to mark yourself available",
+    "quickAvailabilityHelp": "Default slot 09:00–17:00 · tap again to clear",
+    "now": "starting now",
+    "inMinutes": "in {count} min",
+    "inHours": "in {count} h",
+    "inDays": "in {count} d"
+  },
+  "swap": {
+    "title": "Shift swaps",
+    "offerSwap": "Offer this shift to a colleague",
+    "offerHelp": "Pick a colleague to take this shift. They will receive a notification and can accept or reject.",
+    "toColleague": "To colleague",
+    "pickColleague": "Pick a colleague…",
+    "noCandidates": "Nobody is currently free for this slot.",
+    "message": "Message (optional)",
+    "messagePlaceholder": "Why are you asking?",
+    "send": "Send request",
+    "offered": "Swap request sent"
+  },
+  "suggestions": {
+    "title": "Suggested workers",
+    "loading": "Scoring candidates…",
+    "assign": "Assign"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signingIn": "Signing in…",
+    "register": "Register",
+    "createAccount": "Create account",
+    "creating": "Creating…",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full name",
+    "iAmA": "I am a",
+    "owner": "Owner",
+    "worker": "Worker",
+    "manager": "Manager",
+    "businessName": "Business name",
+    "businessId": "Business ID",
+    "businessIdHelp": "Ask your manager for this ID.",
+    "invalidCredentials": "Invalid email or password.",
+    "noAccount": "No account?",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "ownerTitle": "Staffing calendar",
+    "workerTitle": "My calendar",
+    "ownerSubtitle": "Create shifts and approve worker applications.",
+    "workerSubtitle": "Set your availability and apply to open shifts.",
+    "newShift": "New shift",
+    "setAvailability": "Set availability",
+    "today": "Today",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "moreItems": "+{count} more",
+    "empty": "Nothing scheduled in this range yet.",
+    "loading": "Loading calendar…",
+    "errorTitle": "Could not load the calendar.",
+    "errorRetry": "Retry",
+    "draft": "Draft",
+    "publishWeek": "Publish week",
+    "published": "{count} shifts published",
+    "kpi": {
+      "open": "Open",
+      "pending": "Pending",
+      "filled": "Filled",
+      "capacity": "Capacity",
+      "labourCost": "Labour cost",
+      "costPerHour": "Cost/hour"
+    },
+    "filters": {
+      "label": "Filters",
+      "role": "Role",
+      "status": "Status",
+      "worker": "Worker",
+      "any": "Any",
+      "clear": "Clear",
+      "showAvailability": "Show worker availability"
+    }
+  },
+  "status": {
+    "open": "Open",
+    "pending": "Pending",
+    "approved": "Approved",
+    "filled": "Filled",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn",
+    "cancelled": "Cancelled"
+  },
+  "shift": {
+    "title": "Shift",
+    "create": "Create shift",
+    "edit": "Edit shift",
+    "save": "Save shift",
+    "saving": "Saving…",
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "role": "Role",
+    "rolePlaceholder": "e.g. Bartender",
+    "requiredSpots": "Required spots",
+    "requiredSkill": "Required skill",
+    "noSkill": "None",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "Any extra info",
+    "broadcast": "Broadcast to all eligible",
+    "broadcastSent": "{count} workers notified",
+    "acceptBroadcast": "Accept this open shift",
+    "filledCount": "{filled}/{required} filled",
+    "apply": "Apply for shift",
+    "withdraw": "Withdraw application",
+    "cancel": "Cancel shift",
+    "close": "Close",
+    "applications": "Applications",
+    "approve": "Approve",
+    "reject": "Reject",
+    "assign": "Assign worker",
+    "assigning": "Assigning…",
+    "publish": "Publish",
+    "repeatWeekly": "Repeat weekly",
+    "repeatUntil": "Repeat until",
+    "publishNow": "Publish immediately",
+    "template": "Template",
+    "templateNone": "None",
+    "offerSwap": "Offer to another worker",
+    "swap": "Swap"
+  },
+  "availability": {
+    "title": "Availability",
+    "youAreAvailable": "You are available",
+    "save": "Save",
+    "available": "Available",
+    "remove": "Remove availability",
+    "removing": "Removing…",
+    "removeHelp": "Removing this block hides you from owners for that time. You can always add a new one.",
+    "templates": "Recurring availability",
+    "templatesEmpty": "No recurring availability yet."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "loading": "Loading notifications…",
+    "markRead": "Mark read",
+    "markAllRead": "Mark all read",
+    "unreadAria": "Notifications, {count} unread",
+    "ariaLabel": "Notifications"
+  },
+  "confirm": {
+    "cancelShiftTitle": "Cancel this shift?",
+    "cancelShiftBody": "Workers who applied will be notified. This cannot be undone.",
+    "removeAvailabilityTitle": "Remove this availability?",
+    "removeAvailabilityBody": "Owners will no longer see you as available for that block.",
+    "yes": "Yes, continue",
+    "no": "No, keep it"
+  },
+  "toast": {
+    "shiftCreated": "Shift created",
+    "shiftUpdated": "Shift updated",
+    "shiftCancelled": "Shift cancelled",
+    "shiftPublished": "Shifts published",
+    "shiftAssigned": "Worker assigned",
+    "availabilitySet": "Availability saved",
+    "availabilityRemoved": "Availability removed",
+    "applicationSubmitted": "Application submitted",
+    "applicationWithdrawn": "Application withdrawn",
+    "applicationApproved": "Application approved",
+    "applicationRejected": "Application rejected",
+    "notificationsRead": "Marked as read",
+    "inviteSent": "Invite sent",
+    "inviteRevoked": "Invite revoked",
+    "skillSaved": "Skill saved",
+    "skillRemoved": "Skill removed",
+    "workerUpdated": "Worker updated",
+    "timeOffRequested": "Time-off requested",
+    "timeOffApproved": "Time-off approved",
+    "timeOffRejected": "Time-off rejected",
+    "templateSaved": "Template saved",
+    "profileSaved": "Profile saved",
+    "passwordChanged": "Password changed",
+    "swapOffered": "Swap offered",
+    "swapAccepted": "Swap accepted",
+    "swapRejected": "Swap rejected",
+    "clockedIn": "Clocked in",
+    "clockedOut": "Clocked out",
+    "timeEntriesApproved": "Time entries approved",
+    "rosterApplied": "Roster applied"
+  },
+  "applications": {
+    "title": "My applications",
+    "subtitle": "Track every shift you have applied to.",
+    "empty": "You have not applied to any shifts yet.",
+    "groupPending": "Pending",
+    "groupApproved": "Approved",
+    "groupRejected": "Rejected or withdrawn",
+    "viewOnCalendar": "View on calendar",
+    "broadcastsTitle": "Open shifts offered to you",
+    "broadcastAccepted": "You're on the shift"
+  },
+  "workers": {
+    "title": "Team",
+    "subtitle": "Invite workers and manage their profile.",
+    "inviteCta": "Invite worker",
+    "empty": "No workers yet. Invite your first to get started.",
+    "active": "Active",
+    "suspended": "Suspended",
+    "archived": "Archived",
+    "suspend": "Suspend",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "skills": "Skills",
+    "contractType": "Contract",
+    "hoursThisMonth": "Hours this month",
+    "hoursThisYear": "Hours this year",
+    "noContract": "Not set",
+    "hourlyRate": "Hourly rate",
+    "weeklyCap": "Weekly cap",
+    "phone": "Phone",
+    "birthDate": "Birth date",
+    "saveProfile": "Save profile",
+    "upcoming": "Upcoming",
+    "noShowRate": "No-show rate (90d)",
+    "noShowsBadge": "{count, plural, one {# no-show} other {# no-shows}}",
+    "docsAttention": "Documents needing attention",
+    "docsExpired": "Expired {date}",
+    "docsExpiringOn": "Expires {date}"
+  },
+  "invite": {
+    "title": "Join your team",
+    "subtitle": "Set up your account to start picking up shifts.",
+    "expired": "This invite has expired or already been accepted.",
+    "accept": "Accept and create account",
+    "accepting": "Creating account…",
+    "fromBusiness": "Invited to {business}",
+    "linkLabel": "Invite link",
+    "copyLink": "Copy invite link",
+    "linkCopied": "Link copied",
+    "sendEmail": "Send by email",
+    "expiresAt": "Expires {date}"
+  },
+  "skills": {
+    "title": "Skills",
+    "subtitle": "Define roles and certifications used by your team.",
+    "add": "Add skill",
+    "name": "Name",
+    "color": "Colour",
+    "empty": "No skills yet.",
+    "emptyCatalog": "No skills defined yet for your business.",
+    "manageLink": "Manage skills",
+    "workerCount": "{count, plural, =0 {No workers} =1 {1 worker} other {# workers}}"
+  },
+  "timeOff": {
+    "title": "Time off",
+    "workerSubtitle": "Ask not to be scheduled for a range of dates.",
+    "ownerSubtitle": "Approve or reject worker requests.",
+    "newRequest": "Request time off",
+    "from": "From",
+    "to": "To",
+    "reason": "Reason (optional)",
+    "submit": "Submit",
+    "empty": "No time-off requests.",
+    "ownerEmpty": "Nothing waiting for review.",
+    "groupPending": "Pending",
+    "groupApproved": "Approved",
+    "groupRejected": "Rejected",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "ON_TIME": "On time",
+    "LATE": "Late",
+    "NO_SHOW": "No-show",
+    "EXCUSED": "Excused",
+    "noShowRate": "No-show rate"
+  },
+  "shiftChat": {
+    "title": "Shift chat",
+    "empty": "No messages yet. Start the conversation.",
+    "placeholder": "Write a message…",
+    "send": "Send"
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "Fill rate, labour cost and cost-to-revenue trends.",
+    "scheduled": "Scheduled",
+    "fillRate": "Fill rate",
+    "labourCost": "Labour cost",
+    "costRevenue": "Cost / revenue",
+    "week": "Week",
+    "filled": "Filled",
+    "cost": "Cost",
+    "revenue": "Revenue",
+    "costToRevenue": "Cost/rev"
+  },
+  "myData": {
+    "title": "Your data",
+    "subtitle": "Under GDPR you can export everything we hold about you and delete your account at any time.",
+    "exportTitle": "Export",
+    "exportHelp": "Downloads a JSON file with your profile, availabilities, applications, assignments and notifications. Sensitive credentials are excluded.",
+    "exportCta": "Download my data",
+    "exportPreparing": "Preparing…",
+    "deleteTitle": "Delete account",
+    "deleteHelp": "Your account is suspended immediately and permanently removed after 90 days. Future shift assignments are cancelled. Past records (and legally-required payroll history) are kept.",
+    "deleteConfirmLabel": "Type DELETE to confirm",
+    "deleteCta": "Delete my account"
+  },
+  "docs": {
+    "title": "My documents",
+    "help": "Upload identity papers, contracts and certificates. They stay private to you and your business owners.",
+    "kind": "Type",
+    "expiresOn": "Expires on (optional)",
+    "dropzone": "Drag a file here or click to upload (PDF, JPG, PNG · max 10 MB)",
+    "uploading": "Uploading…",
+    "uploaded": "Document uploaded",
+    "empty": "No documents yet.",
+    "kind_ID_CARD": "ID card",
+    "kind_WORK_CONTRACT": "Work contract",
+    "kind_RESIDENCE_PERMIT": "Residence permit",
+    "kind_FOOD_SAFETY": "Food safety certificate",
+    "kind_OTHER": "Other"
+  },
+  "profile": {
+    "title": "My profile",
+    "subtitle": "Update your contact info and notification preferences.",
+    "displayName": "Display name",
+    "phone": "Phone",
+    "locale": "Language",
+    "notifications": "Notifications",
+    "notificationsHelp": "Choose which transactional emails you receive.",
+    "save": "Save changes",
+    "password": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "push": "Push notifications",
+    "pushHelp": "Get a tap on your phone for new assignments, swap requests and 24h reminders.",
+    "pushEnable": "Enable push",
+    "pushDisable": "Disable push",
+    "pushUnsupported": "This browser doesn't support push notifications.",
+    "pushDenied": "You blocked notifications. Re-enable them in your browser settings.",
+    "calendarFeed": "Calendar subscription",
+    "calendarHelp": "Subscribe to this URL from Apple Calendar, Google Calendar, or Outlook to see your shifts.",
+    "calendarRotate": "Revoke and rotate URL",
+    "calendarRotated": "Calendar URL rotated",
+    "calendarCopied": "Copied",
+    "copy": "Copy",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorHelp": "Add a one-time code from your authenticator app on top of your password.",
+    "twoFactorSetup": "Set up authenticator",
+    "twoFactorScan": "Scan this code with Google Authenticator or 1Password, then enter the 6-digit code.",
+    "twoFactorEnable": "Enable",
+    "twoFactorDisable": "Disable",
+    "twoFactorEnabled": "Two-factor authentication enabled",
+    "twoFactorDisabled": "Two-factor authentication disabled",
+    "locales": {
+      "en": "English",
+      "nl": "Nederlands",
+      "fr": "Français"
+    }
+  },
+  "hours": {
+    "title": "My hours",
+    "subtitle": "Scheduled hours from approved shifts.",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "loading": "Loading…",
+    "noBusiness": "You are not linked to a business yet."
+  },
+  "clock": {
+    "title": "Time clock",
+    "clockIn": "Clock in",
+    "clockOut": "Clock out",
+    "running": "Running for {minutes} min",
+    "break": "Break minutes",
+    "notes": "Notes",
+    "noActiveShift": "Not tied to a shift",
+    "noBusiness": "You are not linked to a business yet.",
+    "pendingTitle": "Pending time entries",
+    "approveSelected": "Approve selected",
+    "noPending": "Nothing waiting for approval."
+  },
+  "payroll": {
+    "title": "Payroll & time tracking",
+    "subtitle": "Approve worked hours and export pay-period files.",
+    "export": "Download CSV",
+    "exportXlsx": "Download XLSX",
+    "noRows": "No approved entries in this range."
+  },
+  "templates": {
+    "title": "Shift templates",
+    "subtitle": "Quick presets used when creating new shifts.",
+    "create": "New template",
+    "empty": "No templates yet.",
+    "name": "Template name"
+  },
+  "rosters": {
+    "title": "Weekly rosters",
+    "subtitle": "Plan a typical week and apply it with one click.",
+    "create": "New roster",
+    "apply": "Apply to week",
+    "weekOf": "Week of {date}",
+    "empty": "No rosters yet. Build one to fast-forward weekly planning.",
+    "shiftCount": "{count} shifts",
+    "addShift": "Add shift"
+  },
+  "bulk": {
+    "duplicateWeek": "Duplicate this week",
+    "duplicateWeekHint": "Copy this week's shifts as drafts into next week.",
+    "duplicated": "Duplicated {count} shifts",
+    "cancelDay": "Cancel today",
+    "cancelDayHint": "Cancel every shift starting today.",
+    "confirmCancelToday": "Cancel every shift starting today?",
+    "cancelled": "Cancelled {count} shifts"
+  },
+  "audit": {
+    "title": "Audit log",
+    "subtitle": "Searchable log of every action taken in your business.",
+    "search": "Search action, entity or user…",
+    "allActions": "All actions",
+    "allUsers": "All users",
+    "from": "From",
+    "to": "To",
+    "clear": "Clear filters",
+    "empty": "No events match these filters.",
+    "action": "Action",
+    "user": "User",
+    "entity": "Entity",
+    "when": "When"
+  },
+  "help": {
+    "title": "Help & how-to",
+    "subtitle": "Everything Tattoogenda can do for you, in plain language.",
+    "tocAria": "Table of contents",
+    "tipLabel": "Tip:",
+    "empty": "No help sections are available for your role yet.",
+    "badge": {
+      "worker": "Worker",
+      "manager": "Manager",
+      "owner": "Owner",
+      "all": "Everyone"
+    },
+    "s": {
+      "gettingStarted": {
+        "title": "Getting started",
+        "intro": "A 60-second tour of what Tattoogenda does and how to log in.",
+        "steps": {
+          "1": "Owners create a business at sign-up. Workers and managers join via an invite link from their owner.",
+          "2": "Use email + password, or Google sign-in if your owner has enabled it. 2FA can be turned on per account.",
+          "3": "Your role determines what you see: workers land on a personal home screen, owners and managers on the calendar.",
+          "4": "Pick your language (English, Dutch, French) in Settings → Profile so dates and labels match your team."
+        }
+      },
+      "calendar": {
+        "title": "The calendar",
+        "intro": "The shared calendar shows every shift colour-coded by status. It works on phone, tablet and desktop.",
+        "steps": {
+          "1": "Switch views with the toolbar: month, week, day, or list. Use arrow keys for fast navigation.",
+          "2": "Click a shift to open the details panel: who is assigned, applications, attendance, and chat.",
+          "3": "Colours: open shifts are blue, pending applications amber, filled shifts green, cancelled grey.",
+          "4": "Workers see only published shifts; owners and managers also see drafts and unpublished ones."
+        },
+        "tip": "Hold Shift while clicking to multi-select shifts on the planner — useful with the bulk-operations buttons."
+      },
+      "myHome": {
+        "title": "Your home screen (/me)",
+        "intro": "A mobile-first dashboard with everything you need before a shift.",
+        "steps": {
+          "1": "The big hero card shows your next shift, with the start time, role, location and a relative countdown.",
+          "2": "Clock in becomes active 15 minutes before the shift starts and disappears once you've ended the shift.",
+          "3": "Stat tiles surface pending applications, unread notifications and the hours scheduled this week.",
+          "4": "Open broadcasts appear at the top — tap Accept to claim an open shift on a first-come basis."
+        }
+      },
+      "availability": {
+        "title": "Setting your availability",
+        "intro": "Tell your owner when you can work so they don't have to guess.",
+        "steps": {
+          "1": "On /me, use the 14-day strip to mark days you're available between 09:00 and 17:00 with a single tap.",
+          "2": "For other time windows, open the calendar, click an empty slot, and choose 'Set availability'.",
+          "3": "Use availability templates (under Settings if your owner enabled them) for recurring patterns like weekends."
+        },
+        "tip": "Updating availability does not auto-apply to shifts — you still pick what you want to work."
+      },
+      "applications": {
+        "title": "Applying for shifts",
+        "intro": "Pick the shifts you want to work and wait for owner approval.",
+        "steps": {
+          "1": "Click any open shift in the calendar and choose 'Apply'. You'll see your application status in real time.",
+          "2": "Pending applications appear on /me and on the dedicated /applications page.",
+          "3": "You can withdraw a pending application at any time. Once approved, you must use a shift swap to step away."
+        }
+      },
+      "swaps": {
+        "title": "Shift swaps",
+        "intro": "Hand a confirmed shift to a colleague when something comes up.",
+        "steps": {
+          "1": "Open the shift in the calendar and pick 'Offer swap'. Choose a colleague from the eligibility list.",
+          "2": "The recipient gets a notification. If they accept, the assignment moves; you both see the change in real time.",
+          "3": "Owners and managers see every swap in the audit log, and may decline a swap that breaks scheduling rules."
+        }
+      },
+      "broadcasts": {
+        "title": "Open-shift broadcasts",
+        "intro": "Fill a last-minute hole by asking every eligible worker at once.",
+        "steps": {
+          "1": "Owners and managers: open an under-staffed shift and click 'Broadcast'. Everyone with the right skills is notified.",
+          "2": "Workers: a broadcast lands as a push notification and at the top of /me with an Accept button.",
+          "3": "First Accept wins atomically — no double bookings even if multiple workers tap at the same instant."
+        }
+      },
+      "timeClock": {
+        "title": "Time clock",
+        "intro": "Record actual start and end times so payroll matches reality.",
+        "steps": {
+          "1": "Workers: from /clock or /me, tap 'Clock in' once you've started, and 'Clock out' at the end.",
+          "2": "If you forget, your owner can edit the entry afterwards. The original timestamps are preserved in the audit log.",
+          "3": "Owners and managers approve time entries on /clock; only approved entries flow into payroll exports."
+        }
+      },
+      "timeOff": {
+        "title": "Time off",
+        "intro": "Request days off and have the schedule respect them automatically.",
+        "steps": {
+          "1": "Workers: go to /timeoff, pick a date range and a reason. Conflicts with existing shifts are flagged immediately.",
+          "2": "Owners and managers approve or reject from the same page. Approved time off blocks new assignments in that range.",
+          "3": "Scheduling rules treat approved time off as a hard no-go: AI suggestions and bulk operations skip those days."
+        }
+      },
+      "documents": {
+        "title": "Documents (ID, contracts, certificates)",
+        "intro": "Keep papers like your ID, work contract, and food-safety certificate in one place.",
+        "steps": {
+          "1": "On Settings → Profile, drag a PDF or photo (max 10 MB) into the dropzone, or click to choose a file.",
+          "2": "Pick the document type and the expiry date if there is one. Only you and your business owner can see it.",
+          "3": "Documents expiring within 30 days surface as warnings on the worker profile page.",
+          "4": "Storage is optional — if your owner hasn't set up S3/R2, the section is hidden automatically."
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "intro": "Three channels: in-app, web push, and email. You control what comes through.",
+        "steps": {
+          "1": "The bell icon in the header shows unread items. Click any notification to jump to the related shift or request.",
+          "2": "Enable push notifications on Settings → Profile to get alerts on your phone or laptop, even with the tab closed.",
+          "3": "Email preferences are per-event (invites, shift reminders, approvals) on the same settings page."
+        }
+      },
+      "icsFeed": {
+        "title": "Calendar subscription (ICS)",
+        "intro": "Your Tattoogenda shifts in Google, Apple or Outlook calendar — always up to date.",
+        "steps": {
+          "1": "On Settings → Profile, copy your personal calendar URL.",
+          "2": "Paste it into your calendar app as a new subscription (don't import — it would be a one-off snapshot).",
+          "3": "If a device is lost or shared by mistake, click 'Revoke and rotate URL' to invalidate the old link instantly."
+        },
+        "tip": "Don't share the URL — it contains a signed token that lets anyone with the link see your schedule."
+      },
+      "profile": {
+        "title": "Your profile",
+        "intro": "Name, phone, language, security and contact preferences.",
+        "steps": {
+          "1": "Update your display name, phone and language at any time. Changes apply immediately.",
+          "2": "Change your password from the same page; current password is required for safety.",
+          "3": "Two-factor authentication adds a TOTP code from any authenticator app — strongly recommended for owners."
+        }
+      },
+      "workersDirectory": {
+        "title": "Workers directory",
+        "intro": "Manage who is on your team, their roles, skills and status.",
+        "steps": {
+          "1": "Invite a worker by email from /workers. They get a single-use link valid for 7 days.",
+          "2": "Click a worker to open their profile: hours, contract, skills, no-show rate, and expiring documents.",
+          "3": "Suspend or reactivate workers without deleting their history. Suspended workers cannot apply or be assigned.",
+          "4": "Promote a worker to manager from their profile if you want them to plan shifts but not run the business."
+        }
+      },
+      "shiftsPlanner": {
+        "title": "Shifts planner",
+        "intro": "Create, edit, and publish shifts from the calendar.",
+        "steps": {
+          "1": "Click an empty slot on the calendar or use 'New shift' for a precise dialog.",
+          "2": "Set role label, required spots, time range, optional location, and required skill.",
+          "3": "Shifts start as drafts. Workers only see them after you click 'Publish week' or publish individually.",
+          "4": "Drag a shift to move it; drag its edge to resize. Changes save automatically.",
+          "5": "Conflicts (over-capacity, overlap, time-off, weekly cap, rest period, age limits) are blocked with a clear error."
+        },
+        "tip": "Create a roster template once for a typical week, then apply it onto any future week to skip repetitive setup."
+      },
+      "bulkOps": {
+        "title": "Bulk operations",
+        "intro": "Move many shifts at once for fast weekly planning.",
+        "steps": {
+          "1": "Duplicate this week: copies every shift in the current week as drafts into the next week.",
+          "2": "Cancel today: marks every shift starting today as cancelled. Workers see a strike-through and are notified.",
+          "3": "Bulk reschedule: select shifts and move them all by a fixed number of minutes. Refuses to move into the past."
+        }
+      },
+      "aiSuggestions": {
+        "title": "AI staffing suggestions",
+        "intro": "Rule-based ranking of who should fill an under-staffed shift.",
+        "steps": {
+          "1": "Open an unfilled shift; a suggestions panel shows the top workers with a score and reasons.",
+          "2": "Suggestions factor in availability, skills, weekly hours used, rest periods, and recent no-shows.",
+          "3": "Click 'Assign' on a suggestion to fill the spot directly without going through the apply / approve flow."
+        }
+      },
+      "approvals": {
+        "title": "Approving applications",
+        "intro": "Decide who works which shift.",
+        "steps": {
+          "1": "Open a shift to see its pending applications, with each worker's hours so far and any skill match.",
+          "2": "Approve or reject with one click. The worker is notified instantly and the shift status updates everywhere.",
+          "3": "You cannot approve beyond the required spots — the system blocks it. Increase capacity first if needed."
+        }
+      },
+      "attendance": {
+        "title": "Attendance marking",
+        "intro": "Track who showed up, who was late, and who didn't make it.",
+        "steps": {
+          "1": "For any past shift, open the details panel and pick On time, Late, No-show or Excused per assignment.",
+          "2": "No-shows count towards the worker's 90-day no-show rate shown on their profile and on the insights dashboard.",
+          "3": "Repeated marking is allowed if you made a mistake — the audit log preserves the history."
+        }
+      },
+      "skillsRoster": {
+        "title": "Skills and roster templates",
+        "intro": "Reusable building blocks for fast scheduling.",
+        "steps": {
+          "1": "Define skills (bar, kitchen, host, etc.) under Settings → Skills, with a colour code.",
+          "2": "Tag each shift with a required skill so only qualified workers can apply.",
+          "3": "Roster templates under Settings → Rosters capture a whole week of shifts to apply onto future weeks in one click."
+        }
+      },
+      "insights": {
+        "title": "Insights dashboard",
+        "intro": "A weekly view of how your business is doing.",
+        "steps": {
+          "1": "/insights shows shifts published, hours scheduled, fill rate and no-show rate per week.",
+          "2": "Compare weeks side by side to spot understaffed days or unusual no-show spikes.",
+          "3": "All numbers are computed live from the data you already have — there's nothing to configure."
+        }
+      },
+      "payroll": {
+        "title": "Payroll export",
+        "intro": "Export approved hours for your provider.",
+        "steps": {
+          "1": "On /payroll/time-entries pick a date range and a provider preset (SD Worx, Securex, or generic).",
+          "2": "Only approved time entries are included. Anything pending is highlighted so you don't ship incomplete data.",
+          "3": "Download a CSV ready to upload to your provider's portal."
+        }
+      },
+      "dimona": {
+        "title": "Belgian Dimona declarations",
+        "intro": "Automatic ONSS Dimona OUT/IN declarations when shifts start.",
+        "steps": {
+          "1": "Enter your Dimona credentials once under Settings → Developers (they're encrypted at rest).",
+          "2": "Set DIMONA_ENV to sandbox to test against ONSS without real declarations, then switch to prod when ready.",
+          "3": "Declarations run automatically; reconciliation jobs retry failures and surface them on /audit."
+        },
+        "tip": "Keep DIMONA_ENV on 'mock' in development — it logs intended declarations but doesn't hit ONSS."
+      },
+      "messaging": {
+        "title": "Shift chat",
+        "intro": "Quick messages tied to a specific shift.",
+        "steps": {
+          "1": "Inside the shift detail panel, scroll to the chat box. All assigned workers and managers can read and write.",
+          "2": "Use it for last-minute info (dress code, entry instructions) instead of a separate WhatsApp group.",
+          "3": "Messages are kept as long as the shift exists; deleting the shift removes the chat with it."
+        }
+      },
+      "audit": {
+        "title": "Audit log",
+        "intro": "Searchable history of every meaningful action in your business.",
+        "steps": {
+          "1": "Filter by user, action type, free-text query or date range to find a specific change.",
+          "2": "Every create / update / delete on shifts, assignments, time-off, attendance and settings is recorded.",
+          "3": "Logs are kept indefinitely — useful for GDPR requests and resolving disputes."
+        }
+      },
+      "developers": {
+        "title": "Developers — API keys & webhooks",
+        "intro": "Build integrations on top of your business data.",
+        "steps": {
+          "1": "Create API keys with the smallest set of scopes (shifts:read, shifts:write, …) for each integration.",
+          "2": "Send Idempotency-Key headers on POST requests to safely retry without creating duplicates.",
+          "3": "Subscribe webhooks to events like shift.created and shift.cancelled. Payloads are signed with HMAC-SHA256.",
+          "4": "Browse the full OpenAPI document at /api/v1/openapi to see every endpoint, schema and rate limit."
+        },
+        "tip": "Rate limits are per key: 600 reads/minute and 120 writes/minute. Anything beyond returns 429 with Retry-After."
+      },
+      "settings": {
+        "title": "Business settings",
+        "intro": "Locations, billing details, and operational defaults.",
+        "steps": {
+          "1": "Add multiple locations if you run more than one venue; each shift can be tagged with one.",
+          "2": "Set business-wide scheduling defaults (min rest, weekly cap, minor age limit) once instead of per shift.",
+          "3": "GDPR tools let you export or fully delete any user's data on /me/data."
+        }
+      },
+      "security": {
+        "title": "Security & privacy",
+        "intro": "How your data is protected.",
+        "steps": {
+          "1": "Passwords are hashed with bcrypt. 2FA uses standard TOTP — pair with any authenticator app.",
+          "2": "Sensitive credentials (Dimona) are encrypted at rest with AES-256-GCM and never logged in plaintext.",
+          "3": "Every privileged action is logged. Lost a device? Revoke the calendar URL and reset your password from Settings."
+        }
+      }
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "endBeforeStart": "End time must be after start time.",
+    "capacityFull": "This shift is already at capacity.",
+    "overlap": "Worker already has an overlapping approved shift.",
+    "duplicateApplication": "You already applied to this shift.",
+    "shiftCancelled": "This shift was cancelled.",
+    "timeOffConflict": "Worker has approved time-off in this range.",
+    "minRest": "Less than 11h rest between shifts.",
+    "weeklyCap": "Weekly hour cap would be exceeded.",
+    "ageRestricted": "Worker is too young for this shift.",
+    "forbidden": "You don't have permission to do that.",
+    "notFound": "That item could not be found.",
+    "rateLimit": "Too many requests. Please slow down.",
+    "invalidInput": "Some fields are invalid. Please check and try again.",
+    "dimona": "Dimona declaration failed. Check the worker's NISS.",
+    "network": "Network problem. Check your connection.",
+    "pastShift": "That shift has already started or ended."
+  }
+}

@@ -1,0 +1,750 @@
+{
+  "app": {
+    "name": "Tattoogenda",
+    "tagline": "Kalendergerichte personeelsplanning voor horecateams"
+  },
+  "me": {
+    "greeting": "Vandaag",
+    "subtitle": "Je shifts, broadcasts en sneltoetsen op één plek.",
+    "nextShift": "Je volgende shift",
+    "noNextShift": "Nog geen geplande shifts.",
+    "findShifts": "Bekijk open shifts →",
+    "clockIn": "Inklokken",
+    "openCalendar": "Kalender openen",
+    "pendingApplications": "In behandeling",
+    "unread": "Ongelezen",
+    "weekHours": "Uren deze week",
+    "quickLinks": "Snelkoppelingen",
+    "quickAvailability": "Tik om je beschikbaar te zetten",
+    "quickAvailabilityHelp": "Standaard 09:00–17:00 · tik opnieuw om te wissen",
+    "now": "begint nu",
+    "inMinutes": "over {count} min",
+    "inHours": "over {count} u",
+    "inDays": "over {count} d"
+  },
+  "swap": {
+    "title": "Shift-ruilen",
+    "offerSwap": "Deze shift aanbieden aan een collega",
+    "offerHelp": "Kies een collega die deze shift overneemt. Ze krijgen een melding en kunnen aanvaarden of weigeren.",
+    "toColleague": "Naar collega",
+    "pickColleague": "Kies een collega…",
+    "noCandidates": "Niemand is momenteel vrij voor deze shift.",
+    "message": "Bericht (optioneel)",
+    "messagePlaceholder": "Waarom vraag je dit?",
+    "send": "Vraag versturen",
+    "offered": "Ruilverzoek verstuurd"
+  },
+  "suggestions": {
+    "title": "Voorgestelde werknemers",
+    "loading": "Kandidaten scoren…",
+    "assign": "Toewijzen"
+  },
+  "auth": {
+    "signIn": "Aanmelden",
+    "signOut": "Afmelden",
+    "signingIn": "Aanmelden…",
+    "register": "Registreren",
+    "createAccount": "Account aanmaken",
+    "creating": "Aanmaken…",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "name": "Volledige naam",
+    "iAmA": "Ik ben",
+    "owner": "Eigenaar",
+    "worker": "Medewerker",
+    "manager": "Manager",
+    "businessName": "Bedrijfsnaam",
+    "businessId": "Bedrijfs-ID",
+    "businessIdHelp": "Vraag je manager om dit ID.",
+    "invalidCredentials": "Ongeldige e-mail of wachtwoord.",
+    "noAccount": "Nog geen account?",
+    "alreadyHaveAccount": "Heb je al een account?"
+  },
+  "calendar": {
+    "title": "Agenda",
+    "ownerTitle": "Personeelskalender",
+    "workerTitle": "Mijn kalender",
+    "ownerSubtitle": "Maak shifts aan en keur aanmeldingen goed.",
+    "workerSubtitle": "Stel je beschikbaarheid in en meld je aan voor shifts.",
+    "newShift": "Nieuwe shift",
+    "setAvailability": "Beschikbaarheid",
+    "today": "Vandaag",
+    "previousMonth": "Vorige maand",
+    "nextMonth": "Volgende maand",
+    "moreItems": "+{count} meer",
+    "empty": "Nog niets gepland in dit bereik.",
+    "loading": "Kalender laden…",
+    "errorTitle": "Kan de kalender niet laden.",
+    "errorRetry": "Opnieuw",
+    "draft": "Concept",
+    "publishWeek": "Publiceer week",
+    "published": "{count} shifts gepubliceerd",
+    "kpi": {
+      "open": "Open",
+      "pending": "In behandeling",
+      "filled": "Volledig",
+      "capacity": "Bezetting",
+      "labourCost": "Loonkost",
+      "costPerHour": "Kost/uur"
+    },
+    "filters": {
+      "label": "Filters",
+      "role": "Rol",
+      "status": "Status",
+      "worker": "Medewerker",
+      "any": "Alle",
+      "clear": "Wissen",
+      "showAvailability": "Toon beschikbaarheid medewerkers"
+    }
+  },
+  "status": {
+    "open": "Open",
+    "pending": "In behandeling",
+    "approved": "Goedgekeurd",
+    "filled": "Volledig",
+    "rejected": "Afgewezen",
+    "withdrawn": "Ingetrokken",
+    "cancelled": "Geannuleerd"
+  },
+  "shift": {
+    "title": "Shift",
+    "create": "Shift aanmaken",
+    "edit": "Shift bewerken",
+    "save": "Shift opslaan",
+    "saving": "Opslaan…",
+    "date": "Datum",
+    "start": "Start",
+    "end": "Einde",
+    "role": "Rol",
+    "rolePlaceholder": "bijv. Barman",
+    "requiredSpots": "Benodigde plekken",
+    "requiredSkill": "Vereiste skill",
+    "noSkill": "Geen",
+    "notes": "Notities (optioneel)",
+    "notesPlaceholder": "Extra info",
+    "broadcast": "Naar alle geschikte werknemers sturen",
+    "broadcastSent": "{count} werknemers verwittigd",
+    "acceptBroadcast": "Deze open shift accepteren",
+    "filledCount": "{filled}/{required} ingevuld",
+    "apply": "Aanmelden",
+    "withdraw": "Aanmelding intrekken",
+    "cancel": "Shift annuleren",
+    "close": "Sluiten",
+    "applications": "Aanmeldingen",
+    "approve": "Goedkeuren",
+    "reject": "Afwijzen",
+    "assign": "Medewerker toewijzen",
+    "assigning": "Toewijzen…",
+    "publish": "Publiceren",
+    "repeatWeekly": "Wekelijks herhalen",
+    "repeatUntil": "Herhalen tot",
+    "publishNow": "Onmiddellijk publiceren",
+    "template": "Sjabloon",
+    "templateNone": "Geen",
+    "offerSwap": "Aanbieden aan een andere medewerker",
+    "swap": "Wisselen"
+  },
+  "availability": {
+    "title": "Beschikbaarheid",
+    "youAreAvailable": "Je bent beschikbaar",
+    "save": "Opslaan",
+    "available": "Beschikbaar",
+    "remove": "Beschikbaarheid verwijderen",
+    "removing": "Verwijderen…",
+    "removeHelp": "Door dit blok te verwijderen zien eigenaren je niet meer als beschikbaar voor die tijd. Je kunt altijd een nieuw blok toevoegen.",
+    "templates": "Terugkerende beschikbaarheid",
+    "templatesEmpty": "Nog geen terugkerende beschikbaarheid."
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "empty": "Nog geen meldingen.",
+    "loading": "Meldingen laden…",
+    "markRead": "Markeer als gelezen",
+    "markAllRead": "Markeer alles als gelezen",
+    "unreadAria": "Meldingen, {count} ongelezen",
+    "ariaLabel": "Meldingen"
+  },
+  "confirm": {
+    "cancelShiftTitle": "Deze shift annuleren?",
+    "cancelShiftBody": "Aangemelde medewerkers worden op de hoogte gebracht. Dit kan niet ongedaan worden gemaakt.",
+    "removeAvailabilityTitle": "Deze beschikbaarheid verwijderen?",
+    "removeAvailabilityBody": "Eigenaren zien je niet meer als beschikbaar voor dit blok.",
+    "yes": "Ja, doorgaan",
+    "no": "Nee, behouden"
+  },
+  "toast": {
+    "shiftCreated": "Shift aangemaakt",
+    "shiftUpdated": "Shift bijgewerkt",
+    "shiftCancelled": "Shift geannuleerd",
+    "shiftPublished": "Shifts gepubliceerd",
+    "shiftAssigned": "Medewerker toegewezen",
+    "availabilitySet": "Beschikbaarheid opgeslagen",
+    "availabilityRemoved": "Beschikbaarheid verwijderd",
+    "applicationSubmitted": "Aanmelding verstuurd",
+    "applicationWithdrawn": "Aanmelding ingetrokken",
+    "applicationApproved": "Aanmelding goedgekeurd",
+    "applicationRejected": "Aanmelding afgewezen",
+    "notificationsRead": "Gemarkeerd als gelezen",
+    "inviteSent": "Uitnodiging verstuurd",
+    "inviteRevoked": "Uitnodiging ingetrokken",
+    "skillSaved": "Skill opgeslagen",
+    "skillRemoved": "Skill verwijderd",
+    "workerUpdated": "Medewerker bijgewerkt",
+    "timeOffRequested": "Verlof aangevraagd",
+    "timeOffApproved": "Verlof goedgekeurd",
+    "timeOffRejected": "Verlof afgewezen",
+    "templateSaved": "Sjabloon opgeslagen",
+    "profileSaved": "Profiel opgeslagen",
+    "passwordChanged": "Wachtwoord gewijzigd",
+    "swapOffered": "Wissel aangeboden",
+    "swapAccepted": "Wissel aanvaard",
+    "swapRejected": "Wissel geweigerd",
+    "clockedIn": "Ingeklokt",
+    "clockedOut": "Uitgeklokt",
+    "timeEntriesApproved": "Uren goedgekeurd",
+    "rosterApplied": "Weekrooster toegepast"
+  },
+  "applications": {
+    "title": "Mijn aanmeldingen",
+    "subtitle": "Volg elke shift waarvoor je je hebt aangemeld.",
+    "empty": "Je hebt je nog niet aangemeld voor shifts.",
+    "groupPending": "In behandeling",
+    "groupApproved": "Goedgekeurd",
+    "groupRejected": "Afgewezen of ingetrokken",
+    "viewOnCalendar": "Bekijk in kalender",
+    "broadcastsTitle": "Open shifts aangeboden aan jou",
+    "broadcastAccepted": "Je bent ingepland"
+  },
+  "workers": {
+    "title": "Team",
+    "subtitle": "Nodig medewerkers uit en beheer hun profiel.",
+    "inviteCta": "Medewerker uitnodigen",
+    "empty": "Nog geen medewerkers. Nodig je eerste uit om te starten.",
+    "active": "Actief",
+    "suspended": "Opgeschort",
+    "archived": "Gearchiveerd",
+    "suspend": "Opschorten",
+    "archive": "Archiveren",
+    "reactivate": "Heractiveren",
+    "skills": "Skills",
+    "contractType": "Contracttype",
+    "hoursThisMonth": "Uren deze maand",
+    "hoursThisYear": "Uren dit jaar",
+    "noContract": "Niet ingesteld",
+    "hourlyRate": "Uurloon",
+    "weeklyCap": "Wekelijks maximum",
+    "phone": "Telefoon",
+    "birthDate": "Geboortedatum",
+    "saveProfile": "Profiel opslaan",
+    "upcoming": "Komende",
+    "noShowRate": "No-show ratio (90d)",
+    "noShowsBadge": "{count, plural, one {# no-show} other {# no-shows}}",
+    "docsAttention": "Documenten die opvolging nodig hebben",
+    "docsExpired": "Verlopen op {date}",
+    "docsExpiringOn": "Verloopt op {date}"
+  },
+  "invite": {
+    "title": "Sluit je aan bij je team",
+    "subtitle": "Stel je account in om shifts op te pikken.",
+    "expired": "Deze uitnodiging is verlopen of al aanvaard.",
+    "accept": "Aanvaarden en account aanmaken",
+    "accepting": "Account aanmaken…",
+    "fromBusiness": "Uitgenodigd voor {business}",
+    "linkLabel": "Uitnodigingslink",
+    "copyLink": "Kopieer link",
+    "linkCopied": "Link gekopieerd",
+    "sendEmail": "Versturen via e-mail",
+    "expiresAt": "Vervalt {date}"
+  },
+  "skills": {
+    "title": "Skills",
+    "subtitle": "Definieer rollen en certificeringen voor je team.",
+    "add": "Skill toevoegen",
+    "name": "Naam",
+    "color": "Kleur",
+    "empty": "Nog geen skills.",
+    "emptyCatalog": "Nog geen skills gedefinieerd voor je zaak.",
+    "manageLink": "Skills beheren",
+    "workerCount": "{count, plural, =0 {Geen medewerkers} =1 {1 medewerker} other {# medewerkers}}"
+  },
+  "timeOff": {
+    "title": "Verlof",
+    "workerSubtitle": "Vraag om niet ingepland te worden voor een periode.",
+    "ownerSubtitle": "Keur verlofaanvragen goed of af.",
+    "newRequest": "Verlof aanvragen",
+    "from": "Van",
+    "to": "Tot",
+    "reason": "Reden (optioneel)",
+    "submit": "Versturen",
+    "empty": "Geen verlofaanvragen.",
+    "ownerEmpty": "Niets in behandeling.",
+    "groupPending": "In behandeling",
+    "groupApproved": "Goedgekeurd",
+    "groupRejected": "Afgewezen",
+    "approve": "Goedkeuren",
+    "reject": "Afwijzen"
+  },
+  "attendance": {
+    "title": "Aanwezigheid",
+    "ON_TIME": "Op tijd",
+    "LATE": "Te laat",
+    "NO_SHOW": "Niet komen opdagen",
+    "EXCUSED": "Geldige reden",
+    "noShowRate": "No-show ratio"
+  },
+  "shiftChat": {
+    "title": "Chat",
+    "empty": "Nog geen berichten. Start het gesprek.",
+    "placeholder": "Schrijf een bericht…",
+    "send": "Verzenden"
+  },
+  "insights": {
+    "title": "Inzichten",
+    "subtitle": "Bezetting, loonkosten en kost-omzetratio.",
+    "scheduled": "Ingepland",
+    "fillRate": "Bezetting",
+    "labourCost": "Loonkosten",
+    "costRevenue": "Kost / omzet",
+    "week": "Week",
+    "filled": "Gevuld",
+    "cost": "Kost",
+    "revenue": "Omzet",
+    "costToRevenue": "Kost/omzet"
+  },
+  "myData": {
+    "title": "Mijn gegevens",
+    "subtitle": "Onder de GDPR kun je alle gegevens die we over je bewaren exporteren en je account verwijderen.",
+    "exportTitle": "Exporteren",
+    "exportHelp": "Downloadt een JSON-bestand met je profiel, beschikbaarheden, sollicitaties, toewijzingen en meldingen. Gevoelige inloggegevens worden uitgesloten.",
+    "exportCta": "Mijn gegevens downloaden",
+    "exportPreparing": "Bezig…",
+    "deleteTitle": "Account verwijderen",
+    "deleteHelp": "Je account wordt onmiddellijk geschorst en na 90 dagen definitief verwijderd. Toekomstige toewijzingen worden geannuleerd. Geldig opgeslagen historie blijft bewaard.",
+    "deleteConfirmLabel": "Typ DELETE om te bevestigen",
+    "deleteCta": "Mijn account verwijderen"
+  },
+  "docs": {
+    "title": "Mijn documenten",
+    "help": "Upload identiteitspapieren, contracten en certificaten. Alleen jij en je werkgever zien deze.",
+    "kind": "Type",
+    "expiresOn": "Vervalt op (optioneel)",
+    "dropzone": "Sleep een bestand hierheen of klik om te uploaden (PDF, JPG, PNG · max 10 MB)",
+    "uploading": "Bezig met uploaden…",
+    "uploaded": "Document geüpload",
+    "empty": "Nog geen documenten.",
+    "kind_ID_CARD": "Identiteitskaart",
+    "kind_WORK_CONTRACT": "Arbeidscontract",
+    "kind_RESIDENCE_PERMIT": "Verblijfsvergunning",
+    "kind_FOOD_SAFETY": "Voedselveiligheidsattest",
+    "kind_OTHER": "Andere"
+  },
+  "profile": {
+    "title": "Mijn profiel",
+    "subtitle": "Werk je contactgegevens en meldingsvoorkeuren bij.",
+    "displayName": "Weergavenaam",
+    "phone": "Telefoon",
+    "locale": "Taal",
+    "notifications": "Meldingen",
+    "notificationsHelp": "Kies welke e-mails je ontvangt.",
+    "save": "Wijzigingen opslaan",
+    "password": "Wachtwoord",
+    "currentPassword": "Huidig wachtwoord",
+    "newPassword": "Nieuw wachtwoord",
+    "changePassword": "Wachtwoord wijzigen",
+    "push": "Pushmeldingen",
+    "pushHelp": "Krijg een seintje op je telefoon voor nieuwe toewijzingen, ruilverzoeken en 24u-herinneringen.",
+    "pushEnable": "Push inschakelen",
+    "pushDisable": "Push uitschakelen",
+    "pushUnsupported": "Deze browser ondersteunt geen pushmeldingen.",
+    "pushDenied": "Je hebt meldingen geblokkeerd. Schakel ze in via je browserinstellingen.",
+    "calendarFeed": "Kalender-abonnement",
+    "calendarHelp": "Abonneer op deze URL in Apple Agenda, Google Agenda of Outlook om je shifts te zien.",
+    "calendarRotate": "URL intrekken en vernieuwen",
+    "calendarRotated": "Kalender-URL vernieuwd",
+    "calendarCopied": "Gekopieerd",
+    "copy": "Kopiëren",
+    "twoFactor": "Tweestapsverificatie",
+    "twoFactorHelp": "Voeg een eenmalige code uit een authenticator-app toe bovenop je wachtwoord.",
+    "twoFactorSetup": "Authenticator instellen",
+    "twoFactorScan": "Scan deze code met Google Authenticator of 1Password en voer de 6-cijferige code in.",
+    "twoFactorEnable": "Activeren",
+    "twoFactorDisable": "Uitschakelen",
+    "twoFactorEnabled": "Tweestapsverificatie geactiveerd",
+    "twoFactorDisabled": "Tweestapsverificatie uitgeschakeld",
+    "locales": {
+      "en": "English",
+      "nl": "Nederlands",
+      "fr": "Français"
+    }
+  },
+  "hours": {
+    "title": "Mijn uren",
+    "subtitle": "Geplande uren uit goedgekeurde shifts.",
+    "thisWeek": "Deze week",
+    "thisMonth": "Deze maand",
+    "thisYear": "Dit jaar",
+    "loading": "Laden…",
+    "noBusiness": "Je bent nog niet aan een bedrijf gekoppeld."
+  },
+  "clock": {
+    "title": "Tijdsregistratie",
+    "clockIn": "Inklokken",
+    "clockOut": "Uitklokken",
+    "running": "Bezig sinds {minutes} min",
+    "break": "Pauzeminuten",
+    "notes": "Notities",
+    "noActiveShift": "Niet gekoppeld aan een shift",
+    "noBusiness": "Je bent nog niet aan een bedrijf gekoppeld.",
+    "pendingTitle": "Te beoordelen uren",
+    "approveSelected": "Selectie goedkeuren",
+    "noPending": "Niets in afwachting."
+  },
+  "payroll": {
+    "title": "Loon & uren",
+    "subtitle": "Keur uren goed en exporteer loonbestanden.",
+    "export": "CSV downloaden",
+    "exportXlsx": "XLSX downloaden",
+    "noRows": "Geen goedgekeurde uren in dit bereik."
+  },
+  "templates": {
+    "title": "Shift-sjablonen",
+    "subtitle": "Snelle presets bij het aanmaken van shifts.",
+    "create": "Nieuw sjabloon",
+    "empty": "Nog geen sjablonen.",
+    "name": "Sjabloonnaam"
+  },
+  "rosters": {
+    "title": "Weekroosters",
+    "subtitle": "Plan een typische week en pas hem met één klik toe.",
+    "create": "Nieuw rooster",
+    "apply": "Toepassen op week",
+    "weekOf": "Week van {date}",
+    "empty": "Nog geen weekroosters. Bouw er een om sneller te plannen.",
+    "shiftCount": "{count} shifts",
+    "addShift": "Shift toevoegen"
+  },
+  "bulk": {
+    "duplicateWeek": "Dupliceer deze week",
+    "duplicateWeekHint": "Kopieer de shifts van deze week als concept naar volgende week.",
+    "duplicated": "{count} shifts gedupliceerd",
+    "cancelDay": "Vandaag annuleren",
+    "cancelDayHint": "Annuleer alle shifts die vandaag starten.",
+    "confirmCancelToday": "Alle shifts van vandaag annuleren?",
+    "cancelled": "{count} shifts geannuleerd"
+  },
+  "audit": {
+    "title": "Audit-log",
+    "subtitle": "Doorzoekbare log van alle acties in je zaak.",
+    "search": "Zoek actie, entiteit of gebruiker…",
+    "allActions": "Alle acties",
+    "allUsers": "Alle gebruikers",
+    "from": "Van",
+    "to": "Tot",
+    "clear": "Filters wissen",
+    "empty": "Geen resultaten voor deze filters.",
+    "action": "Actie",
+    "user": "Gebruiker",
+    "entity": "Entiteit",
+    "when": "Wanneer"
+  },
+  "help": {
+    "title": "Hulp & uitleg",
+    "subtitle": "Alles wat Tattoogenda voor jou kan doen, in mensentaal.",
+    "tocAria": "Inhoudstafel",
+    "tipLabel": "Tip:",
+    "empty": "Voor jouw rol zijn er nog geen hulp-secties beschikbaar.",
+    "badge": {
+      "worker": "Werknemer",
+      "manager": "Manager",
+      "owner": "Zaakvoerder",
+      "all": "Iedereen"
+    },
+    "s": {
+      "gettingStarted": {
+        "title": "Aan de slag",
+        "intro": "Een rondleiding van 60 seconden door Tattoogenda en hoe je inlogt.",
+        "steps": {
+          "1": "Zaakvoerders maken bij registratie een zaak aan. Werknemers en managers sluiten aan via een uitnodigingslink.",
+          "2": "Log in met e-mail + wachtwoord, of via Google als de zaakvoerder dat heeft ingeschakeld. 2FA kan per account aan.",
+          "3": "Je rol bepaalt wat je ziet: werknemers landen op een persoonlijke home, zaakvoerders en managers op de agenda.",
+          "4": "Kies je taal (Nederlands, Frans, Engels) onder Instellingen → Profiel zodat data en labels kloppen met je team."
+        }
+      },
+      "calendar": {
+        "title": "De agenda",
+        "intro": "De gedeelde agenda toont elke shift in kleur per status. Werkt op gsm, tablet en pc.",
+        "steps": {
+          "1": "Schakel tussen maand-, week-, dag- of lijstweergave via de werkbalk. Pijltjestoetsen om snel te navigeren.",
+          "2": "Klik op een shift om de detailpaneel te openen: toewijzingen, sollicitaties, aanwezigheid en chat.",
+          "3": "Kleuren: open shifts blauw, lopende sollicitaties amber, ingevulde shifts groen, geannuleerd grijs.",
+          "4": "Werknemers zien enkel gepubliceerde shifts; zaakvoerders en managers zien ook concepten."
+        },
+        "tip": "Houd Shift ingedrukt terwijl je klikt om meerdere shifts tegelijk te selecteren — handig voor bulkacties."
+      },
+      "myHome": {
+        "title": "Jouw home (/me)",
+        "intro": "Een mobile-first dashboard met alles wat je vlak voor een shift nodig hebt.",
+        "steps": {
+          "1": "De grote kaart toont je volgende shift: uur, rol, locatie en een aftellende relatieve tijdsindicatie.",
+          "2": "'Inklokken' wordt actief 15 min vóór de start en verdwijnt zodra je de shift hebt afgesloten.",
+          "3": "De tegels tonen openstaande sollicitaties, ongelezen meldingen en gepland aantal uren deze week.",
+          "4": "Open broadcasts verschijnen bovenaan — tik op Aanvaarden om een open shift wie-eerst-komt op te nemen."
+        }
+      },
+      "availability": {
+        "title": "Je beschikbaarheid instellen",
+        "intro": "Laat de zaakvoerder weten wanneer je kan werken zodat hij niet hoeft te raden.",
+        "steps": {
+          "1": "Op /me kun je in de strook van 14 dagen met één tik aanvinken dat je tussen 09:00 en 17:00 beschikbaar bent.",
+          "2": "Voor andere uren: open de agenda, klik op een leeg vakje, en kies 'Beschikbaarheid instellen'.",
+          "3": "Gebruik sjablonen (onder Instellingen, indien geactiveerd) voor terugkerende patronen zoals weekends."
+        },
+        "tip": "Beschikbaarheid wijst je niet automatisch toe — je kiest zelf nog op welke shifts je solliciteert."
+      },
+      "applications": {
+        "title": "Solliciteren voor shifts",
+        "intro": "Kies de shifts die je wil werken en wacht op goedkeuring.",
+        "steps": {
+          "1": "Klik op een open shift in de agenda en kies 'Solliciteer'. De status verschijnt in real time.",
+          "2": "Openstaande sollicitaties zie je op /me en op de pagina /applications.",
+          "3": "Een sollicitatie intrekken kan steeds. Eens goedgekeurd kun je enkel via een shift-swap nog wisselen."
+        }
+      },
+      "swaps": {
+        "title": "Shift-swaps",
+        "intro": "Geef een goedgekeurde shift door aan een collega als er iets tussenkomt.",
+        "steps": {
+          "1": "Open de shift in de agenda en kies 'Wissel aanbieden'. Selecteer een collega uit de geldige lijst.",
+          "2": "De ontvanger krijgt een melding. Aanvaardt die, dan wisselt de toewijzing in real time bij iedereen.",
+          "3": "Zaakvoerders en managers zien elke wissel in het audit-log en kunnen er een tegenhouden bij regelconflicten."
+        }
+      },
+      "broadcasts": {
+        "title": "Open shift broadcasten",
+        "intro": "Vul een last-minute gat door tegelijk alle geschikte werknemers te vragen.",
+        "steps": {
+          "1": "Zaakvoerders/managers: open een onderbezette shift en klik 'Broadcast'. Iedereen met de juiste skills krijgt een melding.",
+          "2": "Werknemers: een broadcast komt binnen als push-melding én bovenaan /me met een Aanvaarden-knop.",
+          "3": "Wie eerst aanvaardt, krijgt de shift — atomisch, dus geen dubbele boekingen bij gelijktijdige tikken."
+        }
+      },
+      "timeClock": {
+        "title": "Tijdsregistratie",
+        "intro": "Registreer effectieve start- en eindtijden zodat de loonadministratie klopt.",
+        "steps": {
+          "1": "Werknemers: tik via /clock of /me op 'Inklokken' bij aankomst en op 'Uitklokken' op het einde.",
+          "2": "Vergeet je het? De zaakvoerder kan de invoer achteraf bewerken; de originele timestamp blijft in het audit-log.",
+          "3": "Zaakvoerders en managers keuren de invoer goed op /clock; enkel goedgekeurde uren gaan naar payroll."
+        }
+      },
+      "timeOff": {
+        "title": "Verlof",
+        "intro": "Vraag dagen vrij en laat de planning er automatisch rekening mee houden.",
+        "steps": {
+          "1": "Werknemers: ga naar /timeoff, kies een periode en een reden. Conflicten met geplande shifts worden direct gemeld.",
+          "2": "Zaakvoerders/managers keuren goed of weigeren op dezelfde pagina. Goedgekeurd verlof blokkeert nieuwe toewijzingen.",
+          "3": "De planningsregels behandelen goedgekeurd verlof als harde 'nee': AI-suggesties en bulkacties slaan die dagen over."
+        }
+      },
+      "documents": {
+        "title": "Documenten (ID, contract, attesten)",
+        "intro": "Bewaar papieren zoals je identiteitskaart, arbeidscontract en voedselveiligheidsattest op één plek.",
+        "steps": {
+          "1": "Op Instellingen → Profiel: sleep een PDF of foto (max 10 MB) in het uploadvak of kies een bestand.",
+          "2": "Kies het type en eventueel een vervaldatum. Enkel jij en je zaakvoerder zien het.",
+          "3": "Documenten die binnen 30 dagen vervallen, verschijnen als waarschuwing op het werknemersprofiel.",
+          "4": "Documenten zijn optioneel — als de zaakvoerder geen S3/R2 heeft ingesteld, blijft de sectie verborgen."
+        }
+      },
+      "notifications": {
+        "title": "Meldingen",
+        "intro": "Drie kanalen: in-app, web push en e-mail. Je beslist zelf wat er doorkomt.",
+        "steps": {
+          "1": "Het belletje in de header toont ongelezen items. Klik om naar de gerelateerde shift of aanvraag te springen.",
+          "2": "Schakel push aan op Instellingen → Profiel voor meldingen op je gsm of laptop, zelfs als het tabblad gesloten is.",
+          "3": "E-mailvoorkeuren staan per gebeurtenis (uitnodigingen, herinneringen, beslissingen) op dezelfde pagina."
+        }
+      },
+      "icsFeed": {
+        "title": "Agenda-abonnement (ICS)",
+        "intro": "Je Tattoogenda-shifts in Google, Apple of Outlook — altijd actueel.",
+        "steps": {
+          "1": "Op Instellingen → Profiel: kopieer je persoonlijke agenda-URL.",
+          "2": "Plak die in je agenda-app als nieuw abonnement (niet importeren — dat geeft slechts één momentopname).",
+          "3": "Verloren toestel of per ongeluk gedeeld? Klik 'URL intrekken en vernieuwen' om de oude link direct ongeldig te maken."
+        },
+        "tip": "Deel de URL niet — hij bevat een token dat iedereen met de link je planning laat zien."
+      },
+      "profile": {
+        "title": "Je profiel",
+        "intro": "Naam, telefoon, taal, beveiliging en voorkeuren.",
+        "steps": {
+          "1": "Pas je weergegeven naam, telefoon en taal aan wanneer je wil. Wijzigingen gaan direct in.",
+          "2": "Je wachtwoord wijzigen kan op dezelfde pagina; je huidige wachtwoord is nodig ter controle.",
+          "3": "Twee-factor-authenticatie (TOTP) voegt een code uit een authenticator-app toe — sterk aangeraden voor zaakvoerders."
+        }
+      },
+      "workersDirectory": {
+        "title": "Werknemers",
+        "intro": "Beheer je team, hun rollen, skills en status.",
+        "steps": {
+          "1": "Nodig een werknemer uit via /workers. Hij krijgt een eenmalige link die 7 dagen geldig blijft.",
+          "2": "Klik op een werknemer voor zijn profiel: uren, contract, skills, no-show ratio en aflopende documenten.",
+          "3": "Schors of heractiveer werknemers zonder hun geschiedenis te wissen. Geschorste werknemers kunnen niet solliciteren.",
+          "4": "Promoveer een werknemer tot manager via zijn profiel als hij shifts mag plannen maar geen zaak mag beheren."
+        }
+      },
+      "shiftsPlanner": {
+        "title": "Shifts plannen",
+        "intro": "Maak, bewerk en publiceer shifts vanuit de agenda.",
+        "steps": {
+          "1": "Klik op een leeg vakje of gebruik 'Nieuwe shift' voor een gedetailleerde dialoog.",
+          "2": "Stel rol, vereist aantal personen, uren, optionele locatie en vereiste skill in.",
+          "3": "Shifts beginnen als concept. Werknemers zien ze pas na 'Week publiceren' of een individuele publicatie.",
+          "4": "Sleep een shift om hem te verplaatsen; sleep de rand om de duur te wijzigen. Wijzigingen worden automatisch bewaard.",
+          "5": "Conflicten (overcapaciteit, overlap, verlof, weekplafond, rusttijd, leeftijdsgrens) worden duidelijk geblokkeerd."
+        },
+        "tip": "Maak één keer een roostersjabloon voor een typische week en pas dat toe op elke volgende week."
+      },
+      "bulkOps": {
+        "title": "Bulkacties",
+        "intro": "Verzet veel shifts tegelijk voor snelle weekplanning.",
+        "steps": {
+          "1": "Deze week dupliceren: kopieert elke shift van deze week als concept naar volgende week.",
+          "2": "Vandaag annuleren: markeert elke shift die vandaag start als geannuleerd. Werknemers krijgen melding.",
+          "3": "Bulk-verzetten: selecteer shifts en verschuif ze met een vast aantal minuten. Wordt nooit in het verleden gezet."
+        }
+      },
+      "aiSuggestions": {
+        "title": "AI-personeelssuggesties",
+        "intro": "Regels-gebaseerde rangschikking van wie een onderbezette shift kan invullen.",
+        "steps": {
+          "1": "Open een onbezette shift; een suggestiepaneel toont de beste werknemers met score en motivering.",
+          "2": "De ranking houdt rekening met beschikbaarheid, skills, gebruikte weekuren, rusttijden en recente no-shows.",
+          "3": "Klik 'Toewijzen' op een suggestie om de plaats meteen in te vullen zonder solliciteer/goedkeuring-flow."
+        }
+      },
+      "approvals": {
+        "title": "Sollicitaties goedkeuren",
+        "intro": "Beslis wie welke shift werkt.",
+        "steps": {
+          "1": "Open een shift om de lopende sollicitaties te zien, met het aantal uren tot nu toe en eventuele skill-match.",
+          "2": "Goedkeuren of weigeren met één klik. De werknemer krijgt direct een melding en de status updatet overal.",
+          "3": "Je kan niet meer goedkeuren dan vereist — het systeem blokkeert dit. Verhoog eerst het aantal indien nodig."
+        }
+      },
+      "attendance": {
+        "title": "Aanwezigheid",
+        "intro": "Houd bij wie kwam opdagen, wie te laat was, en wie wegbleef.",
+        "steps": {
+          "1": "Open een voorbije shift en kies per toewijzing: Op tijd, Te laat, No-show of Geldig afwezig.",
+          "2": "No-shows tellen mee voor de 90-dagen no-show ratio op het werknemersprofiel en het insights-dashboard.",
+          "3": "Verkeerd geklikt? Aanpassen mag, het audit-log bewaart het verloop."
+        }
+      },
+      "skillsRoster": {
+        "title": "Skills en roostersjablonen",
+        "intro": "Herbruikbare bouwstenen voor snel plannen.",
+        "steps": {
+          "1": "Definieer skills (bar, keuken, hostess…) onder Instellingen → Skills, met een kleur.",
+          "2": "Voeg een vereiste skill toe aan elke shift zodat enkel geschikte werknemers kunnen solliciteren.",
+          "3": "Roostersjablonen onder Instellingen → Rosters leggen een hele week vast om met één klik te hergebruiken."
+        }
+      },
+      "insights": {
+        "title": "Insights",
+        "intro": "Een wekelijks overzicht van hoe je zaak draait.",
+        "steps": {
+          "1": "/insights toont gepubliceerde shifts, geplande uren, invulgraad en no-show ratio per week.",
+          "2": "Vergelijk weken om onderbezette dagen of opvallende no-show-pieken te spotten.",
+          "3": "Alle cijfers worden live berekend uit je bestaande gegevens — niets te configureren."
+        }
+      },
+      "payroll": {
+        "title": "Payroll-export",
+        "intro": "Exporteer goedgekeurde uren voor je sociaal secretariaat.",
+        "steps": {
+          "1": "Op /payroll/time-entries: kies een periode en een provider (SD Worx, Securex of generiek).",
+          "2": "Enkel goedgekeurde tijdsregistraties zitten erin. Lopende items worden gemarkeerd zodat je niets onvolledigs verstuurt.",
+          "3": "Download het CSV-bestand klaar om in het portaal van je provider te uploaden."
+        }
+      },
+      "dimona": {
+        "title": "Dimona-aangiftes",
+        "intro": "Automatische ONSS/RSZ Dimona IN/OUT bij start van shifts.",
+        "steps": {
+          "1": "Vul je Dimona-gegevens eenmalig in onder Instellingen → Developers (versleuteld bewaard).",
+          "2": "Zet DIMONA_ENV op 'sandbox' om te testen zonder echte aangiftes en wissel naar 'prod' wanneer je klaar bent.",
+          "3": "Aangiftes lopen automatisch; reconciliatiejobs proberen mislukte aangiftes opnieuw en tonen ze in /audit."
+        },
+        "tip": "Laat DIMONA_ENV in development op 'mock' — dan logt de app de aangifte maar contacteert de ONSS niet."
+      },
+      "messaging": {
+        "title": "Shift-chat",
+        "intro": "Korte berichten gekoppeld aan een specifieke shift.",
+        "steps": {
+          "1": "In het detailpaneel van een shift: scroll naar het chatvak. Toegewezen werknemers en managers kunnen lezen en schrijven.",
+          "2": "Gebruik het voor last-minute info (dresscode, ingang) in plaats van een aparte WhatsApp-groep.",
+          "3": "Berichten blijven zolang de shift bestaat; bij verwijderen van de shift verdwijnt de chat mee."
+        }
+      },
+      "audit": {
+        "title": "Audit-log",
+        "intro": "Doorzoekbare geschiedenis van elke betekenisvolle actie in je zaak.",
+        "steps": {
+          "1": "Filter op gebruiker, type actie, vrije tekst of datum om een specifieke wijziging terug te vinden.",
+          "2": "Elke create / update / delete op shifts, toewijzingen, verlof, aanwezigheid en instellingen wordt vastgelegd.",
+          "3": "Logs blijven onbeperkt bewaard — handig voor GDPR-aanvragen en geschillen."
+        }
+      },
+      "developers": {
+        "title": "Developers — API-sleutels & webhooks",
+        "intro": "Integraties bouwen op je bedrijfsgegevens.",
+        "steps": {
+          "1": "Maak API-sleutels aan met de minimaal nodige scopes (shifts:read, shifts:write…) per integratie.",
+          "2": "Stuur een Idempotency-Key header bij POST-requests om veilig opnieuw te proberen zonder duplicaten.",
+          "3": "Abonneer webhooks op events zoals shift.created en shift.cancelled. Payloads zijn HMAC-SHA256 ondertekend.",
+          "4": "Bekijk de volledige OpenAPI op /api/v1/openapi voor elk endpoint, schema en rate-limit."
+        },
+        "tip": "Limieten zijn per sleutel: 600 reads/min en 120 writes/min. Daarboven krijg je een 429 met Retry-After."
+      },
+      "settings": {
+        "title": "Bedrijfsinstellingen",
+        "intro": "Locaties, facturatiegegevens en operationele standaarden.",
+        "steps": {
+          "1": "Voeg meerdere locaties toe als je meerdere vestigingen hebt; elke shift kan er één krijgen.",
+          "2": "Stel planningsstandaarden (min rust, weekplafond, leeftijdslimiet jobstudent) eenmalig in.",
+          "3": "Met GDPR-tools kun je elke gebruiker zijn data exporteren of volledig wissen via /me/data."
+        }
+      },
+      "security": {
+        "title": "Beveiliging & privacy",
+        "intro": "Hoe je gegevens beschermd worden.",
+        "steps": {
+          "1": "Wachtwoorden worden gehasht met bcrypt. 2FA gebruikt standaard TOTP — koppel met om het even welke authenticator-app.",
+          "2": "Gevoelige credentials (Dimona) zijn op rust versleuteld met AES-256-GCM en worden nooit in plain text gelogd.",
+          "3": "Elke geprivilegieerde actie wordt gelogd. Toestel kwijt? Trek je agenda-URL in en reset je wachtwoord via Instellingen."
+        }
+      }
+    }
+  },
+  "errors": {
+    "generic": "Er ging iets mis. Probeer het opnieuw.",
+    "endBeforeStart": "Eindtijd moet na de starttijd zijn.",
+    "capacityFull": "Deze shift zit al vol.",
+    "overlap": "Medewerker heeft al een overlappende goedgekeurde shift.",
+    "duplicateApplication": "Je hebt je al aangemeld voor deze shift.",
+    "shiftCancelled": "Deze shift is geannuleerd.",
+    "timeOffConflict": "Medewerker heeft goedgekeurd verlof in deze periode.",
+    "minRest": "Minder dan 11 uur rust tussen shifts.",
+    "weeklyCap": "Wekelijkse limiet overschreden.",
+    "ageRestricted": "Medewerker is te jong voor deze shift.",
+    "forbidden": "Je hebt hiervoor geen rechten.",
+    "notFound": "Dat item kon niet worden gevonden.",
+    "rateLimit": "Te veel verzoeken. Vertraag een beetje.",
+    "invalidInput": "Sommige velden zijn ongeldig. Controleer en probeer opnieuw.",
+    "dimona": "Dimona-aangifte mislukt. Controleer het rijksregisternummer.",
+    "network": "Netwerkprobleem. Controleer je verbinding.",
+    "pastShift": "Die shift is al gestart of voorbij."
+  }
+}
