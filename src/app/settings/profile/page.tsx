@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { ProfileClient } from "./profile-client";
 
 export const metadata = {
-  title: "Profile — Tattoogenda",
+  title: "Profile — Work Calendar",
 };
 
 export default async function ProfileSettingsPage() {

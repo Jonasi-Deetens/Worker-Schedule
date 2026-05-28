@@ -98,6 +98,6 @@ describe("buildEventUid", () => {
     const b = buildEventUid("shift-1", "biz-1");
     expect(a).toBe(b);
     expect(a).toContain("shift-1");
-    expect(a.endsWith("@tattoogenda")).toBe(true);
+    expect(a.endsWith("@work-calendar")).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { HoursClient } from "./hours-client";
 
 export const metadata = {
-  title: "My hours — Tattoogenda",
+  title: "My hours — Work Calendar",
 };
 
 export default async function HoursPage() {

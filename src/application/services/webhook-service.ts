@@ -100,8 +100,8 @@ export class WebhookService {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-Tattoogenda-Event": event,
-              "X-Tattoogenda-Signature": signature,
+              "X-WorkCalendar-Event": event,
+              "X-WorkCalendar-Signature": signature,
             },
             body,
           });

@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { TimeEntriesClient } from "./time-entries-client";
 
 export const metadata = {
-  title: "Time entries — Tattoogenda",
+  title: "Time entries — Work Calendar",
 };
 
 export default async function TimeEntriesPage() {

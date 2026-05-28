@@ -1,4 +1,4 @@
-# Technical Design — Tattoogenda Work Calendar
+# Technical Design — Work Calendar
 
 ## Stack rationale
 

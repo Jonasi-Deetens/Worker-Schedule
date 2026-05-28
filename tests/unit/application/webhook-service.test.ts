@@ -40,10 +40,10 @@ describe("WebhookService", () => {
       .calls[0];
     const init = call[1] as RequestInit;
     expect(init.headers).toMatchObject({
-      "X-Tattoogenda-Event": "shift.created",
+      "X-WorkCalendar-Event": "shift.created",
     });
     expect(init.headers as Record<string, string>).toHaveProperty(
-      "X-Tattoogenda-Signature",
+      "X-WorkCalendar-Signature",
     );
   });
 

@@ -79,6 +79,29 @@ describe("shiftToCalendarEvent", () => {
     expect(open.borderColor).toMatch(/^#/);
     expect(open.textColor).toMatch(/^#/);
   });
+
+  it("exposes assignees on the event so the avatar stack can render", () => {
+    const event = shiftToCalendarEvent(
+      {
+        ...baseShift,
+        assignments: [
+          { userId: "u1", user: { id: "u1", name: "Ada", avatarUrl: "https://x/a.jpg" } },
+          { userId: "u2", user: { id: "u2", name: "Ben", avatarUrl: null } },
+        ],
+        _count: { subscriptions: 0, assignments: 2 },
+      },
+      "OWNER",
+    );
+    expect(event.extendedProps.assignees).toEqual([
+      { id: "u1", name: "Ada", avatarUrl: "https://x/a.jpg" },
+      { id: "u2", name: "Ben", avatarUrl: null },
+    ]);
+  });
+
+  it("returns an empty assignees array when nothing is approved yet", () => {
+    const event = shiftToCalendarEvent(baseShift, "OWNER");
+    expect(event.extendedProps.assignees).toEqual([]);
+  });
 });
 
 describe("availabilityToCalendarEvent", () => {

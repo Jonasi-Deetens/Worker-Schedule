@@ -11,7 +11,7 @@ import { ServiceWorkerRegistrar } from "@/interface/components/service-worker-re
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Tattoogenda Work Calendar",
+  title: "Work Calendar",
   description: "Calendar-first staffing for horeca teams",
   manifest: "/manifest.webmanifest",
 };

@@ -35,11 +35,11 @@ describe("TOTP", () => {
   it("builds an otpauth URL with the expected params", () => {
     const url = totpAuthUrl({
       account: "test@example.com",
-      issuer: "Tattoogenda",
+      issuer: "Work Calendar",
       secret: "JBSWY3DPEHPK3PXP",
     });
     expect(url).toMatch(/^otpauth:\/\/totp\//);
-    expect(url).toContain("Tattoogenda");
+    expect(url).toContain("Work%20Calendar");
     expect(url).toContain("secret=JBSWY3DPEHPK3PXP");
   });
 });

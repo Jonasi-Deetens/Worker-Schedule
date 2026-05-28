@@ -170,7 +170,10 @@ body {
 }
 
 .tg-calendar-shell .tg-event {
-  position: relative;
+  /* IMPORTANT: do NOT set `position: relative` here. FullCalendar relies on
+   * `position: absolute; inset: 0` (set by .fc-timegrid-event in CSS) to make
+   * time-grid events fill the harness span; declaring `position: relative`
+   * collapses every event to its text height — so a 6h shift renders as 1h. */
   border-radius: 8px;
   border: none !important;
   background: transparent !important;
@@ -181,9 +184,14 @@ body {
   margin: 0 2px;
   overflow: hidden;
   transition:
-    transform 140ms ease,
     box-shadow 140ms ease,
     filter 140ms ease;
+}
+
+/* In month view the events stack inside a flex/block container, so they need
+ * a positioning context for the progress bar to attach to. */
+.tg-calendar-shell .fc-daygrid-event.tg-event {
+  position: relative;
 }
 
 .tg-calendar-shell .tg-event:hover {
@@ -269,6 +277,19 @@ body {
   height: 3px;
   background: var(--tg-track, rgba(255, 255, 255, 0.2));
   display: flex;
+}
+
+/* Avatar pile sits between the meta line and the bottom progress bar. */
+.tg-calendar-shell .tg-event .tg-event-avatars {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  padding-bottom: 2px;
+  pointer-events: none;
+}
+/* Hide the stack on tiny month-view chips; there's just no room for it. */
+.tg-calendar-shell .fc-daygrid-event .tg-event-avatars {
+  display: none;
 }
 
 .tg-calendar-shell .tg-event .tg-event-progress-approved {
@@ -362,8 +383,9 @@ body {
   border: none !important;
 }
 .tg-calendar-shell .fc-timegrid-event .tg-event-body {
-  /* Short shifts (e.g. 30-min slots) still need a clean wrap — let the body
-   * grow with the harness instead of forcing a fixed min-height. */
+  /* Stretch to the harness so a 6h event paints from 12:00..18:00, not
+   * just one row of text. */
+  height: 100%;
   min-height: 100%;
 }
 
@@ -391,6 +413,49 @@ body {
 /* Selection mirror polish */
 .tg-calendar-shell .fc-highlight {
   background: rgba(37, 99, 235, 0.12);
+}
+
+/* "Now" indicator: bolder red line + small dot at the leftmost edge so the
+ * current time is unmistakable even on a busy day. */
+.tg-calendar-shell .fc-timegrid-now-indicator-line {
+  border-color: #ef4444;
+  border-top-width: 2px;
+  filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.35));
+}
+.tg-calendar-shell .fc-timegrid-now-indicator-arrow {
+  border-color: #ef4444;
+}
+
+/* Time slot labels: subtle separation + bigger reading size. */
+.tg-calendar-shell .fc-timegrid-slot-label {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+}
+
+/* Time-axis column (left side with 06:00, 07:00, …): give it air, a soft
+ * grey wash so it reads as a separate "rail" from the day columns, and a
+ * crisp right border so events visually start where the rail ends. */
+.tg-calendar-shell .fc-timegrid-axis,
+.tg-calendar-shell .fc-timegrid-slot-label {
+  background: #f8fafc; /* slate-50 */
+  border-right-color: #e2e8f0;
+}
+.tg-calendar-shell .fc-timegrid-slot-label-cushion {
+  padding: 2px 10px 2px 8px !important;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+.tg-calendar-shell .fc-timegrid-axis-cushion {
+  padding: 4px 10px 4px 8px !important;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+/* Highlight the current hour row label so people glance to the time fast. */
+.tg-calendar-shell .fc-timegrid-slot-label.fc-timegrid-slot-label[data-time]:is(.fc-timegrid-slot-minor) {
+  color: #94a3b8;
 }
 
 /* "+N more" link */

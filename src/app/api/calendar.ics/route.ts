@@ -68,14 +68,14 @@ export async function GET(request: Request) {
 
   const body = buildIcal({
     events,
-    calendarName: `Tattoogenda — ${user.name}`,
+    calendarName: `Work Calendar — ${user.name}`,
   });
 
   return new NextResponse(body, {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="tattoogenda.ics"',
+      "Content-Disposition": 'attachment; filename="work-calendar.ics"',
       "Cache-Control": "no-store",
     },
   });

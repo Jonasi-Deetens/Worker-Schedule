@@ -1,7 +1,10 @@
 import { compare, hash } from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { prisma } from "@/infrastructure/db/prisma";
+import { env } from "@/lib/env";
+import { presignS3Put } from "@/infrastructure/storage/s3-presign";
 import {
   managerProcedure,
   mapServiceError,
@@ -255,7 +258,7 @@ export const appRouter = router({
           where: { id: input.shiftId, businessId },
           include: {
             assignments: {
-              include: { user: { select: { id: true, name: true } } },
+              include: { user: { select: { id: true, name: true, avatarUrl: true } } },
             },
           },
         });
@@ -266,6 +269,7 @@ export const appRouter = router({
           id: a.id,
           userId: a.userId,
           userName: a.user.name,
+          avatarUrl: a.user.avatarUrl ?? null,
           attendance: a.attendance,
         }));
       }),
@@ -1214,6 +1218,52 @@ export const appRouter = router({
         },
       });
     }),
+
+    /**
+     * Presigned PUT URL for an avatar upload. Same S3-compatible storage
+     * we use for documents, but a stricter cap (2 MiB) and image-only
+     * content types because avatars get rendered everywhere — including
+     * inside FullCalendar event cards — and we don't want a fat upload to
+     * tank rendering performance.
+     */
+    presignAvatar: protectedProcedure
+      .input(
+        z.object({
+          contentType: z.enum([
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+          ]),
+          sizeBytes: z
+            .number()
+            .int()
+            .positive()
+            .max(2 * 1024 * 1024, "Avatar must be ≤2 MiB"),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!isStorageConfigured()) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Object storage is not configured",
+          });
+        }
+        const ext = input.contentType === "image/jpeg" ? "jpg" :
+          input.contentType === "image/png" ? "png" : "webp";
+        const key = `avatars/${ctx.session.user.id}/${randomUUID()}.${ext}`;
+        const presigned = presignS3Put({
+          endpoint: env.STORAGE_ENDPOINT!,
+          region: env.STORAGE_REGION!,
+          bucket: env.STORAGE_BUCKET!,
+          accessKeyId: env.STORAGE_ACCESS_KEY!,
+          secretAccessKey: env.STORAGE_SECRET_KEY!,
+          key,
+          contentType: input.contentType,
+          expiresInSeconds: 300,
+          forcePathStyle: env.STORAGE_FORCE_PATH_STYLE === true,
+        });
+        return { ...presigned, key };
+      }),
     updateProfile: protectedProcedure
       .input(meProfileUpdateSchema)
       .mutation(async ({ ctx, input }) => {
@@ -1673,7 +1723,7 @@ export const appRouter = router({
       const secret = generateSecret();
       const url = totpAuthUrl({
         account: ctx.session.user.email,
-        issuer: "Tattoogenda",
+        issuer: "Work Calendar",
         secret,
       });
       return { secret, otpauthUrl: url };

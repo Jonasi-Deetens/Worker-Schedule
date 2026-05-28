@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { WorkersClient } from "./workers-client";
 
 export const metadata = {
-  title: "Team — Tattoogenda",
+  title: "Team — Work Calendar",
 };
 
 export default async function WorkersPage() {

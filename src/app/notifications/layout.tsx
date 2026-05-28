@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Notifications — Tattoogenda",
+  title: "Notifications — Work Calendar",
 };
 
 export default function NotificationsLayout({

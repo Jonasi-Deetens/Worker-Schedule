@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { ClockClient } from "./clock-client";
 
 export const metadata = {
-  title: "Time clock — Tattoogenda",
+  title: "Time clock — Work Calendar",
 };
 
 export default async function ClockPage() {

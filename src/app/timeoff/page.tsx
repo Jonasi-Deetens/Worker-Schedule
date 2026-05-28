@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { TimeOffClient } from "./timeoff-client";
 
 export const metadata = {
-  title: "Time off — Tattoogenda",
+  title: "Time off — Work Calendar",
 };
 
 export default async function TimeOffPage() {

@@ -42,8 +42,8 @@ async function main() {
 
   const business = await prisma.business.upsert({
     where: { ownerId: owner.id },
-    update: { name: "Café Tattoogenda" },
-    create: { name: "Café Tattoogenda", ownerId: owner.id },
+    update: { name: "Demo Bistro" },
+    create: { name: "Demo Bistro", ownerId: owner.id },
   });
 
   await prisma.user.update({

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Tattoogenda",
+    "name": "Werkkalender",
     "tagline": "Kalendergerichte personeelsplanning voor horecateams"
   },
   "me": {
@@ -62,6 +62,9 @@
   },
   "calendar": {
     "title": "Agenda",
+    "timeFormat24": "24u",
+    "timeFormat12": "AM/PM",
+    "timeFormatAria": "Tijdsweergave",
     "ownerTitle": "Personeelskalender",
     "workerTitle": "Mijn kalender",
     "ownerSubtitle": "Maak shifts aan en keur aanmeldingen goed.",
@@ -338,6 +341,17 @@
     "kind_FOOD_SAFETY": "Voedselveiligheidsattest",
     "kind_OTHER": "Andere"
   },
+  "avatar": {
+    "title": "Profielfoto",
+    "help": "Wordt naast je naam getoond op shifts en roosters. JPG, PNG of WebP tot 2 MB.",
+    "upload": "Foto uploaden",
+    "replace": "Vervangen",
+    "remove": "Verwijderen",
+    "uploading": "Bezig met uploaden…",
+    "imageOnly": "Kies een afbeeldingsbestand.",
+    "tooLarge": "Afbeelding moet 2 MB of kleiner zijn.",
+    "unsupported": "Gebruik JPG, PNG of WebP."
+  },
   "profile": {
     "title": "Mijn profiel",
     "subtitle": "Werk je contactgegevens en meldingsvoorkeuren bij.",
@@ -449,7 +463,7 @@
   },
   "help": {
     "title": "Hulp & uitleg",
-    "subtitle": "Alles wat Tattoogenda voor jou kan doen, in mensentaal.",
+    "subtitle": "Alles wat Werkkalender voor jou kan doen, in mensentaal.",
     "tocAria": "Inhoudstafel",
     "tipLabel": "Tip:",
     "empty": "Voor jouw rol zijn er nog geen hulp-secties beschikbaar.",
@@ -462,7 +476,7 @@
     "s": {
       "gettingStarted": {
         "title": "Aan de slag",
-        "intro": "Een rondleiding van 60 seconden door Tattoogenda en hoe je inlogt.",
+        "intro": "Een rondleiding van 60 seconden door Werkkalender en hoe je inlogt.",
         "steps": {
           "1": "Zaakvoerders maken bij registratie een zaak aan. Werknemers en managers sluiten aan via een uitnodigingslink.",
           "2": "Log in met e-mail + wachtwoord, of via Google als de zaakvoerder dat heeft ingeschakeld. 2FA kan per account aan.",
@@ -567,7 +581,7 @@
       },
       "icsFeed": {
         "title": "Agenda-abonnement (ICS)",
-        "intro": "Je Tattoogenda-shifts in Google, Apple of Outlook — altijd actueel.",
+        "intro": "Je Werkkalender-shifts in Google, Apple of Outlook — altijd actueel.",
         "steps": {
           "1": "Op Instellingen → Profiel: kopieer je persoonlijke agenda-URL.",
           "2": "Plak die in je agenda-app als nieuw abonnement (niet importeren — dat geeft slechts één momentopname).",

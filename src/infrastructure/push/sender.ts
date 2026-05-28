@@ -14,7 +14,7 @@ let configuredFor: { pub: string; prv: string } | null = null;
 function configure(): boolean {
   const pub = process.env.VAPID_PUBLIC_KEY;
   const prv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT ?? "mailto:ops@tattoogenda.local";
+  const subject = process.env.VAPID_SUBJECT ?? "mailto:ops@work-calendar.local";
   if (!pub || !prv) {
     if (!warned) {
       logger.warn({ event: "push.vapid.missing" });

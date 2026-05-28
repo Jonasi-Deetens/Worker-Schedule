@@ -8,6 +8,7 @@ import { Button } from "@/interface/components/ui/button";
 import { StatusBadge } from "@/interface/components/status-badge";
 import { ShiftMessagesPanel } from "@/interface/components/shift-messages-panel";
 import { StaffingSuggestionsPanel } from "@/interface/components/staffing-suggestions-panel";
+import { Avatar, AvatarStack } from "@/interface/components/avatar";
 import type { DisplayStatus } from "@/domain/types";
 
 export interface CalendarShiftItem {
@@ -31,13 +32,14 @@ interface ShiftDetailDialogProps {
   subscriptions?: {
     id: string;
     status: string;
-    user: { id: string; name: string; email: string };
+    user: { id: string; name: string; email: string; avatarUrl?: string | null };
   }[];
   /** Approved assignments for past-shift attendance marking (owners only). */
   assignments?: {
     id: string;
     userId: string;
     userName: string;
+    avatarUrl?: string | null;
     attendance: "ON_TIME" | "LATE" | "NO_SHOW" | "EXCUSED" | null;
   }[];
   workerOptions?: ReadonlyArray<{ id: string; name: string }>;
@@ -132,6 +134,23 @@ export function ShiftDetailDialog({
           <p className="mt-3 text-sm text-slate-600">
             {formatTimeRange(new Date(shift.startsAt), new Date(shift.endsAt))}
           </p>
+
+          {(assignments?.length ?? 0) > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+              <AvatarStack
+                people={(assignments ?? []).map((a) => ({
+                  id: a.userId,
+                  name: a.userName,
+                  avatarUrl: a.avatarUrl,
+                }))}
+                size="sm"
+                max={6}
+              />
+              <span className="text-xs text-slate-500">
+                {(assignments ?? []).map((a) => a.userName).join(", ")}
+              </span>
+            </div>
+          )}
 
           {shift.notes && (
             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
@@ -270,9 +289,18 @@ export function ShiftDetailDialog({
                     key={sub.id}
                     className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
                   >
-                    <div>
-                      <p className="font-medium text-slate-900">{sub.user.name}</p>
-                      <p className="text-xs text-slate-500">{sub.status}</p>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar
+                        name={sub.user.name}
+                        url={sub.user.avatarUrl}
+                        size="md"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-900">
+                          {sub.user.name}
+                        </p>
+                        <p className="text-xs text-slate-500">{sub.status}</p>
+                      </div>
                     </div>
                     {sub.status === "PENDING" && (
                       <div className="flex gap-2">
@@ -312,7 +340,10 @@ export function ShiftDetailDialog({
                       key={a.id}
                       className="flex flex-wrap items-center justify-between gap-2"
                     >
-                      <span className="text-sm text-slate-800">{a.userName}</span>
+                      <span className="flex min-w-0 items-center gap-2 text-sm text-slate-800">
+                        <Avatar name={a.userName} url={a.avatarUrl} size="sm" />
+                        <span className="truncate">{a.userName}</span>
+                      </span>
                       <div className="flex flex-wrap gap-1">
                         {(["ON_TIME", "LATE", "NO_SHOW", "EXCUSED"] as const).map(
                           (status) => (

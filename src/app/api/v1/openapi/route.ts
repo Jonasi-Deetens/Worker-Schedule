@@ -9,7 +9,7 @@ import { API_SCOPES } from "@/application/services/api-key-service";
 const doc = {
   openapi: "3.1.0",
   info: {
-    title: "Tattoogenda Public API",
+    title: "Work Calendar Public API",
     version: "1.0.0",
     description:
       "Read-and-write access to shifts and assignments using API keys.",

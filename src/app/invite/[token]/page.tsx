@@ -1,7 +1,7 @@
 import { InviteAcceptClient } from "./invite-client";
 
 export const metadata = {
-  title: "Accept invite — Tattoogenda",
+  title: "Accept invite — Work Calendar",
 };
 
 export default async function InviteAcceptPage(props: {

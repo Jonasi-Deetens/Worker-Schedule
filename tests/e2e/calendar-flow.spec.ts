@@ -25,7 +25,7 @@ function dateInCurrentWeek(): string {
   return d.toISOString().slice(0, 10);
 }
 
-test.describe("Tattoogenda Work Calendar — golden paths", () => {
+test.describe("Work Calendar — golden paths", () => {
   test("worker can set availability and see it on the calendar", async ({ page }) => {
     await login(page, WORKER);
 

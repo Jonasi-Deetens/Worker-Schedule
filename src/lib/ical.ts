@@ -1,6 +1,6 @@
 import { createHmac, createHash } from "node:crypto";
 
-const PRODID = "-//Tattoogenda//Work Calendar//EN";
+const PRODID = "-//WorkCalendar//Work Calendar//EN";
 
 export interface IcalEvent {
   uid: string;
@@ -121,5 +121,5 @@ export function buildEventUid(shiftId: string, businessId: string): string {
     .update(businessId)
     .digest("hex")
     .slice(0, 8);
-  return `${shiftId}-${businessHash}@tattoogenda`;
+  return `${shiftId}-${businessHash}@work-calendar`;
 }

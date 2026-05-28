@@ -1,4 +1,4 @@
-/* Tattoogenda PWA service worker (hand-rolled, no extra deps).
+/* Work Calendar PWA service worker (hand-rolled, no extra deps).
  *
  * Strategy:
  * - Static app shell + icons go through a stale-while-revalidate cache.
@@ -7,7 +7,7 @@
  * - All other requests bypass the worker and use the network directly.
  */
 
-const CACHE_NAME = "tattoogenda-v1";
+const CACHE_NAME = "work-calendar-v1";
 const SHELL = ["/", "/me", "/calendar", "/manifest.webmanifest", "/icon-192.svg", "/icon-512.svg"];
 
 self.addEventListener("install", (event) => {
@@ -58,7 +58,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   const payload = event.data ? safeJson(event.data.text()) : null;
-  const title = payload?.title || "Tattoogenda";
+  const title = payload?.title || "Work Calendar";
   const body = payload?.body || "";
   event.waitUntil(
     self.registration.showNotification(title, {

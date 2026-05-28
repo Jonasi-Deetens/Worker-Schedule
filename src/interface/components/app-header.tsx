@@ -46,7 +46,7 @@ export function AppHeader() {
             href={isOwnerOrManager ? "/calendar" : "/me"}
             className="text-lg font-semibold text-slate-900"
           >
-            Tattoogenda
+            Work Calendar
           </Link>
           <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 sm:inline">
             {role === "OWNER"
