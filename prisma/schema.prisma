@@ -53,6 +53,12 @@ enum NotificationType {
   SHIFT_SWAP_REQUESTED
   SHIFT_SWAP_DECIDED
   SHIFT_BROADCAST
+  SHIFT_RESCHEDULED
+}
+
+enum AssignmentStatus {
+  CONFIRMED
+  PENDING_RECONFIRMATION
 }
 
 enum AttendanceStatus {
@@ -81,12 +87,18 @@ enum AuditAction {
   TIMEOFF_REQUESTED
   TIMEOFF_APPROVED
   TIMEOFF_REJECTED
+  TIMEOFF_CANCELLED
+  TIMEOFF_UPDATED
+  TIMEOFF_REVOKED
   SWAP_REQUESTED
   SWAP_DECIDED
   TIME_ENTRY_APPROVED
   DIMONA_DECLARED
   ATTENDANCE_MARKED
   SHIFT_BROADCAST_SENT
+  SHIFT_RESCHEDULE_PENDING
+  SHIFT_RECONFIRMED
+  SHIFT_RECONFIRM_DECLINED
 }
 
 enum TimeOffStatus {
@@ -280,6 +292,7 @@ model ShiftAssignment {
   shift                Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
   userId               String
   user                 User              @relation("AssignmentWorker", fields: [userId], references: [id], onDelete: Cascade)
+  status               AssignmentStatus  @default(CONFIRMED)
   attendance           AttendanceStatus?
   attendanceNote       String?
   attendanceMarkedAt   DateTime?
@@ -289,6 +302,7 @@ model ShiftAssignment {
 
   @@unique([shiftId, userId])
   @@index([userId])
+  @@index([userId, status])
   @@index([attendance])
   @@map("shift_assignments")
 }

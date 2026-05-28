@@ -108,6 +108,7 @@ export function CalendarPageClient({
       if (event === "shift.updated" || event === "assignment.changed") {
         utils.shift.list.invalidate();
         utils.shift.kpis.invalidate();
+        utils.shift.pendingReconfirmations.invalidate();
       } else if (event === "subscription.changed") {
         utils.shift.list.invalidate();
         utils.subscription.listForShift.invalidate();
@@ -147,6 +148,16 @@ export function CalendarPageClient({
   const businessQuery = trpc.business.get.useQuery(undefined, {
     enabled: isOwner,
   });
+
+  // Workers: shifts whose assignment is awaiting reschedule reconfirmation.
+  const reconfirmQuery = trpc.shift.pendingReconfirmations.useQuery(undefined, {
+    enabled: !isOwner,
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
+  const reconfirmShiftIds = useMemo(
+    () => new Set((reconfirmQuery.data ?? []).map((s) => s.id)),
+    [reconfirmQuery.data],
+  );
 
   const m = useCalendarMutations({
     closeShiftDialog: () => {
@@ -465,6 +476,11 @@ export function CalendarPageClient({
         onEditShift={handleEditShift}
         onCancelShiftClick={() => setCancelShiftOpen(true)}
         onOfferSwapClick={() => setOfferSwapOpen(true)}
+        workerNeedsReconfirm={
+          !isOwner &&
+          !!selectedShift &&
+          reconfirmShiftIds.has(selectedShift.shiftId)
+        }
         cancelShiftOpen={cancelShiftOpen}
         setCancelShiftOpen={setCancelShiftOpen}
         offerSwapOpen={offerSwapOpen}

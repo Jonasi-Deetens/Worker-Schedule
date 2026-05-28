@@ -3,6 +3,11 @@
     "name": "Calendrier de travail",
     "tagline": "Planning d'équipe pour l'horeca"
   },
+  "nav": {
+    "settings": "Paramètres",
+    "menu": "Ouvrir le menu",
+    "close": "Fermer le menu"
+  },
   "me": {
     "greeting": "Aujourd’hui",
     "subtitle": "Vos shifts, broadcasts et raccourcis en un seul endroit.",
@@ -17,6 +22,7 @@
     "quickLinks": "Raccourcis",
     "quickAvailability": "Touchez pour vous déclarer disponible",
     "quickAvailabilityHelp": "Créneau par défaut 09:00–17:00 · touchez à nouveau pour effacer",
+    "inTimeOff": "En congé",
     "now": "ça commence",
     "inMinutes": "dans {count} min",
     "inHours": "dans {count} h",
@@ -196,6 +202,9 @@
     "timeOffRequested": "Congé demandé",
     "timeOffApproved": "Congé approuvé",
     "timeOffRejected": "Congé refusé",
+    "timeOffCancelled": "Congé annulé",
+    "timeOffUpdated": "Congé mis à jour",
+    "timeOffRevoked": "Congé révoqué",
     "templateSaved": "Modèle enregistré",
     "profileSaved": "Profil enregistré",
     "passwordChanged": "Mot de passe modifié",
@@ -205,7 +214,16 @@
     "clockedIn": "Pointage entrée",
     "clockedOut": "Pointage sortie",
     "timeEntriesApproved": "Heures approuvées",
-    "rosterApplied": "Roster appliqué"
+    "rosterApplied": "Roster appliqué",
+    "reconfirmConfirmed": "Shift reconfirmé",
+    "reconfirmDeclined": "Shift décliné — le responsable a été prévenu"
+  },
+  "reconfirm": {
+    "title": "Reconfirmer les shifts modifiés",
+    "help": "Ces shifts ont changé après votre planification. Confirmez que vous êtes disponible au nouvel horaire, ou déclinez pour libérer la place.",
+    "confirm": "Confirmer le nouvel horaire",
+    "decline": "Pas disponible",
+    "badge": "Reconfirmation requise"
   },
   "applications": {
     "title": "Mes candidatures",
@@ -285,7 +303,12 @@
     "groupApproved": "Approuvé",
     "groupRejected": "Refusé",
     "approve": "Approuver",
-    "reject": "Refuser"
+    "reject": "Refuser",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "revoke": "Révoquer",
+    "editTitle": "Modifier la demande de congé",
+    "editHelp": "Modifiez les dates ou le motif. Les demandes approuvées repassent en attente de validation."
   },
   "attendance": {
     "title": "Présence",
@@ -418,7 +441,14 @@
     "subtitle": "Approuvez les heures et exportez les fichiers de paie.",
     "export": "Télécharger CSV",
     "exportXlsx": "Télécharger XLSX",
-    "noRows": "Aucune heure approuvée sur cette plage."
+    "noRows": "Aucune heure approuvée sur cette plage.",
+    "grossHours": "{value} brut",
+    "breakMinutes": "{value} pause",
+    "netLabel": "net",
+    "tabPending": "En attente",
+    "tabApproved": "Approuvées",
+    "approvedMeta": "Approuvé par {name} · {date}",
+    "noApproved": "Aucune heure approuvée pour le moment."
   },
   "templates": {
     "title": "Modèles de shifts",
@@ -759,6 +789,8 @@
     "invalidInput": "Certains champs sont invalides. Vérifiez et réessayez.",
     "dimona": "La déclaration Dimona a échoué. Vérifiez le NISS du travailleur.",
     "network": "Problème réseau. Vérifiez votre connexion.",
-    "pastShift": "Ce shift a déjà commencé ou est terminé."
+    "pastShift": "Ce shift a déjà commencé ou est terminé.",
+    "availabilityInTimeOff": "Vous avez un congé approuvé sur cette période.",
+    "reconfirmNotNeeded": "Ce shift n'a plus besoin de votre reconfirmation."
   }
 }

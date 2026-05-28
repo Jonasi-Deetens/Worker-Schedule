@@ -48,6 +48,12 @@ export const timeClockRouter = router({
       const businessId = requireBusinessId(ctx.session.user.businessId);
       return timeClockService.listPending(businessId, input?.from, input?.to);
     }),
+  listApproved: managerProcedure
+    .input(dateRangeSchema.partial().optional())
+    .query(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      return timeClockService.listApproved(businessId, input?.from, input?.to);
+    }),
   approve: managerProcedure
     .input(timeEntryApproveSchema)
     .mutation(async ({ ctx, input }) => {

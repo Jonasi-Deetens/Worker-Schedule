@@ -113,6 +113,110 @@ describe("ShiftService.update", () => {
   });
 });
 
+describe("ShiftService.update (reschedule reconfirmation)", () => {
+  const existing = {
+    id: "shift-1",
+    startsAt: new Date("2026-06-01T10:00:00Z"),
+    endsAt: new Date("2026-06-01T14:00:00Z"),
+    roleLabel: "Bartender",
+  };
+
+  function primeUpdate(updated: Record<string, unknown>) {
+    prisma.shift.findFirst.mockResolvedValue(existing);
+    prisma.shift.update.mockResolvedValue({ ...existing, ...updated });
+    prisma.auditEvent.create.mockResolvedValue({ id: "audit-x" });
+    prisma.notification.create.mockResolvedValue({ id: "n1" });
+    prisma.shiftAssignment.update.mockResolvedValue({ id: "a1" });
+  }
+
+  it("drops CONFIRMED assignments to PENDING_RECONFIRMATION when startsAt changes", async () => {
+    primeUpdate({ startsAt: new Date("2026-06-01T12:00:00Z") });
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      { id: "a1", userId: "w1", status: "CONFIRMED" },
+      { id: "a2", userId: "w2", status: "CONFIRMED" },
+    ]);
+
+    await service.update({
+      id: "shift-1",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+      startsAt: new Date("2026-06-01T12:00:00Z"),
+    });
+
+    expect(prisma.shiftAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { shiftId: "shift-1", status: "CONFIRMED" },
+      }),
+    );
+    expect(prisma.shiftAssignment.update).toHaveBeenCalledTimes(2);
+    expect(prisma.shiftAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { status: "PENDING_RECONFIRMATION" },
+      }),
+    );
+    expect(prisma.notification.create).toHaveBeenCalledTimes(2);
+    expect(prisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: "SHIFT_RESCHEDULED" }),
+      }),
+    );
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "SHIFT_RESCHEDULE_PENDING" }),
+      }),
+    );
+  });
+
+  it("triggers reconfirmation when the roleLabel changes", async () => {
+    primeUpdate({ roleLabel: "Host" });
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      { id: "a1", userId: "w1", status: "CONFIRMED" },
+    ]);
+
+    await service.update({
+      id: "shift-1",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+      roleLabel: "Host",
+    });
+
+    expect(prisma.shiftAssignment.update).toHaveBeenCalledTimes(1);
+    expect(prisma.notification.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT disturb assignments when only notes/requiredSpots change", async () => {
+    primeUpdate({ notes: "new note", requiredSpots: 3 });
+
+    await service.update({
+      id: "shift-1",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+      notes: "new note",
+      requiredSpots: 3,
+    });
+
+    expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
+    expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
+    expect(prisma.notification.create).not.toHaveBeenCalled();
+  });
+
+  it("does NOT trigger when the passed times are identical to the stored ones", async () => {
+    primeUpdate({});
+
+    await service.update({
+      id: "shift-1",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+      startsAt: new Date("2026-06-01T10:00:00Z"),
+      endsAt: new Date("2026-06-01T14:00:00Z"),
+      roleLabel: "Bartender",
+    });
+
+    expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
+    expect(prisma.notification.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("ShiftService.delete (cancel-with-notify)", () => {
   it("marks shift as cancelled and notifies pending subscribers", async () => {
     prisma.shift.findFirst.mockResolvedValue({

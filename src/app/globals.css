@@ -269,17 +269,15 @@ body {
   border-radius: 4px;
 }
 
-.tg-calendar-shell .tg-event .tg-event-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--tg-track, rgba(255, 255, 255, 0.2));
-  display: flex;
+.tg-calendar-shell .tg-event .tg-event-progress,
+.tg-calendar-shell .tg-event .tg-event-progress-approved,
+.tg-calendar-shell .tg-event .tg-event-progress-pending,
+.tg-calendar-shell .tg-event-pending .tg-event-progress-approved,
+.tg-calendar-shell .fc-daygrid-event .tg-event-progress {
+  display: none !important;
 }
 
-/* Avatar pile sits between the meta line and the bottom progress bar. */
+/* Avatar pile sits between the meta line and the bottom edge. */
 .tg-calendar-shell .tg-event .tg-event-avatars {
   display: flex;
   align-items: center;
@@ -292,57 +290,39 @@ body {
   display: none;
 }
 
-.tg-calendar-shell .tg-event .tg-event-progress-approved {
-  height: 100%;
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.tg-calendar-shell .tg-event .tg-event-progress-pending {
-  height: 100%;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.65) 0px,
-    rgba(255, 255, 255, 0.65) 4px,
-    rgba(255, 255, 255, 0.25) 4px,
-    rgba(255, 255, 255, 0.25) 8px
-  );
-}
-
-/* Status surfaces */
+/* Status surfaces — wider gradient spread so each pill reads as dimensional
+ * (lighter highlight at top-left, deeper main shade at bottom-right) instead
+ * of nearly-flat. Mirrors the visible-gradient feel of the Availability pill. */
 .tg-calendar-shell .tg-event-open .tg-event-body {
-  --tg-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --tg-bg: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   --tg-accent: #1d4ed8;
   --tg-track: rgba(255, 255, 255, 0.28);
   --tg-text: #ffffff;
 }
 
 .tg-calendar-shell .tg-event-pending .tg-event-body {
-  --tg-bg: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --tg-bg: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
   --tg-accent: #b45309;
   --tg-track: rgba(120, 53, 15, 0.22);
   --tg-text: #1f2937;
 }
 
-.tg-calendar-shell .tg-event-pending .tg-event-progress-approved {
-  background: rgba(120, 53, 15, 0.85);
-}
-
 .tg-calendar-shell .tg-event-approved .tg-event-body {
-  --tg-bg: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  --tg-bg: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
   --tg-accent: #166534;
   --tg-track: rgba(255, 255, 255, 0.32);
   --tg-text: #ffffff;
 }
 
 .tg-calendar-shell .tg-event-rejected .tg-event-body {
-  --tg-bg: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  --tg-bg: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
   --tg-accent: #b91c1c;
   --tg-track: rgba(255, 255, 255, 0.28);
   --tg-text: #ffffff;
 }
 
 .tg-calendar-shell .tg-event-withdrawn .tg-event-body {
-  --tg-bg: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  --tg-bg: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
   --tg-accent: #475569;
   --tg-track: rgba(255, 255, 255, 0.32);
   --tg-text: #0f172a;
@@ -398,10 +378,6 @@ body {
 
 .tg-calendar-shell .fc-daygrid-event .tg-event-meta {
   display: none;
-}
-
-.tg-calendar-shell .fc-daygrid-event .tg-event-progress {
-  height: 2px;
 }
 
 /* Month view: the daygrid rows aren't sized to actual hours, so the small

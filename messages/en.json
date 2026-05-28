@@ -3,6 +3,11 @@
     "name": "Work Calendar",
     "tagline": "Calendar-first staffing for horeca teams"
   },
+  "nav": {
+    "settings": "Settings",
+    "menu": "Open menu",
+    "close": "Close menu"
+  },
   "me": {
     "greeting": "Today",
     "subtitle": "Your shifts, broadcasts and quick actions in one place.",
@@ -17,6 +22,7 @@
     "quickLinks": "Quick links",
     "quickAvailability": "Tap to mark yourself available",
     "quickAvailabilityHelp": "Default slot 09:00–17:00 · tap again to clear",
+    "inTimeOff": "On time off",
     "now": "starting now",
     "inMinutes": "in {count} min",
     "inHours": "in {count} h",
@@ -196,6 +202,9 @@
     "timeOffRequested": "Time-off requested",
     "timeOffApproved": "Time-off approved",
     "timeOffRejected": "Time-off rejected",
+    "timeOffCancelled": "Time-off cancelled",
+    "timeOffUpdated": "Time-off updated",
+    "timeOffRevoked": "Time-off revoked",
     "templateSaved": "Template saved",
     "profileSaved": "Profile saved",
     "passwordChanged": "Password changed",
@@ -205,7 +214,16 @@
     "clockedIn": "Clocked in",
     "clockedOut": "Clocked out",
     "timeEntriesApproved": "Time entries approved",
-    "rosterApplied": "Roster applied"
+    "rosterApplied": "Roster applied",
+    "reconfirmConfirmed": "Shift reconfirmed",
+    "reconfirmDeclined": "Shift declined — the owner has been notified"
+  },
+  "reconfirm": {
+    "title": "Reconfirm rescheduled shifts",
+    "help": "These shifts changed after you were scheduled. Confirm you can still make the new time, or decline to free the spot.",
+    "confirm": "Confirm new time",
+    "decline": "Can't make it",
+    "badge": "Needs reconfirmation"
   },
   "applications": {
     "title": "My applications",
@@ -285,7 +303,12 @@
     "groupApproved": "Approved",
     "groupRejected": "Rejected",
     "approve": "Approve",
-    "reject": "Reject"
+    "reject": "Reject",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "revoke": "Revoke",
+    "editTitle": "Edit time-off request",
+    "editHelp": "Change the dates or reason. Approved requests go back to pending for owner review."
   },
   "attendance": {
     "title": "Attendance",
@@ -418,7 +441,14 @@
     "subtitle": "Approve worked hours and export pay-period files.",
     "export": "Download CSV",
     "exportXlsx": "Download XLSX",
-    "noRows": "No approved entries in this range."
+    "noRows": "No approved entries in this range.",
+    "grossHours": "{value} gross",
+    "breakMinutes": "{value} break",
+    "netLabel": "net",
+    "tabPending": "Pending",
+    "tabApproved": "Approved",
+    "approvedMeta": "Approved by {name} · {date}",
+    "noApproved": "No approved entries yet."
   },
   "templates": {
     "title": "Shift templates",
@@ -759,6 +789,8 @@
     "invalidInput": "Some fields are invalid. Please check and try again.",
     "dimona": "Dimona declaration failed. Check the worker's NISS.",
     "network": "Network problem. Check your connection.",
-    "pastShift": "That shift has already started or ended."
+    "pastShift": "That shift has already started or ended.",
+    "availabilityInTimeOff": "You have approved time-off in this range.",
+    "reconfirmNotNeeded": "This shift no longer needs your reconfirmation."
   }
 }

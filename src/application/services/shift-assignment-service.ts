@@ -4,6 +4,7 @@ import type { TimeRange } from "@/domain/types";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { DimonaService } from "./dimona-service";
+import { NotificationService } from "./notification-service";
 
 export interface ShiftConflictWarning {
   userId: string;
@@ -19,7 +20,11 @@ export interface ShiftConflictWarning {
  * here cannot accidentally couple with create/update/delete code paths.
  */
 export class ShiftAssignmentService {
-  constructor(private readonly db: PrismaClient) {}
+  private readonly notifications: NotificationService;
+
+  constructor(private readonly db: PrismaClient) {
+    this.notifications = new NotificationService(db);
+  }
 
   /**
    * Owner directly assigns a worker to a shift, bypassing the apply/approve
@@ -208,5 +213,193 @@ export class ShiftAssignmentService {
     }
 
     return warnings;
+  }
+
+  /**
+   * Worker-facing list of shifts they are currently expected to reconfirm
+   * after a reschedule. Mirrors `BroadcastService.listForUser` in shape so the
+   * worker surfaces can render reconfirm cards exactly like broadcast cards.
+   */
+  async listPendingReconfirmations(input: {
+    userId: string;
+    businessId: string;
+  }) {
+    const assignments = await this.db.shiftAssignment.findMany({
+      where: {
+        userId: input.userId,
+        status: "PENDING_RECONFIRMATION",
+        shift: {
+          businessId: input.businessId,
+          endsAt: { gt: new Date() },
+          status: { not: "CANCELLED" },
+        },
+      },
+      include: { shift: true },
+      orderBy: { shift: { startsAt: "asc" } },
+    });
+
+    return assignments.map((a) => ({
+      id: a.shift.id,
+      startsAt: a.shift.startsAt,
+      endsAt: a.shift.endsAt,
+      roleLabel: a.shift.roleLabel,
+    }));
+  }
+
+  /**
+   * Worker re-locks their spot on a rescheduled shift. Mirrors the safety of
+   * `BroadcastService.accept`: the shift must be live, the assignment must be
+   * in PENDING_RECONFIRMATION, and the *new* time must not clash with the
+   * worker's other assignments or approved time-off.
+   */
+  async confirmReschedule(input: {
+    shiftId: string;
+    userId: string;
+    businessId: string;
+  }) {
+    const shift = await this.db.shift.findFirst({
+      where: { id: input.shiftId, businessId: input.businessId },
+    });
+    if (!shift) throw new Error("Shift not found");
+    if (shift.status === "CANCELLED") throw new Error("Shift is cancelled");
+    if (shift.endsAt < new Date()) throw new Error("Shift already ended");
+
+    const assignment = await this.db.shiftAssignment.findUnique({
+      where: {
+        shiftId_userId: { shiftId: input.shiftId, userId: input.userId },
+      },
+    });
+    if (!assignment || assignment.status !== "PENDING_RECONFIRMATION") {
+      throw new Error("This shift does not need reconfirmation");
+    }
+
+    const overlap = await this.db.shiftAssignment.findFirst({
+      where: {
+        userId: input.userId,
+        shiftId: { not: input.shiftId },
+        shift: { startsAt: { lt: shift.endsAt }, endsAt: { gt: shift.startsAt } },
+      },
+    });
+    if (overlap) {
+      throw new Error(
+        "The new time overlaps another shift — decline this one instead",
+      );
+    }
+
+    const timeOff = await this.db.timeOffRequest.findFirst({
+      where: {
+        userId: input.userId,
+        status: "APPROVED",
+        startsAt: { lt: shift.endsAt },
+        endsAt: { gt: shift.startsAt },
+      },
+    });
+    if (timeOff) {
+      throw new Error(
+        "You have approved time-off at the new time — decline this one instead",
+      );
+    }
+
+    const updated = await this.db.shiftAssignment.update({
+      where: { id: assignment.id },
+      data: { status: "CONFIRMED" },
+    });
+
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.userId,
+        action: "SHIFT_RECONFIRMED",
+        entityType: "Shift",
+        entityId: shift.id,
+      },
+    });
+
+    logger.info({
+      event: "shift.reschedule.reconfirmed",
+      shiftId: shift.id,
+      userId: input.userId,
+    });
+    publishEvent(input.businessId, {
+      type: "assignment.changed",
+      shiftId: shift.id,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Worker can't make the rescheduled shift: drop the assignment, withdraw the
+   * mirrored subscription, and notify the owner so they can re-broadcast the
+   * now-open spot.
+   */
+  async declineReschedule(input: {
+    shiftId: string;
+    userId: string;
+    businessId: string;
+  }) {
+    const shift = await this.db.shift.findFirst({
+      where: { id: input.shiftId, businessId: input.businessId },
+    });
+    if (!shift) throw new Error("Shift not found");
+
+    const assignment = await this.db.shiftAssignment.findUnique({
+      where: {
+        shiftId_userId: { shiftId: input.shiftId, userId: input.userId },
+      },
+    });
+    if (!assignment || assignment.status !== "PENDING_RECONFIRMATION") {
+      throw new Error("This shift does not need reconfirmation");
+    }
+
+    const worker = await this.db.user.findUnique({
+      where: { id: input.userId },
+      select: { name: true },
+    });
+
+    await this.db.shiftAssignment.delete({ where: { id: assignment.id } });
+    await this.db.shiftSubscription.updateMany({
+      where: { shiftId: input.shiftId, userId: input.userId },
+      data: { status: "WITHDRAWN" },
+    });
+
+    const business = await this.db.business.findUnique({
+      where: { id: input.businessId },
+      select: { ownerId: true },
+    });
+    if (business) {
+      const dateLabel = shift.startsAt
+        .toISOString()
+        .slice(0, 16)
+        .replace("T", " ");
+      await this.notifications.create({
+        userId: business.ownerId,
+        type: "APPLICATION_WITHDRAWN",
+        title: "Worker declined a rescheduled shift",
+        body: `${worker?.name ?? "A worker"} can't make ${shift.roleLabel} on ${dateLabel}. The spot is open again.`,
+        payload: { shiftId: shift.id, kind: "reschedule" },
+        url: `/calendar`,
+      });
+    }
+
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.userId,
+        action: "SHIFT_RECONFIRM_DECLINED",
+        entityType: "Shift",
+        entityId: shift.id,
+      },
+    });
+
+    logger.info({
+      event: "shift.reschedule.declined",
+      shiftId: shift.id,
+      userId: input.userId,
+    });
+    publishEvent(input.businessId, {
+      type: "assignment.changed",
+      shiftId: shift.id,
+    });
+
+    return { success: true };
   }
 }

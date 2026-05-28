@@ -58,6 +58,10 @@ interface ShiftDetailDialogProps {
   onAcceptBroadcast?: () => void;
   onOfferSwap?: () => void;
   workerBroadcastInvited?: boolean;
+  /** True when the current worker's assignment on this shift is awaiting reschedule reconfirmation. */
+  workerNeedsReconfirm?: boolean;
+  onConfirmReschedule?: () => void;
+  onDeclineReschedule?: () => void;
   onBulkApprove?: (subscriptionIds: string[]) => void;
   onBulkReject?: (subscriptionIds: string[]) => void;
   isLoading?: boolean;
@@ -83,6 +87,9 @@ export function ShiftDetailDialog({
   onAcceptBroadcast,
   onOfferSwap,
   workerBroadcastInvited = false,
+  workerNeedsReconfirm = false,
+  onConfirmReschedule,
+  onDeclineReschedule,
   onBulkApprove,
   onBulkReject,
   isLoading,
@@ -122,6 +129,11 @@ export function ShiftDetailDialog({
           </Dialog.Title>
           <div className="mt-2 flex items-center gap-2">
             <StatusBadge status={shift.displayStatus} />
+            {!isOwner && workerNeedsReconfirm && (
+              <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                {t("reconfirm.badge")}
+              </span>
+            )}
             {shift.approvedCount !== undefined && (
               <span className="text-sm text-slate-600">
                 {t("shift.filledCount", {
@@ -205,6 +217,20 @@ export function ShiftDetailDialog({
             {!isOwner && workerBroadcastInvited && onAcceptBroadcast && (
               <Button onClick={onAcceptBroadcast} disabled={isLoading}>
                 {t("shift.acceptBroadcast")}
+              </Button>
+            )}
+            {!isOwner && workerNeedsReconfirm && onConfirmReschedule && (
+              <Button onClick={onConfirmReschedule} disabled={isLoading}>
+                {t("reconfirm.confirm")}
+              </Button>
+            )}
+            {!isOwner && workerNeedsReconfirm && onDeclineReschedule && (
+              <Button
+                variant="outline"
+                onClick={onDeclineReschedule}
+                disabled={isLoading}
+              >
+                {t("reconfirm.decline")}
               </Button>
             )}
             {isOwner && onCancelShift && shift.displayStatus !== "Cancelled" && (

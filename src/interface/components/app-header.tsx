@@ -6,19 +6,33 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  CalendarRange,
+  ClipboardCheck,
   ClipboardList,
   Clock,
   HelpCircle,
   Home,
+  LayoutTemplate,
   LogOut,
+  Menu,
+  Settings,
   ShieldCheck,
   Tags,
   UserCircle,
   Users,
+  X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/interface/components/ui/button";
 import { trpc } from "@/interface/trpc/client";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+};
 
 export function AppHeader() {
   const { data: session } = useSession();
@@ -37,6 +51,109 @@ export function AppHeader() {
   const isManager = role === "MANAGER";
   const isOwnerOrManager = isOwner || isManager;
   const hasMultipleBusinesses = (memberships?.length ?? 0) > 1;
+
+  // Primary navigation: rendered as direct icons on desktop and as rows in the
+  // mobile drawer. Each entry is already filtered by the current user's role.
+  const primaryItems: NavItem[] = [
+    isOwnerOrManager
+      ? {
+          href: "/workers",
+          label: t("workers.title"),
+          icon: <Users className="h-5 w-5" />,
+        }
+      : {
+          href: "/me",
+          label: t("me.greeting"),
+          icon: <Home className="h-5 w-5" />,
+        },
+    ...(!isOwner
+      ? [
+          {
+            href: "/applications",
+            label: t("applications.title"),
+            icon: <ClipboardList className="h-5 w-5" />,
+          },
+        ]
+      : []),
+    {
+      href: "/timeoff",
+      label: t("timeOff.title"),
+      icon: <CalendarClock className="h-5 w-5" />,
+    },
+    ...(!isOwner
+      ? [
+          {
+            href: "/clock",
+            label: t("clock.title"),
+            icon: <Clock className="h-5 w-5" />,
+          },
+        ]
+      : []),
+    ...(isOwnerOrManager
+      ? [
+          {
+            href: "/payroll/time-entries",
+            label: t("payroll.title"),
+            icon: <ClipboardCheck className="h-5 w-5" />,
+          },
+          {
+            href: "/insights",
+            label: t("insights.title"),
+            icon: <BarChart3 className="h-5 w-5" />,
+          },
+        ]
+      : []),
+    {
+      href: "/help",
+      label: t("help.title"),
+      icon: <HelpCircle className="h-5 w-5" />,
+    },
+    {
+      href: "/settings/profile",
+      label: t("profile.title"),
+      icon: <UserCircle className="h-5 w-5" />,
+    },
+  ];
+
+  // Setup/admin links grouped into the desktop "Settings" dropdown and the
+  // mobile drawer's settings section.
+  const settingsItems: NavItem[] = [
+    ...(isOwnerOrManager
+      ? [
+          {
+            href: "/settings/skills",
+            label: t("skills.title"),
+            icon: <Tags className="h-5 w-5" />,
+          },
+          {
+            href: "/settings/rosters",
+            label: t("rosters.title"),
+            icon: <CalendarRange className="h-5 w-5" />,
+          },
+        ]
+      : []),
+    ...(isOwner
+      ? [
+          {
+            href: "/settings/templates",
+            label: t("templates.title"),
+            icon: <LayoutTemplate className="h-5 w-5" />,
+          },
+          {
+            href: "/settings/developers",
+            label: "Developers",
+            icon: <span className="text-xs font-semibold">{"</>"}</span>,
+          },
+          {
+            href: "/audit",
+            label: "Audit log",
+            icon: <ShieldCheck className="h-5 w-5" />,
+          },
+        ]
+      : []),
+  ];
+
+  const unreadCount = unread?.count ?? 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -62,65 +179,26 @@ export function AppHeader() {
             />
           )}
         </div>
-        <div className="flex items-center gap-1">
-          {!isOwnerOrManager && (
-            <NavLink href="/me" label={t("me.greeting")}>
-              <Home className="h-5 w-5" />
+
+        {/* Desktop navigation */}
+        <div className="hidden items-center gap-1 md:flex">
+          {primaryItems.map((item) => (
+            <NavLink key={item.href} href={item.href} label={item.label}>
+              {item.icon}
             </NavLink>
+          ))}
+          {settingsItems.length > 0 && (
+            <SettingsMenu items={settingsItems} label={t("nav.settings")} />
           )}
-          {isOwnerOrManager && (
-            <NavLink href="/workers" label={t("workers.title")}>
-              <Users className="h-5 w-5" />
-            </NavLink>
-          )}
-          {!isOwner && (
-            <NavLink href="/applications" label={t("applications.title")}>
-              <ClipboardList className="h-5 w-5" />
-            </NavLink>
-          )}
-          <NavLink href="/timeoff" label={t("timeOff.title")}>
-            <CalendarClock className="h-5 w-5" />
-          </NavLink>
-          <NavLink href="/clock" label={t("clock.title")}>
-            <Clock className="h-5 w-5" />
-          </NavLink>
-          {isOwnerOrManager && (
-            <NavLink href="/settings/skills" label={t("skills.title")}>
-              <Tags className="h-5 w-5" />
-            </NavLink>
-          )}
-          {isOwnerOrManager && (
-            <NavLink href="/insights" label={t("insights.title")}>
-              <BarChart3 className="h-5 w-5" />
-            </NavLink>
-          )}
-          {isOwner && (
-            <NavLink href="/settings/developers" label="Developers">
-              <span className="text-xs font-semibold">{"</>"}</span>
-            </NavLink>
-          )}
-          {isOwner && (
-            <NavLink href="/audit" label="Audit log">
-              <ShieldCheck className="h-5 w-5" />
-            </NavLink>
-          )}
-          <NavLink href="/help" label={t("help.title")}>
-            <HelpCircle className="h-5 w-5" />
-          </NavLink>
-          <NavLink href="/settings/profile" label={t("profile.title")}>
-            <UserCircle className="h-5 w-5" />
-          </NavLink>
           <Link
             href="/notifications"
             className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-            aria-label={t("notifications.unreadAria", {
-              count: unread?.count ?? 0,
-            })}
+            aria-label={t("notifications.unreadAria", { count: unreadCount })}
           >
             <Bell className="h-5 w-5" />
-            {unread && unread.count > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                {unread.count > 9 ? "9+" : unread.count}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </Link>
@@ -135,6 +213,24 @@ export function AppHeader() {
           >
             <LogOut className="h-4 w-4" />
           </Button>
+        </div>
+
+        {/* Mobile navigation */}
+        <div className="flex items-center gap-1 md:hidden">
+          <MobileDrawer
+            primaryItems={primaryItems}
+            settingsItems={settingsItems}
+            settingsLabel={t("nav.settings")}
+            menuLabel={t("nav.menu")}
+            closeLabel={t("nav.close")}
+            notificationsLabel={t("notifications.unreadAria", {
+              count: unreadCount,
+            })}
+            notificationsTitle={t("notifications.title")}
+            unreadCount={unreadCount}
+            signOutLabel={t("auth.signOut")}
+            onSignOut={() => signOut({ callbackUrl: "/login" })}
+          />
         </div>
       </div>
     </header>
@@ -153,11 +249,264 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:inline-flex"
+      className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       aria-label={label}
       title={label}
     >
       {children}
+    </Link>
+  );
+}
+
+function SettingsMenu({ items, label }: { items: NavItem[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        aria-label={label}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Settings className="h-5 w-5" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label={label}
+          className="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+        >
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none"
+            >
+              <span className="flex h-5 w-5 items-center justify-center text-slate-500">
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileDrawer({
+  primaryItems,
+  settingsItems,
+  settingsLabel,
+  menuLabel,
+  closeLabel,
+  notificationsLabel,
+  notificationsTitle,
+  unreadCount,
+  signOutLabel,
+  onSignOut,
+}: {
+  primaryItems: NavItem[];
+  settingsItems: NavItem[];
+  settingsLabel: string;
+  menuLabel: string;
+  closeLabel: string;
+  notificationsLabel: string;
+  notificationsTitle: string;
+  unreadCount: number;
+  signOutLabel: string;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  // Lock body scroll while the drawer is open so the page behind it stays put.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        aria-label={menuLabel}
+        aria-expanded={open}
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {mounted &&
+        open &&
+        createPortal(
+          <div className="fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-slate-900/40"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={menuLabel}
+              className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-white shadow-xl"
+            >
+              <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4">
+                <span className="text-lg font-semibold text-slate-900">
+                  Work Calendar
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  aria-label={closeLabel}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto py-2">
+                {primaryItems.map((item) => (
+                  <DrawerLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    onNavigate={() => setOpen(false)}
+                  />
+                ))}
+
+                <DrawerLink
+                  href="/notifications"
+                  label={notificationsTitle}
+                  ariaLabel={notificationsLabel}
+                  icon={<Bell className="h-5 w-5" />}
+                  badge={unreadCount}
+                  onNavigate={() => setOpen(false)}
+                />
+
+                {settingsItems.length > 0 && (
+                  <>
+                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {settingsLabel}
+                    </p>
+                    {settingsItems.map((item) => (
+                      <DrawerLink
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        onNavigate={() => setOpen(false)}
+                      />
+                    ))}
+                  </>
+                )}
+              </nav>
+
+              <div className="border-t border-slate-200 p-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onSignOut();
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center text-slate-500">
+                    <LogOut className="h-5 w-5" />
+                  </span>
+                  {signOutLabel}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+function DrawerLink({
+  href,
+  label,
+  icon,
+  ariaLabel,
+  badge,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  ariaLabel?: string;
+  badge?: number;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-label={ariaLabel ?? label}
+      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none"
+    >
+      <span className="relative flex h-5 w-5 items-center justify-center text-slate-500">
+        {icon}
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
+      {label}
     </Link>
   );
 }

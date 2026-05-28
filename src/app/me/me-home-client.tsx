@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   PhoneCall,
+  Plane,
   Sparkles,
   Timer,
 } from "lucide-react";
@@ -44,6 +45,7 @@ export function MeHomeClient() {
   // the business stream. We deliberately invalidate rather than patch in
   // place — the server-derived shape (next shift, broadcasts, unread counts)
   // is small and the user has at most one /me tab open at a time.
+  const reconfirmQuery = trpc.shift.pendingReconfirmations.useQuery();
   const onLiveEvent = useCallback(
     (event: string) => {
       if (
@@ -52,9 +54,10 @@ export function MeHomeClient() {
         event === "subscription.changed"
       ) {
         utils.me.dashboard.invalidate();
+        utils.shift.pendingReconfirmations.invalidate();
       }
     },
-    [utils.me.dashboard],
+    [utils.me.dashboard, utils.shift.pendingReconfirmations],
   );
   useBusinessEvents(onLiveEvent);
   const accept = trpc.shift.acceptBroadcast.useMutation({
@@ -64,6 +67,28 @@ export function MeHomeClient() {
     },
     onError: (e) => toast.error(trpcErrorMessage(e, t)),
   });
+
+  const invalidateReconfirm = () => {
+    utils.shift.pendingReconfirmations.invalidate();
+    utils.me.dashboard.invalidate();
+    utils.notification.unreadCount.invalidate();
+  };
+  const confirmReschedule = trpc.shift.confirmReschedule.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.reconfirmConfirmed"));
+      invalidateReconfirm();
+    },
+    onError: (e) => toast.error(trpcErrorMessage(e, t)),
+  });
+  const declineReschedule = trpc.shift.declineReschedule.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.reconfirmDeclined"));
+      invalidateReconfirm();
+    },
+    onError: (e) => toast.error(trpcErrorMessage(e, t)),
+  });
+  const reconfirmPending =
+    confirmReschedule.isPending || declineReschedule.isPending;
 
   const nextShift = dashboardQuery.data?.nextShift ?? null;
   const startsAt = useMemo(
@@ -185,6 +210,55 @@ export function MeHomeClient() {
         />
       </section>
 
+      {/* Rescheduled shifts awaiting reconfirmation */}
+      {reconfirmQuery.data && reconfirmQuery.data.length > 0 && (
+        <section className="mt-6">
+          <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
+            <Clock className="h-4 w-4" />
+            {t("reconfirm.title")}
+          </div>
+          <p className="mb-2 text-xs text-slate-600">{t("reconfirm.help")}</p>
+          <ul className="space-y-2">
+            {reconfirmQuery.data.map((s) => {
+              const start = new Date(s.startsAt);
+              const end = new Date(s.endsAt);
+              return (
+                <li
+                  key={s.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3"
+                >
+                  <div>
+                    <div className="font-medium text-slate-900">
+                      {s.roleLabel}
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      {start.toLocaleDateString()} · {formatTimeRange(start, end)}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => confirmReschedule.mutate({ shiftId: s.id })}
+                      disabled={reconfirmPending}
+                    >
+                      {t("reconfirm.confirm")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => declineReschedule.mutate({ shiftId: s.id })}
+                      disabled={reconfirmPending}
+                    >
+                      {t("reconfirm.decline")}
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Broadcasts */}
       {dashboardQuery.data?.broadcasts &&
         dashboardQuery.data.broadcasts.length > 0 && (
@@ -296,6 +370,10 @@ function AvailabilityStrip() {
   }, [days]);
 
   const list = trpc.availability.list.useQuery({ from, to });
+  // Mirror time-off so we can render an unmistakable "Off" pill on days the
+  // worker already has approved leave. The router rejects writes too, but the
+  // visual cue prevents the tap altogether.
+  const timeOffList = trpc.timeOff.listMine.useQuery();
   const setMutation = trpc.availability.set.useMutation({
     onSuccess: () => utils.availability.list.invalidate(),
     onError: (e) => toast.error(trpcErrorMessage(e, t)),
@@ -334,6 +412,28 @@ function AvailabilityStrip() {
     }),
   );
 
+  // Day-level overlap: APPROVED time-off whose [start, end) intersects any day
+  // in the visible window. We expand the range per-day so a multi-day leave
+  // marks every covered cell.
+  const timeOffDays = useMemo(() => {
+    const set = new Set<number>();
+    for (const req of timeOffList.data ?? []) {
+      if (req.status !== "APPROVED") continue;
+      for (const d of days) {
+        const dayStart = new Date(d);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        const reqStart = new Date(req.startsAt);
+        const reqEnd = new Date(req.endsAt);
+        if (reqStart < dayEnd && reqEnd > dayStart) {
+          set.add(dayStart.getTime());
+        }
+      }
+    }
+    return set;
+  }, [days, timeOffList.data]);
+
   return (
     <section className="mt-6">
       <div className="mb-2 flex items-center justify-between">
@@ -344,31 +444,43 @@ function AvailabilityStrip() {
           {t("me.quickAvailabilityHelp")}
         </span>
       </div>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 py-2">
         {days.map((d) => {
           const isAvailable = availableDays.has(d.getTime());
+          const isOff = timeOffDays.has(d.getTime());
           const isToday = d.getTime() === days[0]!.getTime();
+          const offLabel = t("me.inTimeOff");
           return (
             <button
               key={d.toISOString()}
               type="button"
               onClick={() => toggleDay(d)}
-              disabled={setMutation.isPending || deleteMutation.isPending}
-              className={`flex min-w-[3.25rem] flex-col items-center rounded-xl border px-2 py-2 text-center transition ${
-                isAvailable
-                  ? "border-emerald-300 bg-emerald-100 text-emerald-900"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
-              } ${isToday ? "ring-2 ring-indigo-300" : ""}`}
+              disabled={
+                isOff || setMutation.isPending || deleteMutation.isPending
+              }
+              aria-label={isOff ? offLabel : undefined}
+              className={`flex min-w-[3.25rem] flex-col items-center rounded-xl border px-2.5 py-3 text-center transition ${
+                isOff
+                  ? "cursor-not-allowed border-amber-300 bg-amber-50 text-amber-900"
+                  : isAvailable
+                    ? "border-emerald-300 bg-emerald-100 text-emerald-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
+              } ${isToday ? "ring-2 ring-inset ring-indigo-400" : ""}`}
             >
               <span className="text-[10px] font-semibold uppercase tracking-wide">
                 {d.toLocaleDateString(undefined, { weekday: "short" })}
               </span>
-              <span className="text-lg font-bold leading-none">
-                {d.getDate()}
-              </span>
-              <span className="mt-1 text-[10px] text-slate-500">
-                {isAvailable ? "9–17" : "—"}
-              </span>
+              <span className="mt-0.5 text-lg font-bold">{d.getDate()}</span>
+              {isOff ? (
+                <span className="mt-1.5 inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-800">
+                  <Plane className="h-3 w-3" aria-hidden />
+                  Off
+                </span>
+              ) : (
+                <span className="mt-1.5 text-[10px] text-slate-500">
+                  {isAvailable ? "9–17" : "—"}
+                </span>
+              )}
             </button>
           );
         })}

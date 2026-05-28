@@ -25,11 +25,13 @@ export const toast = {
  * files in lock-step when adding a new key.
  */
 const ERROR_MAP: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(does not need reconfirmation|reconfirm)/i, "errors.reconfirmNotNeeded"],
   [/(at capacity|capacity full|already filled|capacity)/i, "errors.capacityFull"],
   [/overlap/i, "errors.overlap"],
   [/(already applied|duplicate application)/i, "errors.duplicateApplication"],
   [/(shift\s+(was\s+)?cancelled|cannot.*cancelled)/i, "errors.shiftCancelled"],
   [/end time.*(after|before)/i, "errors.endBeforeStart"],
+  [/availabilityInTimeOff/i, "errors.availabilityInTimeOff"],
   [/time[- ]?off/i, "errors.timeOffConflict"],
   [/(11\s?h|min(imum)?\s+rest|rest period)/i, "errors.minRest"],
   [/(weekly|cap|hour cap)/i, "errors.weeklyCap"],

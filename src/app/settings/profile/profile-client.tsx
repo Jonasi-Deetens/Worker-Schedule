@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AppHeader } from "@/interface/components/app-header";
 import { Button } from "@/interface/components/ui/button";
@@ -194,6 +196,26 @@ export function ProfileClient() {
         <CalendarFeedSection />
         <DocumentsSection />
         <TwoFactorSection />
+
+        <Link
+          href="/me/data"
+          className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-300"
+        >
+          <span className="flex items-center gap-3">
+            <ShieldCheck className="h-5 w-5 text-slate-500" />
+            <span>
+              <span className="block text-sm font-semibold text-slate-900">
+                {t("myData.title")}
+              </span>
+              <span className="block text-xs text-slate-500">
+                {t("myData.subtitle")}
+              </span>
+            </span>
+          </span>
+          <span aria-hidden className="text-slate-400">
+            →
+          </span>
+        </Link>
       </main>
     </div>
   );

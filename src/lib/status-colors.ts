@@ -19,7 +19,7 @@ export const STATUS_HEX: Record<
 > = {
   Open: {
     bg: "#2563eb",
-    bgGradient: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+    bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)",
     accent: "#1d4ed8",
     track: "rgba(255,255,255,0.28)",
     border: "#1d4ed8",
@@ -27,7 +27,7 @@ export const STATUS_HEX: Record<
   },
   Pending: {
     bg: "#f59e0b",
-    bgGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+    bgGradient: "linear-gradient(135deg, #fde68a 0%, #f59e0b 100%)",
     accent: "#b45309",
     track: "rgba(120,53,15,0.25)",
     border: "#b45309",
@@ -35,7 +35,7 @@ export const STATUS_HEX: Record<
   },
   "Approved/Filled": {
     bg: "#16a34a",
-    bgGradient: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+    bgGradient: "linear-gradient(135deg, #22c55e 0%, #15803d 100%)",
     accent: "#166534",
     track: "rgba(255,255,255,0.3)",
     border: "#166534",
@@ -43,7 +43,7 @@ export const STATUS_HEX: Record<
   },
   Rejected: {
     bg: "#ef4444",
-    bgGradient: "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
+    bgGradient: "linear-gradient(135deg, #ef4444 0%, #991b1b 100%)",
     accent: "#b91c1c",
     track: "rgba(255,255,255,0.28)",
     border: "#b91c1c",
@@ -51,7 +51,7 @@ export const STATUS_HEX: Record<
   },
   Withdrawn: {
     bg: "#94a3b8",
-    bgGradient: "linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)",
+    bgGradient: "linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)",
     accent: "#475569",
     track: "rgba(255,255,255,0.32)",
     border: "#64748b",

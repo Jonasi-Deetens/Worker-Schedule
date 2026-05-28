@@ -76,7 +76,7 @@ export function mapServiceError(error: unknown): never {
   }
   if (
     message.includes("Can only") ||
-    message.includes("Cannot apply") ||
+    message.startsWith("Cannot ") ||
     message.includes("must be")
   ) {
     throw new TRPCError({ code: "BAD_REQUEST", message });

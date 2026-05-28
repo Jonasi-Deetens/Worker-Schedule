@@ -80,6 +80,37 @@ describe("ShiftReadModel.kpis", () => {
     expect(result.capacityPct).toBe(0);
     expect(result.total).toBe(0);
   });
+
+  it("counts a reconfirmation-pending shift as Pending, not Filled", async () => {
+    const startsAt = new Date("2026-06-01T09:00:00Z");
+    const endsAt = new Date("2026-06-01T13:00:00Z");
+    prisma.shift.findMany.mockResolvedValue([
+      {
+        id: "a",
+        status: "OPEN",
+        requiredSpots: 1,
+        startsAt,
+        endsAt,
+        // The only assignment is awaiting reconfirmation: CONFIRMED count is 0.
+        assignments: [
+          { status: "PENDING_RECONFIRMATION", user: { hourlyRate: 20 } },
+        ],
+        _count: { subscriptions: 0, assignments: 0 },
+      },
+    ]);
+
+    const result = await readModel.kpis({
+      businessId: BUSINESS_ID,
+      from: startsAt,
+      to: endsAt,
+    });
+
+    expect(result.pending).toBe(1);
+    expect(result.filled).toBe(0);
+    expect(result.approvedSpots).toBe(0);
+    expect(result.scheduledHours).toBe(0);
+    expect(result.labourCost).toBe(0);
+  });
 });
 
 describe("ShiftReadModel.listForCalendar", () => {
@@ -119,5 +150,27 @@ describe("ShiftReadModel.listForCalendar", () => {
       "Pending",
       "Approved/Filled",
     ]);
+  });
+
+  it("surfaces a shift with only a PENDING_RECONFIRMATION assignment as Pending", async () => {
+    prisma.shift.findMany.mockResolvedValue([
+      {
+        id: "shift-1",
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T18:00:00Z"),
+        status: "OPEN",
+        requiredSpots: 1,
+        assignments: [{ status: "PENDING_RECONFIRMATION" }],
+        _count: { subscriptions: 0, assignments: 0 },
+      },
+    ]);
+
+    const result = await readModel.listForCalendar({
+      businessId: BUSINESS_ID,
+      from: new Date("2026-06-01T00:00:00Z"),
+      to: new Date("2026-06-30T00:00:00Z"),
+    });
+
+    expect(result[0]?.displayStatus).toBe("Pending");
   });
 });

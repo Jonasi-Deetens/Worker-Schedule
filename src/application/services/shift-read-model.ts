@@ -50,23 +50,30 @@ export class ShiftReadModel {
         _count: {
           select: {
             subscriptions: { where: { status: "PENDING" } },
-            assignments: true,
+            // Only CONFIRMED assignments fill a spot. Workers awaiting
+            // reschedule reconfirmation are surfaced as Pending instead.
+            assignments: { where: { status: "CONFIRMED" } },
           },
         },
       },
       orderBy: { startsAt: "asc" },
     });
 
-    return shifts.map((shift) => ({
-      ...shift,
-      displayStatus: computeShiftDisplayStatus({
-        shiftStatus: shift.status,
-        approvedCount: shift._count.assignments,
-        requiredSpots: shift.requiredSpots,
-        pendingCount: shift._count.subscriptions,
-      }),
-      isDraft: shift.publishedAt === null,
-    }));
+    return shifts.map((shift) => {
+      const reconfirmCount = (shift.assignments ?? []).filter(
+        (a) => a.status === "PENDING_RECONFIRMATION",
+      ).length;
+      return {
+        ...shift,
+        displayStatus: computeShiftDisplayStatus({
+          shiftStatus: shift.status,
+          approvedCount: shift._count.assignments,
+          requiredSpots: shift.requiredSpots,
+          pendingCount: shift._count.subscriptions + reconfirmCount,
+        }),
+        isDraft: shift.publishedAt === null,
+      };
+    });
   }
 
   /**
@@ -95,7 +102,8 @@ export class ShiftReadModel {
         _count: {
           select: {
             subscriptions: { where: { status: "PENDING" } },
-            assignments: true,
+            // CONFIRMED assignments only — see listForCalendar.
+            assignments: { where: { status: "CONFIRMED" } },
           },
         },
       },
@@ -111,11 +119,14 @@ export class ShiftReadModel {
     let labourCostCents = 0;
 
     for (const shift of shifts) {
+      const reconfirmCount = shift.assignments.filter(
+        (a) => a.status === "PENDING_RECONFIRMATION",
+      ).length;
       const status = computeShiftDisplayStatus({
         shiftStatus: shift.status,
         approvedCount: shift._count.assignments,
         requiredSpots: shift.requiredSpots,
-        pendingCount: shift._count.subscriptions,
+        pendingCount: shift._count.subscriptions + reconfirmCount,
       });
       if (status === "Open") open += 1;
       else if (status === "Pending") pending += 1;
@@ -128,7 +139,10 @@ export class ShiftReadModel {
 
         const hours =
           (shift.endsAt.getTime() - shift.startsAt.getTime()) / 3_600_000;
+        // Unconfirmed (PENDING_RECONFIRMATION) workers are not yet committed,
+        // so they don't contribute to scheduled hours or labour cost.
         for (const a of shift.assignments) {
+          if (a.status !== "CONFIRMED") continue;
           scheduledHours += hours;
           const rate = a.user.hourlyRate ? Number(a.user.hourlyRate) : 0;
           labourCostCents += Math.round(rate * hours * 100);

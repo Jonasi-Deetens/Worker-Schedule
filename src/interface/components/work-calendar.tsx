@@ -109,13 +109,6 @@ function makeRenderEventContent(fmt: CalendarTimeFormat) {
 
   const required = props.requiredSpots ?? 0;
   const approved = props.approvedCount ?? 0;
-  const pending = props.pendingCount ?? 0;
-  const showProgress = props.kind === "shift" && required > 0;
-  const approvedPct = required > 0 ? Math.min(100, (approved / required) * 100) : 0;
-  const pendingPct =
-    required > 0
-      ? Math.min(100 - approvedPct, (pending / required) * 100)
-      : 0;
 
   const isShift = props.kind === "shift";
   const titleText = isShift
@@ -146,18 +139,6 @@ function makeRenderEventContent(fmt: CalendarTimeFormat) {
             size="xs"
             max={4}
             ringColor="#ffffff"
-          />
-        </div>
-      )}
-      {showProgress && (
-        <div className="tg-event-progress" aria-hidden>
-          <span
-            className="tg-event-progress-approved"
-            style={{ width: `${approvedPct}%` }}
-          />
-          <span
-            className="tg-event-progress-pending"
-            style={{ width: `${pendingPct}%` }}
           />
         </div>
       )}

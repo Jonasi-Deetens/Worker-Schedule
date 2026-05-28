@@ -61,6 +61,8 @@ interface CalendarDialogsProps {
   onEditShift: () => void;
   onCancelShiftClick: () => void;
   onOfferSwapClick: () => void;
+  /** True when the current worker's assignment on the selected shift awaits reconfirmation. */
+  workerNeedsReconfirm?: boolean;
   // Cancel shift confirm
   cancelShiftOpen: boolean;
   setCancelShiftOpen: (open: boolean) => void;
@@ -196,6 +198,15 @@ export function CalendarDialogs(props: CalendarDialogsProps) {
         onEditShift={props.onEditShift}
         onCancelShift={props.onCancelShiftClick}
         onOfferSwap={props.onOfferSwapClick}
+        workerNeedsReconfirm={props.workerNeedsReconfirm}
+        onConfirmReschedule={() =>
+          selectedShift &&
+          m.shift.confirmReschedule.mutate({ shiftId: selectedShift.shiftId })
+        }
+        onDeclineReschedule={() =>
+          selectedShift &&
+          m.shift.declineReschedule.mutate({ shiftId: selectedShift.shiftId })
+        }
         workerOptions={props.workerOptions}
         onAssignWorker={(workerId: string) =>
           selectedShift &&

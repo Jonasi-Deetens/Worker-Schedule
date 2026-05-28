@@ -150,6 +150,30 @@ export function useCalendarMutations(
     onError,
   });
 
+  const reconfirmInvalidate = () => {
+    utils.shift.list.invalidate();
+    utils.shift.pendingReconfirmations.invalidate();
+    utils.notification.unreadCount.invalidate();
+  };
+
+  const confirmReschedule = trpc.shift.confirmReschedule.useMutation({
+    onSuccess: () => {
+      reconfirmInvalidate();
+      callbacks.closeDetail?.();
+      toast.success(t("toast.reconfirmConfirmed"));
+    },
+    onError,
+  });
+
+  const declineReschedule = trpc.shift.declineReschedule.useMutation({
+    onSuccess: () => {
+      reconfirmInvalidate();
+      callbacks.closeDetail?.();
+      toast.success(t("toast.reconfirmDeclined"));
+    },
+    onError,
+  });
+
   const applyToShift = trpc.subscription.submit.useMutation({
     onSuccess: () => {
       utils.shift.list.invalidate();
@@ -221,6 +245,8 @@ export function useCalendarMutations(
       cancelDay,
       assign: assignWorker,
       broadcast,
+      confirmReschedule,
+      declineReschedule,
     },
     availability: {
       set: setAvailability,

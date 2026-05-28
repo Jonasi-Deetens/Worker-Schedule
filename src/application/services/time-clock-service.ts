@@ -86,6 +86,37 @@ export class TimeClockService {
     });
   }
 
+  async listApproved(businessId: string, from?: Date, to?: Date) {
+    return this.db.timeEntry.findMany({
+      where: {
+        approvedAt: { not: null },
+        clockOutAt: { not: null },
+        user: { businessId },
+        ...(from || to
+          ? {
+              clockInAt: {
+                ...(from ? { gte: from } : {}),
+                ...(to ? { lte: to } : {}),
+              },
+            }
+          : {}),
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        shift: {
+          select: {
+            id: true,
+            startsAt: true,
+            endsAt: true,
+            roleLabel: true,
+          },
+        },
+        approvedBy: { select: { id: true, name: true } },
+      },
+      orderBy: { approvedAt: "desc" },
+    });
+  }
+
   async listMine(userId: string, from: Date, to: Date) {
     return this.db.timeEntry.findMany({
       where: { userId, clockInAt: { gte: from, lte: to } },

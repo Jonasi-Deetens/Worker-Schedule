@@ -10,6 +10,7 @@ import {
   idSchema,
   timeOffDecisionSchema,
   timeOffRequestSchema,
+  timeOffUpdateSchema,
 } from "../schemas";
 import { requireBusinessId, timeOffService } from "../services";
 
@@ -57,6 +58,35 @@ export const timeOffRouter = router({
         return await timeOffService.cancel({
           id: input.id,
           userId: ctx.session.user.id,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  update: workerProcedure
+    .input(timeOffUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await timeOffService.update({
+          id: input.id,
+          userId: ctx.session.user.id,
+          startsAt: input.startsAt,
+          endsAt: input.endsAt,
+          reason: input.reason,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  revoke: managerProcedure
+    .input(idSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await timeOffService.revoke({
+          id: input.id,
+          ownerId: ctx.session.user.id,
+          businessId,
         });
       } catch (error) {
         mapServiceError(error);

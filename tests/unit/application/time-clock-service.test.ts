@@ -41,4 +41,19 @@ describe("TimeClockService", () => {
       }),
     ).toBe(0);
   });
+
+  it("lists only approved entries for a business", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findMany.mockResolvedValue([
+      { id: "te1", approvedAt: new Date() },
+    ]);
+    const svc = new TimeClockService(asPrisma(db));
+
+    const result = await svc.listApproved("biz1");
+
+    expect(result).toHaveLength(1);
+    const where = db.timeEntry.findMany.mock.calls[0][0].where;
+    expect(where.approvedAt).toEqual({ not: null });
+    expect(where.user).toEqual({ businessId: "biz1" });
+  });
 });

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { AppHeader } from "@/interface/components/app-header";
 import { trpc } from "@/interface/trpc/client";
+import { formatDuration } from "@/lib/format-duration";
 
 function startOfWeekMon(d: Date): Date {
   const date = new Date(d);
@@ -68,8 +69,7 @@ function Card({
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-2 text-3xl font-bold text-slate-900">
-        {loading ? "…" : value?.toFixed(1) ?? "0"}
-        <span className="ml-1 text-base text-slate-500">h</span>
+        {loading ? "…" : formatDuration(Math.round((value ?? 0) * 60))}
       </p>
     </div>
   );

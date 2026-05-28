@@ -305,4 +305,42 @@ export const shiftRouter = router({
       businessId,
     });
   }),
+
+  pendingReconfirmations: workerProcedure.query(async ({ ctx }) => {
+    const businessId = requireBusinessId(ctx.session.user.businessId);
+    return shiftAssignmentService.listPendingReconfirmations({
+      userId: ctx.session.user.id,
+      businessId,
+    });
+  }),
+
+  confirmReschedule: workerProcedure
+    .input(shiftIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await shiftAssignmentService.confirmReschedule({
+          shiftId: input.shiftId,
+          userId: ctx.session.user.id,
+          businessId,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  declineReschedule: workerProcedure
+    .input(shiftIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await shiftAssignmentService.declineReschedule({
+          shiftId: input.shiftId,
+          userId: ctx.session.user.id,
+          businessId,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
 });

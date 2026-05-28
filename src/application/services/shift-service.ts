@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
+import { NotificationService } from "./notification-service";
 import { WebhookService } from "./webhook-service";
 
 /**
@@ -10,7 +11,11 @@ import { WebhookService } from "./webhook-service";
  * stays focused on "the shift row itself".
  */
 export class ShiftService {
-  constructor(private readonly db: PrismaClient) {}
+  private readonly notifications: NotificationService;
+
+  constructor(private readonly db: PrismaClient) {
+    this.notifications = new NotificationService(db);
+  }
 
   async create(input: {
     businessId: string;
@@ -181,6 +186,18 @@ export class ShiftService {
       throw new Error("Shift not found");
     }
 
+    // Only fields explicitly passed in `input` can have changed — an
+    // `undefined` value means "leave as-is", so it must not count as a change.
+    const startChanged =
+      input.startsAt !== undefined &&
+      input.startsAt.getTime() !== existing.startsAt.getTime();
+    const endChanged =
+      input.endsAt !== undefined &&
+      input.endsAt.getTime() !== existing.endsAt.getTime();
+    const roleChanged =
+      input.roleLabel !== undefined && input.roleLabel !== existing.roleLabel;
+    const needsReconfirm = startChanged || endChanged || roleChanged;
+
     const shift = await this.db.shift.update({
       where: { id: input.id },
       data: {
@@ -201,7 +218,76 @@ export class ShiftService {
       },
     });
 
+    if (needsReconfirm) {
+      await this.requestReconfirmations({
+        shift,
+        businessId: input.businessId,
+        ownerId: input.ownerId,
+      });
+    }
+
     return shift;
+  }
+
+  /**
+   * Drops every currently-CONFIRMED assignment on a rescheduled shift back to
+   * PENDING_RECONFIRMATION and pings each worker. The owner does not re-approve;
+   * the worker either re-confirms the new time or declines (freeing the spot).
+   * The mirrored `ShiftSubscription` rows are intentionally left untouched —
+   * `ShiftAssignment.status` is the single source of truth for reconfirmation.
+   */
+  private async requestReconfirmations(input: {
+    shift: { id: string; startsAt: Date; endsAt: Date; roleLabel: string };
+    businessId: string;
+    ownerId: string;
+  }) {
+    const assignments =
+      (await this.db.shiftAssignment.findMany({
+        where: { shiftId: input.shift.id, status: "CONFIRMED" },
+      })) ?? [];
+    if (assignments.length === 0) return;
+
+    const dateLabel = input.shift.startsAt
+      .toISOString()
+      .slice(0, 16)
+      .replace("T", " ");
+
+    for (const assignment of assignments) {
+      await this.db.shiftAssignment.update({
+        where: { id: assignment.id },
+        data: { status: "PENDING_RECONFIRMATION" },
+      });
+
+      await this.notifications.create({
+        userId: assignment.userId,
+        type: "SHIFT_RESCHEDULED",
+        title: "A shift was rescheduled",
+        body: `${input.shift.roleLabel} is now ${dateLabel}. Please reconfirm you can still make it.`,
+        payload: { shiftId: input.shift.id, kind: "reschedule" },
+        url: `/applications`,
+      });
+
+      await this.db.auditEvent.create({
+        data: {
+          userId: input.ownerId,
+          action: "SHIFT_RESCHEDULE_PENDING",
+          entityType: "Shift",
+          entityId: input.shift.id,
+          metadata: { workerId: assignment.userId },
+        },
+      });
+
+      publishEvent(input.businessId, {
+        type: "assignment.changed",
+        shiftId: input.shift.id,
+      });
+    }
+
+    logger.info({
+      event: "shift.reschedule.reconfirmRequested",
+      shiftId: input.shift.id,
+      count: assignments.length,
+    });
   }
 
   async delete(input: { id: string; businessId: string; ownerId: string }) {

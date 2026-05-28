@@ -63,4 +63,10 @@ describe("trpcErrorMessage", () => {
     expect(trpcErrorMessage({ message: "Past shift" }, t)).toBe("errors.pastShift");
     expect(trpcErrorMessage({ message: "Approved time-off in range" }, t)).toBe("errors.timeOffConflict");
   });
+
+  it("maps the availability-in-time-off router error to its own key", () => {
+    expect(
+      trpcErrorMessage({ message: "errors.availabilityInTimeOff" }, t),
+    ).toBe("errors.availabilityInTimeOff");
+  });
 });

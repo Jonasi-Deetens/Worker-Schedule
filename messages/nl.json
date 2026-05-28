@@ -3,6 +3,11 @@
     "name": "Werkkalender",
     "tagline": "Kalendergerichte personeelsplanning voor horecateams"
   },
+  "nav": {
+    "settings": "Instellingen",
+    "menu": "Menu openen",
+    "close": "Menu sluiten"
+  },
   "me": {
     "greeting": "Vandaag",
     "subtitle": "Je shifts, broadcasts en sneltoetsen op één plek.",
@@ -17,6 +22,7 @@
     "quickLinks": "Snelkoppelingen",
     "quickAvailability": "Tik om je beschikbaar te zetten",
     "quickAvailabilityHelp": "Standaard 09:00–17:00 · tik opnieuw om te wissen",
+    "inTimeOff": "Verlof",
     "now": "begint nu",
     "inMinutes": "over {count} min",
     "inHours": "over {count} u",
@@ -196,6 +202,9 @@
     "timeOffRequested": "Verlof aangevraagd",
     "timeOffApproved": "Verlof goedgekeurd",
     "timeOffRejected": "Verlof afgewezen",
+    "timeOffCancelled": "Verlof geannuleerd",
+    "timeOffUpdated": "Verlof bijgewerkt",
+    "timeOffRevoked": "Verlof ingetrokken",
     "templateSaved": "Sjabloon opgeslagen",
     "profileSaved": "Profiel opgeslagen",
     "passwordChanged": "Wachtwoord gewijzigd",
@@ -205,7 +214,16 @@
     "clockedIn": "Ingeklokt",
     "clockedOut": "Uitgeklokt",
     "timeEntriesApproved": "Uren goedgekeurd",
-    "rosterApplied": "Weekrooster toegepast"
+    "rosterApplied": "Weekrooster toegepast",
+    "reconfirmConfirmed": "Shift opnieuw bevestigd",
+    "reconfirmDeclined": "Shift afgewezen — de eigenaar is op de hoogte gebracht"
+  },
+  "reconfirm": {
+    "title": "Verplaatste shifts opnieuw bevestigen",
+    "help": "Deze shifts zijn gewijzigd nadat je was ingepland. Bevestig dat je het nieuwe tijdstip kunt halen, of wijs af om de plek vrij te geven.",
+    "confirm": "Nieuwe tijd bevestigen",
+    "decline": "Lukt niet",
+    "badge": "Opnieuw bevestigen nodig"
   },
   "applications": {
     "title": "Mijn aanmeldingen",
@@ -285,7 +303,12 @@
     "groupApproved": "Goedgekeurd",
     "groupRejected": "Afgewezen",
     "approve": "Goedkeuren",
-    "reject": "Afwijzen"
+    "reject": "Afwijzen",
+    "edit": "Bewerken",
+    "cancel": "Annuleren",
+    "revoke": "Intrekken",
+    "editTitle": "Verlofaanvraag bewerken",
+    "editHelp": "Pas de data of reden aan. Goedgekeurde aanvragen gaan terug naar 'in behandeling' voor herziening."
   },
   "attendance": {
     "title": "Aanwezigheid",
@@ -418,7 +441,14 @@
     "subtitle": "Keur uren goed en exporteer loonbestanden.",
     "export": "CSV downloaden",
     "exportXlsx": "XLSX downloaden",
-    "noRows": "Geen goedgekeurde uren in dit bereik."
+    "noRows": "Geen goedgekeurde uren in dit bereik.",
+    "grossHours": "{value} bruto",
+    "breakMinutes": "{value} pauze",
+    "netLabel": "netto",
+    "tabPending": "In afwachting",
+    "tabApproved": "Goedgekeurd",
+    "approvedMeta": "Goedgekeurd door {name} · {date}",
+    "noApproved": "Nog geen goedgekeurde uren."
   },
   "templates": {
     "title": "Shift-sjablonen",
@@ -759,6 +789,8 @@
     "invalidInput": "Sommige velden zijn ongeldig. Controleer en probeer opnieuw.",
     "dimona": "Dimona-aangifte mislukt. Controleer het rijksregisternummer.",
     "network": "Netwerkprobleem. Controleer je verbinding.",
-    "pastShift": "Die shift is al gestart of voorbij."
+    "pastShift": "Die shift is al gestart of voorbij.",
+    "availabilityInTimeOff": "Je hebt goedgekeurd verlof in deze periode.",
+    "reconfirmNotNeeded": "Deze shift hoeft niet meer opnieuw bevestigd te worden."
   }
 }

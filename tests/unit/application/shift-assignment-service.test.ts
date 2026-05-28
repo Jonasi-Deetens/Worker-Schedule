@@ -122,3 +122,118 @@ describe("ShiftAssignmentService.findRescheduleConflicts", () => {
     expect(warnings).toHaveLength(0);
   });
 });
+
+describe("ShiftAssignmentService.confirmReschedule", () => {
+  const liveShift = {
+    id: "s1",
+    businessId: BUSINESS_ID,
+    status: "OPEN",
+    startsAt: new Date(Date.now() + 86_400_000),
+    endsAt: new Date(Date.now() + 90_000_000),
+    roleLabel: "Bartender",
+  };
+
+  it("re-locks the spot when nothing now conflicts", async () => {
+    prisma.shift.findFirst.mockResolvedValue(liveShift);
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_RECONFIRMATION",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue(null);
+    prisma.timeOffRequest.findFirst.mockResolvedValue(null);
+    prisma.shiftAssignment.update.mockResolvedValue({ id: "a1", status: "CONFIRMED" });
+
+    await service.confirmReschedule({
+      shiftId: "s1",
+      userId: "w1",
+      businessId: BUSINESS_ID,
+    });
+
+    expect(prisma.shiftAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "CONFIRMED" } }),
+    );
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "SHIFT_RECONFIRMED" }),
+      }),
+    );
+  });
+
+  it("rejects when the new time overlaps another assignment", async () => {
+    prisma.shift.findFirst.mockResolvedValue(liveShift);
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_RECONFIRMATION",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue({ id: "other" });
+
+    await expect(
+      service.confirmReschedule({
+        shiftId: "s1",
+        userId: "w1",
+        businessId: BUSINESS_ID,
+      }),
+    ).rejects.toThrow(/overlap/i);
+    expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
+  });
+
+  it("errors when the assignment is not awaiting reconfirmation", async () => {
+    prisma.shift.findFirst.mockResolvedValue(liveShift);
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "CONFIRMED",
+    });
+
+    await expect(
+      service.confirmReschedule({
+        shiftId: "s1",
+        userId: "w1",
+        businessId: BUSINESS_ID,
+      }),
+    ).rejects.toThrow(/reconfirm/i);
+  });
+});
+
+describe("ShiftAssignmentService.declineReschedule", () => {
+  it("removes the assignment, withdraws the subscription and notifies the owner", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      id: "s1",
+      businessId: BUSINESS_ID,
+      startsAt: new Date(Date.now() + 86_400_000),
+      endsAt: new Date(Date.now() + 90_000_000),
+      roleLabel: "Bartender",
+    });
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_RECONFIRMATION",
+    });
+    prisma.user.findUnique.mockResolvedValue({ name: "Alex" });
+    prisma.shiftAssignment.delete.mockResolvedValue({ id: "a1" });
+    prisma.shiftSubscription.updateMany.mockResolvedValue({ count: 1 });
+    prisma.business.findUnique.mockResolvedValue({ ownerId: OWNER_ID });
+    prisma.notification.create.mockResolvedValue({ id: "n1" });
+
+    await service.declineReschedule({
+      shiftId: "s1",
+      userId: "w1",
+      businessId: BUSINESS_ID,
+    });
+
+    expect(prisma.shiftAssignment.delete).toHaveBeenCalledWith({
+      where: { id: "a1" },
+    });
+    expect(prisma.shiftSubscription.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "WITHDRAWN" } }),
+    );
+    expect(prisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: OWNER_ID }),
+      }),
+    );
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "SHIFT_RECONFIRM_DECLINED" }),
+      }),
+    );
+  });
+});

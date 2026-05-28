@@ -170,6 +170,18 @@ export const timeOffDecisionSchema = z.object({
   approve: z.boolean(),
 });
 
+export const timeOffUpdateSchema = z
+  .object({
+    id: z.string().cuid(),
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date(),
+    reason: z.string().max(500).optional(),
+  })
+  .refine((d) => d.endsAt > d.startsAt, {
+    message: "End time must be after start time",
+    path: ["endsAt"],
+  });
+
 export const availabilityTemplateSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),

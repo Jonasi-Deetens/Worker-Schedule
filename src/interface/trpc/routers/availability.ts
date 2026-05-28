@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import {
   mapServiceError,
   ownerProcedure,
@@ -9,7 +10,11 @@ import {
   dateRangeSchema,
   idSchema,
 } from "../schemas";
-import { availabilityService, requireBusinessId } from "../services";
+import {
+  availabilityService,
+  requireBusinessId,
+  timeOffService,
+} from "../services";
 
 export const availabilityRouter = router({
   list: workerProcedure
@@ -36,6 +41,17 @@ export const availabilityRouter = router({
   set: workerProcedure
     .input(availabilitySchema)
     .mutation(async ({ ctx, input }) => {
+      const blocked = await timeOffService.hasConflict(
+        ctx.session.user.id,
+        input.startsAt,
+        input.endsAt,
+      );
+      if (blocked) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "errors.availabilityInTimeOff",
+        });
+      }
       try {
         return await availabilityService.set({
           userId: ctx.session.user.id,

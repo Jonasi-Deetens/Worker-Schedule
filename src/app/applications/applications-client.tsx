@@ -28,6 +28,7 @@ export function ApplicationsPageClient() {
   const { data, isLoading } = trpc.subscription.listMine.useQuery();
   const utils = trpc.useUtils();
   const broadcastsQuery = trpc.shift.openBroadcasts.useQuery();
+  const reconfirmQuery = trpc.shift.pendingReconfirmations.useQuery();
   const accept = trpc.shift.acceptBroadcast.useMutation({
     onSuccess: () => {
       toast.success(t("applications.broadcastAccepted"));
@@ -36,6 +37,28 @@ export function ApplicationsPageClient() {
     },
     onError: (e) => toast.error(trpcErrorMessage(e, t)),
   });
+
+  const invalidateReconfirm = () => {
+    reconfirmQuery.refetch();
+    utils.shift.list.invalidate();
+    utils.notification.unreadCount.invalidate();
+  };
+  const confirmReschedule = trpc.shift.confirmReschedule.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.reconfirmConfirmed"));
+      invalidateReconfirm();
+    },
+    onError: (e) => toast.error(trpcErrorMessage(e, t)),
+  });
+  const declineReschedule = trpc.shift.declineReschedule.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.reconfirmDeclined"));
+      invalidateReconfirm();
+    },
+    onError: (e) => toast.error(trpcErrorMessage(e, t)),
+  });
+  const reconfirmPending =
+    confirmReschedule.isPending || declineReschedule.isPending;
 
   const groups = useMemo(() => {
     const items = ((data ?? []) as unknown as Item[]).slice();
@@ -65,6 +88,58 @@ export function ApplicationsPageClient() {
           <p className="mt-6 text-sm text-slate-500">
             {t("notifications.loading")}
           </p>
+        )}
+
+        {reconfirmQuery.data && reconfirmQuery.data.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-rose-700">
+              {t("reconfirm.title")}
+            </h2>
+            <p className="mb-3 text-xs text-slate-600">{t("reconfirm.help")}</p>
+            <ul className="space-y-2">
+              {reconfirmQuery.data.map((s) => {
+                const start = new Date(s.startsAt);
+                const end = new Date(s.endsAt);
+                return (
+                  <li
+                    key={s.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3"
+                  >
+                    <div>
+                      <div className="font-medium text-slate-900">
+                        {s.roleLabel}
+                      </div>
+                      <div className="text-xs text-slate-600">
+                        {start.toLocaleDateString()} ·{" "}
+                        {formatTimeRange(start, end)}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          confirmReschedule.mutate({ shiftId: s.id })
+                        }
+                        disabled={reconfirmPending}
+                      >
+                        {t("reconfirm.confirm")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          declineReschedule.mutate({ shiftId: s.id })
+                        }
+                        disabled={reconfirmPending}
+                      >
+                        {t("reconfirm.decline")}
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
 
         {broadcastsQuery.data && broadcastsQuery.data.length > 0 && (
