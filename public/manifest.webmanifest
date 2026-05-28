@@ -1,6 +1,6 @@
 {
-  "name": "Tattoogenda Work Calendar",
-  "short_name": "Tattoogenda",
+  "name": "Work Calendar",
+  "short_name": "Work Calendar",
   "description": "Calendar-first staffing for horeca teams.",
   "start_url": "/calendar",
   "scope": "/",

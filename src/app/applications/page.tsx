@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { ApplicationsPageClient } from "./applications-client";
 
 export const metadata = {
-  title: "My applications — Tattoogenda",
+  title: "My applications — Work Calendar",
 };
 
 export default async function ApplicationsPage() {

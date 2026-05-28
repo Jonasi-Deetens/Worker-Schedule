@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { WorkerDetailClient } from "./worker-detail-client";
 
 export const metadata = {
-  title: "Worker — Tattoogenda",
+  title: "Worker — Work Calendar",
 };
 
 export default async function WorkerDetailPage(props: {

@@ -39,7 +39,7 @@ export interface CalendarShift {
   requiredSkill?: { id: string; name: string; color: string } | null;
   _count?: { subscriptions?: number; assignments?: number };
   subscriptions?: Array<{ id: string; status: SubscriptionStatus }>;
-  assignments?: Array<{ userId: string }>;
+  assignments?: Array<{ userId: string; user?: { id: string; name: string; avatarUrl?: string | null } | null }>;
 }
 
 export interface CalendarAvailability {
@@ -77,6 +77,8 @@ export interface CalendarEvent {
     isDraft?: boolean;
     requiredSkillId?: string;
     requiredSkillName?: string;
+    /** Approved workers on this shift, used to render the avatar stack. */
+    assignees?: Array<{ id: string; name: string; avatarUrl?: string | null }>;
   };
 }
 
@@ -148,6 +150,17 @@ export function shiftToCalendarEvent(
       isDraft,
       requiredSkillId: shift.requiredSkill?.id,
       requiredSkillName: shift.requiredSkill?.name,
+      assignees: (shift.assignments ?? [])
+        .map((a) =>
+          a.user
+            ? {
+                id: a.user.id,
+                name: a.user.name,
+                avatarUrl: a.user.avatarUrl ?? null,
+              }
+            : null,
+        )
+        .filter((x): x is { id: string; name: string; avatarUrl: string | null } => x !== null),
     },
   };
 }

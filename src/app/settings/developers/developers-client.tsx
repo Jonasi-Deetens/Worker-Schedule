@@ -68,7 +68,7 @@ export function DevelopersClient() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Developers</h1>
         <p className="text-sm text-slate-600">
-          API keys and webhooks for integrating Tattoogenda with payroll, POS or
+          API keys and webhooks for integrating Work Calendar with payroll, POS or
           custom dashboards.
         </p>
       </header>
@@ -170,7 +170,7 @@ export function DevelopersClient() {
         <h2 className="text-lg font-semibold text-slate-900">Webhooks</h2>
         <p className="mt-1 text-sm text-slate-600">
           We POST JSON events to your endpoint. Verify the{" "}
-          <code>X-Tattoogenda-Signature</code> header with the per-webhook
+          <code>X-WorkCalendar-Signature</code> header with the per-webhook
           secret.
         </p>
         <form

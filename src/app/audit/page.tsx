@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { AuditViewer } from "./audit-viewer";
 
 export const metadata = {
-  title: "Audit log — Tattoogenda",
+  title: "Audit log — Work Calendar",
 };
 
 export default async function AuditPage() {

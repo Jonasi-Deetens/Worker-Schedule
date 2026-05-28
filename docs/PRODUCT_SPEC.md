@@ -1,4 +1,4 @@
-# Tattoogenda Work Calendar — Product Spec
+# Work Calendar — Product Spec
 
 ## Vision
 A calendar-first staffing app for horeca businesses where flex workers set availability, apply to shifts, and owners approve staffing — with clear status visibility and in-app notifications.

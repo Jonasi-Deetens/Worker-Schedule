@@ -12,7 +12,7 @@ function shell(title: string, body: string): string {
   <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;padding:32px;border:1px solid #e2e8f0">
     ${body}
     <hr style="margin-top:32px;border:none;border-top:1px solid #e2e8f0">
-    <p style="color:#64748b;font-size:12px;margin-top:16px">Tattoogenda Work Calendar</p>
+    <p style="color:#64748b;font-size:12px;margin-top:16px">Work Calendar</p>
   </div>
 </body></html>`;
 }
@@ -23,7 +23,7 @@ export interface InviteEmailInput extends BaseTemplateInput {
 }
 
 export function inviteEmail(input: InviteEmailInput): EmailMessage {
-  const subject = `${input.businessName} invited you to Tattoogenda`;
+  const subject = `${input.businessName} invited you to Work Calendar`;
   const expiry = input.expiresAt.toLocaleDateString("en-GB");
   const html = shell(
     subject,
@@ -37,7 +37,7 @@ export function inviteEmail(input: InviteEmailInput): EmailMessage {
      </p>
      <p style="color:#64748b;font-size:13px">This link expires on ${expiry}.</p>`,
   );
-  const text = `${input.businessName} invited you to Tattoogenda.\nAccept here: ${input.inviteUrl}\nExpires ${expiry}.`;
+  const text = `${input.businessName} invited you to Work Calendar.\nAccept here: ${input.inviteUrl}\nExpires ${expiry}.`;
   return { to: "", subject, html, text };
 }
 

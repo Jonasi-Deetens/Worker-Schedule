@@ -52,7 +52,7 @@ export class ShiftService {
           : true,
         assignments: {
           include: {
-            user: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, avatarUrl: true } },
           },
         },
         requiredSkill: { select: { id: true, name: true, color: true } },
@@ -497,7 +497,7 @@ export class ShiftService {
       include: {
         assignments: {
           include: {
-            user: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, avatarUrl: true } },
           },
         },
       },

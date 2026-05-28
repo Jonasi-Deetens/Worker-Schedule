@@ -1,5 +1,5 @@
 {
-  "name": "tattoogenda-work-calendar",
+  "name": "work-calendar",
   "version": "0.1.0",
   "private": true,
   "description": "Calendar-first staffing app for horeca businesses where workers signal availability and subscribe to shifts and owners approve assignments.",

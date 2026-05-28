@@ -303,7 +303,9 @@ export class SubscriptionService {
 
     return this.db.shiftSubscription.findMany({
       where: { shiftId },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
       orderBy: { createdAt: "asc" },
     });
   }

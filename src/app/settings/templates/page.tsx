@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { TemplatesClient } from "./templates-client";
 
 export const metadata = {
-  title: "Shift templates — Tattoogenda",
+  title: "Shift templates — Work Calendar",
 };
 
 export default async function TemplatesPage() {

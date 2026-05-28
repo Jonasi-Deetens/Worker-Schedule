@@ -23,6 +23,7 @@ import {
 import { useMemo, useRef, type ComponentType } from "react";
 import type { DisplayStatus } from "@/domain/types";
 import type { CalendarEvent } from "@/lib/calendar-events";
+import { AvatarStack } from "./avatar";
 
 export interface CalendarRangeChange {
   start: Date;
@@ -36,6 +37,8 @@ export interface EventReschedule {
   newEnd: Date;
   revert: () => void;
 }
+
+export type CalendarTimeFormat = "24h" | "12h";
 
 interface WorkCalendarProps {
   events: CalendarEvent[];
@@ -53,6 +56,8 @@ interface WorkCalendarProps {
   canSelect?: boolean;
   editable?: boolean;
   ariaLabel?: string;
+  /** "24h" = 13:00, "12h" = 1:00 PM. Defaults to "24h". */
+  timeFormat?: CalendarTimeFormat;
 }
 
 const STATUS_CLASS: Record<DisplayStatus | "Available", string> = {
@@ -75,18 +80,32 @@ const STATUS_ICON: Record<DisplayStatus | "Available", ComponentType<{ className
   Available: Clock4,
 };
 
-function formatTime(date: Date | null): string {
-  if (!date) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function buildTimeFormat(fmt: CalendarTimeFormat) {
+  return {
+    hour: "2-digit" as const,
+    minute: "2-digit" as const,
+    meridiem: fmt === "12h" ? ("short" as const) : (false as const),
+    hour12: fmt === "12h",
+  };
 }
 
-function renderEventContent(arg: EventContentArg) {
+function formatTime(date: Date | null, fmt: CalendarTimeFormat): string {
+  if (!date) return "";
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: fmt === "12h",
+  });
+}
+
+function makeRenderEventContent(fmt: CalendarTimeFormat) {
+  return function renderEventContent(arg: EventContentArg) {
   const props = arg.event.extendedProps as CalendarEvent["extendedProps"];
   const status = (props.status ?? "Open") as DisplayStatus | "Available";
   const Icon = STATUS_ICON[status] ?? CalendarClock;
 
-  const start = formatTime(arg.event.start);
-  const end = formatTime(arg.event.end);
+  const start = formatTime(arg.event.start, fmt);
+  const end = formatTime(arg.event.end, fmt);
 
   const required = props.requiredSpots ?? 0;
   const approved = props.approvedCount ?? 0;
@@ -120,6 +139,16 @@ function renderEventContent(arg: EventContentArg) {
           <span className="tg-event-substatus">{props.subscriptionStatus}</span>
         )}
       </div>
+      {isShift && props.assignees && props.assignees.length > 0 && (
+        <div className="tg-event-avatars" aria-hidden>
+          <AvatarStack
+            people={props.assignees}
+            size="xs"
+            max={4}
+            ringColor="#ffffff"
+          />
+        </div>
+      )}
       {showProgress && (
         <div className="tg-event-progress" aria-hidden>
           <span
@@ -135,6 +164,7 @@ function renderEventContent(arg: EventContentArg) {
       <span className="sr-only">Status: {status}</span>
     </div>
   );
+  };
 }
 
 /**
@@ -161,8 +191,14 @@ export function WorkCalendar({
   canSelect = false,
   editable = false,
   ariaLabel,
+  timeFormat = "24h",
 }: WorkCalendarProps) {
   const fcRef = useRef<FullCalendar | null>(null);
+  const tf = buildTimeFormat(timeFormat);
+  const renderEventContent = useMemo(
+    () => makeRenderEventContent(timeFormat),
+    [timeFormat],
+  );
 
   const fcEvents = useMemo(
     () =>
@@ -253,12 +289,12 @@ export function WorkCalendar({
         eventClick={handleEventClick}
         eventContent={renderEventContent}
         events={fcEvents}
-        eventTimeFormat={{ hour: "2-digit", minute: "2-digit", meridiem: false }}
+        eventTimeFormat={tf}
         slotMinTime="06:00:00"
         slotMaxTime="24:00:00"
         slotDuration="00:30:00"
         slotLabelInterval="01:00:00"
-        slotLabelFormat={{ hour: "2-digit", minute: "2-digit", meridiem: false }}
+        slotLabelFormat={tf}
         expandRows
         scrollTime="08:00:00"
         eventDisplay="block"

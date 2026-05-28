@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { RostersClient } from "./rosters-client";
 
 export const metadata = {
-  title: "Rosters — Tattoogenda",
+  title: "Rosters — Work Calendar",
 };
 
 export default async function RostersPage() {

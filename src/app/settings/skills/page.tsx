@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { SkillsClient } from "./skills-client";
 
 export const metadata = {
-  title: "Skills — Tattoogenda",
+  title: "Skills — Work Calendar",
 };
 
 export default async function SkillsSettingsPage() {

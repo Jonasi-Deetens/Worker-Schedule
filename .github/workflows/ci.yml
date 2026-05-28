@@ -55,7 +55,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tattoogenda
+          POSTGRES_DB: work_calendar
         ports:
           - 5432:5432
         options: >-
@@ -65,7 +65,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tattoogenda?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/work_calendar?schema=public
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ci-test-secret-min-32-characters-long
       SKIP_ENV_VALIDATION: "1"

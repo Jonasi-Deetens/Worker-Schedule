@@ -4,7 +4,7 @@ import { authOptions } from "@/infrastructure/auth/auth-options";
 import { SwapClient } from "./swap-client";
 
 export const metadata = {
-  title: "Shift swaps — Tattoogenda",
+  title: "Shift swaps — Work Calendar",
 };
 
 export default async function SwapPage() {

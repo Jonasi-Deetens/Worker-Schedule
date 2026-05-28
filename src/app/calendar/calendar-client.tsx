@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBusinessEvents } from "@/interface/hooks/use-business-events";
 import { useTranslations } from "next-intl";
 import { addMonths, endOfMonth, startOfMonth, endOfWeek, startOfWeek } from "date-fns";
@@ -27,6 +27,7 @@ import {
 import {
   WorkCalendar,
   type CalendarRangeChange,
+  type CalendarTimeFormat,
   type EventReschedule,
 } from "@/interface/components/work-calendar";
 import { trpc } from "@/interface/trpc/client";
@@ -142,6 +143,22 @@ export function CalendarPageClient({
   const [removeAvailabilityOpen, setRemoveAvailabilityOpen] = useState(false);
   const [filters, setFilters] = useState<CalendarFilters>({});
   const [showAvailabilityOverlay, setShowAvailabilityOverlay] = useState(false);
+
+  // Persist 12h/24h preference per browser. We default to 24h because Belgian
+  // horeca norms (and the previous hardcoded format) use it; once a user
+  // flips the toggle, their choice is remembered across refreshes.
+  const [timeFormat, setTimeFormat] = useState<CalendarTimeFormat>("24h");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("tg.calendar.timeFormat");
+    if (stored === "12h" || stored === "24h") setTimeFormat(stored);
+  }, []);
+  const handleTimeFormatChange = useCallback((next: CalendarTimeFormat) => {
+    setTimeFormat(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("tg.calendar.timeFormat", next);
+    }
+  }, []);
 
   const handleRangeChange = useCallback((change: CalendarRangeChange) => {
     setRange({
@@ -584,7 +601,16 @@ export function CalendarPageClient({
                 : t("calendar.workerSubtitle")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <TimeFormatToggle
+              value={timeFormat}
+              onChange={handleTimeFormatChange}
+              labels={{
+                h24: t("calendar.timeFormat24"),
+                h12: t("calendar.timeFormat12"),
+                aria: t("calendar.timeFormatAria"),
+              }}
+            />
             {isOwner ? (
               <>
                 <Button
@@ -677,6 +703,7 @@ export function CalendarPageClient({
           canSelect
           editable={isOwner}
           ariaLabel={isOwner ? t("calendar.ownerTitle") : t("calendar.workerTitle")}
+          timeFormat={timeFormat}
         />
 
         <div className="mt-6 flex flex-wrap gap-2.5 text-xs">
@@ -862,6 +889,53 @@ function statusKey(status: DisplayStatus): string {
     case "Cancelled":
       return "status.cancelled";
   }
+}
+
+/**
+ * 24h / 12h time-display switcher. Pure two-button segmented control —
+ * compact enough to sit between bulk actions without crowding the header.
+ */
+function TimeFormatToggle({
+  value,
+  onChange,
+  labels,
+}: {
+  value: CalendarTimeFormat;
+  onChange: (next: CalendarTimeFormat) => void;
+  labels: { h24: string; h12: string; aria: string };
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={labels.aria}
+      className="inline-flex rounded-md border border-slate-200 bg-white p-0.5 text-xs shadow-sm"
+    >
+      <button
+        type="button"
+        onClick={() => onChange("24h")}
+        aria-pressed={value === "24h"}
+        className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
+          value === "24h"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-slate-600 hover:bg-slate-50"
+        }`}
+      >
+        {labels.h24}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("12h")}
+        aria-pressed={value === "12h"}
+        className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
+          value === "12h"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-slate-600 hover:bg-slate-50"
+        }`}
+      >
+        {labels.h12}
+      </button>
+    </div>
+  );
 }
 
 function StatusDot({ status }: { status: DisplayStatus }) {
