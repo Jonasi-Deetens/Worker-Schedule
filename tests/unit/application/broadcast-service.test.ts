@@ -75,6 +75,59 @@ describe("BroadcastService.send", () => {
   });
 });
 
+describe("BroadcastService.listForUser", () => {
+  it("returns an empty list when the worker has no broadcast notifications", async () => {
+    const db = createPrismaMock();
+    db.notification.findMany.mockResolvedValue([]);
+    const svc = new BroadcastService(db as unknown as PrismaClient);
+    const result = await svc.listForUser({ userId: "u1", businessId: "b1" });
+    expect(result).toEqual([]);
+    expect(db.shift.findMany).not.toHaveBeenCalled();
+  });
+
+  it("drops shifts at capacity or already assigned to the worker", async () => {
+    const db = createPrismaMock();
+    db.notification.findMany.mockResolvedValue([
+      { payload: { shiftId: "s1" } },
+      { payload: { shiftId: "s2" } },
+      { payload: { shiftId: "s3" } },
+    ]);
+    db.shift.findMany.mockResolvedValue([
+      // open + has room: keep
+      {
+        id: "s1",
+        startsAt: FUTURE_START,
+        endsAt: FUTURE_END,
+        roleLabel: "Bartender",
+        requiredSpots: 2,
+        assignments: [{ userId: "other" }],
+      },
+      // at capacity: drop
+      {
+        id: "s2",
+        startsAt: FUTURE_START,
+        endsAt: FUTURE_END,
+        roleLabel: "Host",
+        requiredSpots: 1,
+        assignments: [{ userId: "other" }],
+      },
+      // already assigned to caller: drop
+      {
+        id: "s3",
+        startsAt: FUTURE_START,
+        endsAt: FUTURE_END,
+        roleLabel: "Server",
+        requiredSpots: 2,
+        assignments: [{ userId: "u1" }],
+      },
+    ]);
+    const svc = new BroadcastService(db as unknown as PrismaClient);
+    const result = await svc.listForUser({ userId: "u1", businessId: "b1" });
+    expect(result.map((s) => s.id)).toEqual(["s1"]);
+    expect(result[0]!.approvedCount).toBe(1);
+  });
+});
+
 describe("BroadcastService.accept", () => {
   it("rejects when the shift is already filled", async () => {
     const db = createPrismaMock();

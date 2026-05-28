@@ -37,3 +37,49 @@ describe("SwapService", () => {
     ).rejects.toThrow(/overlapping/i);
   });
 });
+
+describe("SwapService.findCandidates", () => {
+  it("throws when the subscription is not owned by the caller", async () => {
+    const db = createPrismaMock();
+    db.shiftSubscription.findFirst.mockResolvedValue(null);
+    const svc = new SwapService(asPrisma(db));
+    await expect(
+      svc.findCandidates({
+        subscriptionId: "sub1",
+        requestingUserId: "u1",
+        businessId: "b1",
+      }),
+    ).rejects.toThrow(/not found/i);
+  });
+
+  it("excludes overlapping assignments and approved time-off", async () => {
+    const db = createPrismaMock();
+    db.shiftSubscription.findFirst.mockResolvedValue({
+      id: "sub1",
+      userId: "u1",
+      status: "APPROVED",
+      shift: {
+        id: "s1",
+        businessId: "b1",
+        requiredSkillId: null,
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T14:00:00Z"),
+      },
+    });
+    db.user.findMany.mockResolvedValue([
+      { id: "u2", name: "Bea" },
+      { id: "u3", name: "Cy" },
+      { id: "u4", name: "Dee" },
+    ]);
+    db.shiftAssignment.findMany.mockResolvedValue([{ userId: "u3" }]);
+    db.timeOffRequest.findMany.mockResolvedValue([{ userId: "u4" }]);
+
+    const svc = new SwapService(asPrisma(db));
+    const result = await svc.findCandidates({
+      subscriptionId: "sub1",
+      requestingUserId: "u1",
+      businessId: "b1",
+    });
+    expect(result).toEqual([{ id: "u2", name: "Bea" }]);
+  });
+});

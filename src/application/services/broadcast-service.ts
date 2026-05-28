@@ -126,6 +126,52 @@ export class BroadcastService {
   }
 
   /**
+   * Open broadcast invitations the worker still has a shot at — read from
+   * the per-user notification inbox, cross-referenced against the current
+   * shift state so already-filled or already-assigned-to-this-worker shifts
+   * are dropped before they reach the UI.
+   */
+  async listForUser(input: { userId: string; businessId: string }) {
+    const broadcasts = await this.db.notification.findMany({
+      where: {
+        userId: input.userId,
+        type: "SHIFT_BROADCAST",
+        readAt: null,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+    });
+    const shiftIds = broadcasts
+      .map((n) => (n.payload as { shiftId?: string } | null)?.shiftId)
+      .filter((id): id is string => Boolean(id));
+    if (shiftIds.length === 0) return [];
+
+    const shifts = await this.db.shift.findMany({
+      where: {
+        id: { in: shiftIds },
+        businessId: input.businessId,
+        endsAt: { gt: new Date() },
+        status: { not: "CANCELLED" },
+      },
+      include: { assignments: { select: { userId: true } } },
+    });
+    return shifts
+      .filter(
+        (s) =>
+          s.assignments.length < s.requiredSpots &&
+          !s.assignments.some((a) => a.userId === input.userId),
+      )
+      .map((s) => ({
+        id: s.id,
+        startsAt: s.startsAt,
+        endsAt: s.endsAt,
+        roleLabel: s.roleLabel,
+        requiredSpots: s.requiredSpots,
+        approvedCount: s.assignments.length,
+      }));
+  }
+
+  /**
    * First-come-first-served accept of a broadcast invitation. Uses a
    * conditional `updateMany` (where capacity not yet reached) to prevent two
    * workers from racing each other onto the last spot.

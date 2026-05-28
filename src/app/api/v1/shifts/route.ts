@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/infrastructure/db/prisma";
 import { ShiftService } from "@/application/services/shift-service";
+import { ShiftReadModel } from "@/application/services/shift-read-model";
 import { checkIdempotency } from "@/infrastructure/idempotency";
 import { authenticateApiKey } from "../_auth";
 
@@ -21,6 +22,7 @@ const createBody = z.object({
 });
 
 const shiftService = new ShiftService(prisma);
+const shiftReadModel = new ShiftReadModel(prisma);
 
 function withRlHeaders(
   res: NextResponse,
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
       auth.rateLimitHeaders,
     );
   }
-  const shifts = await shiftService.listForCalendar({
+  const shifts = await shiftReadModel.listForCalendar({
     businessId: auth.businessId,
     from: parsed.data.from,
     to: parsed.data.to,

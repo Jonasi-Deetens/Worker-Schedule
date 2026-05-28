@@ -4,25 +4,15 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBusinessEvents } from "@/interface/hooks/use-business-events";
 import { useTranslations } from "next-intl";
-import { addMonths, endOfMonth, startOfMonth, endOfWeek, startOfWeek } from "date-fns";
-import { Plus, Send } from "lucide-react";
-import type { DisplayStatus, UserRole } from "@/domain/types";
+import { addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } from "date-fns";
+import { Plus } from "lucide-react";
+import type { UserRole } from "@/domain/types";
 import { AppHeader } from "@/interface/components/app-header";
-import {
-  AvailabilityDetailDialog,
-  type AvailabilityItem,
-} from "@/interface/components/availability-detail-dialog";
+import type { AvailabilityItem } from "@/interface/components/availability-detail-dialog";
 import { Button } from "@/interface/components/ui/button";
-import { ConfirmDialog } from "@/interface/components/confirm-dialog";
-import { KpiStrip } from "@/interface/components/kpi-strip";
-import { CalendarFiltersBar } from "@/interface/components/calendar-filters-bar";
-import { ShiftDetailDialog } from "@/interface/components/shift-detail-dialog";
-import { OfferSwapDialog } from "@/interface/components/offer-swap-dialog";
-import {
-  AvailabilityFormDialog,
-  ShiftFormDialog,
-  type AvailabilityFormInitial,
-  type ShiftFormInitial,
+import type {
+  AvailabilityFormInitial,
+  ShiftFormInitial,
 } from "@/interface/components/shift-form-dialog";
 import {
   WorkCalendar,
@@ -38,76 +28,21 @@ import {
   type CalendarFilters,
   type CalendarShift,
 } from "@/lib/calendar-events";
-import { STATUS_HEX } from "@/lib/status-colors";
-import { toast, trpcErrorMessage } from "@/lib/toast";
-
-const DISPLAY_STATUSES: DisplayStatus[] = [
-  "Open",
-  "Pending",
-  "Approved/Filled",
-  "Rejected",
-  "Withdrawn",
-  "Cancelled",
-];
-
-function combineDateTime(date: string, time: string): Date {
-  return new Date(`${date}T${time}:00`);
-}
-
-function toDateInput(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function toTimeInput(d: Date): string {
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
-}
-
-interface SelectedShift {
-  shiftId: string;
-  roleLabel: string;
-  startsAt: Date;
-  endsAt: Date;
-  displayStatus: DisplayStatus;
-  requiredSpots: number;
-  approvedCount?: number;
-  subscriptionId?: string;
-  subscriptionStatus?: string;
-  notes?: string | null;
-}
-
-function eventToSelectedShift(event: CalendarEvent): SelectedShift | null {
-  const props = event.extendedProps;
-  if (props.kind !== "shift" || !props.shiftId) return null;
-  return {
-    shiftId: props.shiftId,
-    roleLabel: props.roleLabel ?? event.title,
-    startsAt: new Date(event.start),
-    endsAt: new Date(event.end),
-    displayStatus: (props.status as DisplayStatus) ?? "Open",
-    requiredSpots: props.requiredSpots ?? 1,
-    approvedCount: props.approvedCount,
-    subscriptionId: props.subscriptionId,
-    subscriptionStatus: props.subscriptionStatus,
-    notes: props.notes ?? null,
-  };
-}
-
-function eventToSelectedAvailability(
-  event: CalendarEvent,
-): AvailabilityItem | null {
-  const props = event.extendedProps;
-  if (props.kind !== "availability" || !props.availabilityId) return null;
-  return {
-    id: props.availabilityId,
-    startsAt: new Date(event.start),
-    endsAt: new Date(event.end),
-  };
-}
+import { CalendarDialogs } from "./components/calendar-dialogs";
+import { FilterBar } from "./components/filter-bar";
+import { KpiStrip } from "./components/kpi-strip";
+import { OwnerToolbar } from "./components/owner-toolbar";
+import { StatusLegend } from "./components/status-dot";
+import { TimeFormatToggle } from "./components/time-format-toggle";
+import { useCalendarMutations } from "./hooks/use-calendar-mutations";
+import {
+  combineDateTime,
+  eventToSelectedAvailability,
+  eventToSelectedShift,
+  toDateInput,
+  toTimeInput,
+  type SelectedShift,
+} from "./lib/helpers";
 
 export function CalendarPageClient({
   role,
@@ -208,193 +143,33 @@ export function CalendarPageClient({
     { shiftId: selectedShift?.shiftId ?? "" },
     { enabled: isOwner && !!selectedShift?.shiftId && detailOpen },
   );
-  const markAttendance = trpc.attendance.mark.useMutation({
-    onSuccess: () => {
-      assignmentsQuery.refetch();
-      toast.success(t("attendance.title"));
-    },
-    onError: (e) => toast.error(trpcErrorMessage(e, t)),
-  });
-  const broadcastMutation = trpc.shift.broadcast.useMutation({
-    onSuccess: (data) => {
-      toast.success(t("shift.broadcastSent", { count: data?.notified ?? 0 }));
-    },
-    onError: (e) => toast.error(trpcErrorMessage(e, t)),
-  });
 
   const businessQuery = trpc.business.get.useQuery(undefined, {
     enabled: isOwner,
   });
 
-  const createShift = trpc.shift.create.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      setShiftDialogOpen(false);
-      setShiftDialogInitial(undefined);
-      toast.success(t("toast.shiftCreated"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const createRecurringShift = trpc.shift.createRecurring.useMutation({
-    onSuccess: (data) => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      setShiftDialogOpen(false);
-      setShiftDialogInitial(undefined);
-      const count = Array.isArray(data) ? data.length : 1;
-      toast.success(t("toast.shiftCreated"), {
-        description: `${count}×`,
-      });
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const updateShift = trpc.shift.update.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
+  const m = useCalendarMutations({
+    closeShiftDialog: () => {
       setShiftDialogOpen(false);
       setShiftDialogInitial(undefined);
       setShiftDialogMode("create");
-      toast.success(t("toast.shiftUpdated"));
     },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const deleteShift = trpc.shift.delete.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      setDetailOpen(false);
-      setCancelShiftOpen(false);
-      setSelectedShift(null);
-      toast.success(t("toast.shiftCancelled"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const setAvailability = trpc.availability.set.useMutation({
-    onSuccess: () => {
-      utils.availability.list.invalidate();
+    closeAvailabilityDialog: () => {
       setAvailDialogOpen(false);
       setAvailDialogInitial(undefined);
-      toast.success(t("toast.availabilitySet"));
     },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const deleteAvailability = trpc.availability.delete.useMutation({
-    onSuccess: () => {
-      utils.availability.list.invalidate();
-      setAvailDetailOpen(false);
-      setRemoveAvailabilityOpen(false);
-      setSelectedAvailability(null);
-      toast.success(t("toast.availabilityRemoved"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const applyMutation = trpc.subscription.submit.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.subscription.listMine.invalidate();
-      utils.notification.unreadCount.invalidate();
-      setDetailOpen(false);
-      toast.success(t("toast.applicationSubmitted"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const withdrawMutation = trpc.subscription.withdraw.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.subscription.listMine.invalidate();
-      setDetailOpen(false);
-      toast.success(t("toast.applicationWithdrawn"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const approveMutation = trpc.subscription.approve.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      utils.subscription.listForShift.invalidate();
-      utils.notification.unreadCount.invalidate();
-      toast.success(t("toast.applicationApproved"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const rejectMutation = trpc.subscription.reject.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.subscription.listForShift.invalidate();
-      toast.success(t("toast.applicationRejected"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const approveManyMutation = trpc.subscription.approveMany.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      utils.subscription.listForShift.invalidate();
-      utils.notification.unreadCount.invalidate();
-      toast.success(t("toast.applicationApproved"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const rejectManyMutation = trpc.subscription.rejectMany.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.subscription.listForShift.invalidate();
-      toast.success(t("toast.applicationRejected"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const publishRange = trpc.shift.publishRange.useMutation({
-    onSuccess: (data) => {
-      utils.shift.list.invalidate();
-      utils.shift.kpis.invalidate();
-      toast.success(t("toast.shiftPublished"), {
-        description: t("calendar.published", { count: data.count }),
-      });
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const duplicateWeek = trpc.shift.duplicateWeek.useMutation({
-    onSuccess: (data) => {
-      utils.shift.list.invalidate();
-      toast.success(t("bulk.duplicated", { count: data?.created ?? 0 }));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-  const cancelDay = trpc.shift.cancelDay.useMutation({
-    onSuccess: (data) => {
-      utils.shift.list.invalidate();
-      toast.success(t("bulk.cancelled", { count: data?.cancelled ?? 0 }));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
-  });
-
-  const assignWorker = trpc.shift.assign.useMutation({
-    onSuccess: () => {
-      utils.shift.list.invalidate();
-      utils.subscription.listForShift.invalidate();
-      toast.success(t("toast.shiftAssigned"));
-    },
-    onError: (error) => toast.error(trpcErrorMessage(error, t)),
+    closeDetail: () => setDetailOpen(false),
+    closeAvailabilityDetail: () => setAvailDetailOpen(false),
+    closeCancelShift: () => setCancelShiftOpen(false),
+    closeRemoveAvailability: () => setRemoveAvailabilityOpen(false),
+    clearSelectedShift: () => setSelectedShift(null),
+    clearSelectedAvailability: () => setSelectedAvailability(null),
+    refetchAssignments: () => assignmentsQuery.refetch(),
   });
 
   const handlePublishWeek = () => {
     const today = new Date();
-    publishRange.mutate({
+    m.shift.publishRange.mutate({
       from: startOfWeek(today, { weekStartsOn: 1 }),
       to: endOfWeek(today, { weekStartsOn: 1 }),
     });
@@ -492,15 +267,9 @@ export function CalendarPageClient({
     newEnd,
     revert,
   }: EventReschedule) => {
-    updateShift.mutate(
-      {
-        id: shiftId,
-        startsAt: newStart,
-        endsAt: newEnd,
-      },
-      {
-        onError: () => revert(),
-      },
+    m.shift.update.mutate(
+      { id: shiftId, startsAt: newStart, endsAt: newEnd },
+      { onError: () => revert() },
     );
   };
 
@@ -541,7 +310,7 @@ export function CalendarPageClient({
     repeatUntil?: string;
   }) => {
     if (shiftDialogMode === "edit" && selectedShift) {
-      updateShift.mutate({
+      m.shift.update.mutate({
         id: selectedShift.shiftId,
         startsAt: combineDateTime(data.date, data.startTime),
         endsAt: combineDateTime(data.date, data.endTime),
@@ -552,7 +321,7 @@ export function CalendarPageClient({
       return;
     }
     if (data.repeatWeekly && data.repeatUntil) {
-      createRecurringShift.mutate({
+      m.shift.createRecurring.mutate({
         startsAt: combineDateTime(data.date, data.startTime),
         endsAt: combineDateTime(data.date, data.endTime),
         roleLabel: data.roleLabel,
@@ -562,7 +331,7 @@ export function CalendarPageClient({
       });
       return;
     }
-    createShift.mutate({
+    m.shift.create.mutate({
       startsAt: combineDateTime(data.date, data.startTime),
       endsAt: combineDateTime(data.date, data.endTime),
       roleLabel: data.roleLabel,
@@ -572,17 +341,17 @@ export function CalendarPageClient({
   };
 
   const isMutating =
-    createShift.isPending ||
-    createRecurringShift.isPending ||
-    updateShift.isPending ||
-    deleteShift.isPending ||
-    applyMutation.isPending ||
-    withdrawMutation.isPending ||
-    approveMutation.isPending ||
-    rejectMutation.isPending ||
-    approveManyMutation.isPending ||
-    rejectManyMutation.isPending ||
-    deleteAvailability.isPending;
+    m.shift.create.isPending ||
+    m.shift.createRecurring.isPending ||
+    m.shift.update.isPending ||
+    m.shift.delete.isPending ||
+    m.subscription.apply.isPending ||
+    m.subscription.withdraw.isPending ||
+    m.subscription.approve.isPending ||
+    m.subscription.reject.isPending ||
+    m.subscription.approveMany.isPending ||
+    m.subscription.rejectMany.isPending ||
+    m.availability.delete.isPending;
 
   if (!session) return null;
 
@@ -605,59 +374,17 @@ export function CalendarPageClient({
             <TimeFormatToggle
               value={timeFormat}
               onChange={handleTimeFormatChange}
-              labels={{
-                h24: t("calendar.timeFormat24"),
-                h12: t("calendar.timeFormat12"),
-                aria: t("calendar.timeFormatAria"),
-              }}
             />
             {isOwner ? (
-              <>
-                <Button
-                  onClick={handlePublishWeek}
-                  size="sm"
-                  variant="outline"
-                  disabled={publishRange.isPending}
-                >
-                  <Send className="mr-1 h-4 w-4" />
-                  {t("calendar.publishWeek")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    const today = new Date();
-                    const fromWeek = startOfWeek(today, { weekStartsOn: 1 });
-                    const toWeek = new Date(
-                      fromWeek.getTime() + 7 * 86_400_000,
-                    );
-                    duplicateWeek.mutate({
-                      fromWeekStart: fromWeek,
-                      toWeekStart: toWeek,
-                    });
-                  }}
-                  size="sm"
-                  variant="outline"
-                  disabled={duplicateWeek.isPending}
-                  title={t("bulk.duplicateWeekHint")}
-                >
-                  {t("bulk.duplicateWeek")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!window.confirm(t("bulk.confirmCancelToday"))) return;
-                    cancelDay.mutate({ date: new Date() });
-                  }}
-                  size="sm"
-                  variant="outline"
-                  disabled={cancelDay.isPending}
-                  title={t("bulk.cancelDayHint")}
-                >
-                  {t("bulk.cancelDay")}
-                </Button>
-                <Button onClick={handleNewShiftClick} size="sm">
-                  <Plus className="mr-1 h-4 w-4" />
-                  {t("calendar.newShift")}
-                </Button>
-              </>
+              <OwnerToolbar
+                onPublishWeek={handlePublishWeek}
+                onDuplicateWeek={(input) => m.shift.duplicateWeek.mutate(input)}
+                onCancelDay={(date) => m.shift.cancelDay.mutate({ date })}
+                onNewShift={handleNewShiftClick}
+                isPublishing={m.shift.publishRange.isPending}
+                isDuplicating={m.shift.duplicateWeek.isPending}
+                isCancellingDay={m.shift.cancelDay.isPending}
+              />
             ) : (
               <Button onClick={handleNewAvailabilityClick} size="sm">
                 <Plus className="mr-1 h-4 w-4" />
@@ -674,7 +401,7 @@ export function CalendarPageClient({
           />
         )}
 
-        <CalendarFiltersBar
+        <FilterBar
           roleOptions={roleOptions}
           workerOptions={workerOptions}
           filters={filters}
@@ -706,245 +433,47 @@ export function CalendarPageClient({
           timeFormat={timeFormat}
         />
 
-        <div className="mt-6 flex flex-wrap gap-2.5 text-xs">
-          {DISPLAY_STATUSES.map((status) => (
-            <span
-              key={status}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700 shadow-sm"
-            >
-              <StatusDot status={status} />
-              <span className="font-medium">{t(statusKey(status))}</span>
-            </span>
-          ))}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-violet-800 shadow-sm">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full border border-violet-400"
-              style={{ background: "#a78bfa" }}
-              aria-hidden
-            />
-            <span className="font-medium">{t("availability.available")}</span>
-          </span>
-        </div>
+        <StatusLegend />
       </main>
 
-      <ShiftFormDialog
-        open={shiftDialogOpen}
-        onOpenChange={(open) => {
-          setShiftDialogOpen(open);
-          if (!open) {
-            setShiftDialogInitial(undefined);
-            setShiftDialogMode("create");
-          }
-        }}
-        isSubmitting={
-          createShift.isPending ||
-          createRecurringShift.isPending ||
-          updateShift.isPending
-        }
-        mode={shiftDialogMode}
-        initialData={shiftDialogInitial}
-        allowRecurrence
-        onSubmit={handleShiftSubmit}
-      />
-
-      <AvailabilityFormDialog
-        open={availDialogOpen}
-        onOpenChange={(open) => {
-          setAvailDialogOpen(open);
-          if (!open) setAvailDialogInitial(undefined);
-        }}
-        isSubmitting={setAvailability.isPending}
-        initialData={availDialogInitial}
-        onSubmit={(data) => {
-          setAvailability.mutate({
-            startsAt: combineDateTime(data.date, data.startTime),
-            endsAt: combineDateTime(data.date, data.endTime),
-          });
-        }}
-      />
-
-      <AvailabilityDetailDialog
-        open={availDetailOpen}
-        onOpenChange={setAvailDetailOpen}
-        availability={selectedAvailability}
-        isDeleting={deleteAvailability.isPending}
-        onDelete={() => setRemoveAvailabilityOpen(true)}
-      />
-
-      <ConfirmDialog
-        open={removeAvailabilityOpen}
-        onOpenChange={setRemoveAvailabilityOpen}
-        title={t("confirm.removeAvailabilityTitle")}
-        description={t("confirm.removeAvailabilityBody")}
-        confirmLabel={t("confirm.yes")}
-        cancelLabel={t("confirm.no")}
-        isPending={deleteAvailability.isPending}
-        onConfirm={() => {
-          if (selectedAvailability) {
-            deleteAvailability.mutate({ id: selectedAvailability.id });
-          }
-        }}
-      />
-
-      <ShiftDetailDialog
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        shift={
-          selectedShift
-            ? {
-                id: selectedShift.shiftId,
-                startsAt: selectedShift.startsAt,
-                endsAt: selectedShift.endsAt,
-                roleLabel: selectedShift.roleLabel,
-                displayStatus: selectedShift.displayStatus,
-                requiredSpots: selectedShift.requiredSpots,
-                approvedCount: selectedShift.approvedCount,
-                subscriptionId: selectedShift.subscriptionId,
-                subscriptionStatus: selectedShift.subscriptionStatus,
-                notes: selectedShift.notes,
-              }
-            : null
-        }
+      <CalendarDialogs
+        m={m}
         isOwner={isOwner}
+        shiftDialogOpen={shiftDialogOpen}
+        setShiftDialogOpen={setShiftDialogOpen}
+        shiftDialogMode={shiftDialogMode}
+        setShiftDialogMode={setShiftDialogMode}
+        shiftDialogInitial={shiftDialogInitial}
+        setShiftDialogInitial={setShiftDialogInitial}
+        onShiftSubmit={handleShiftSubmit}
+        availDialogOpen={availDialogOpen}
+        setAvailDialogOpen={setAvailDialogOpen}
+        availDialogInitial={availDialogInitial}
+        setAvailDialogInitial={setAvailDialogInitial}
+        availDetailOpen={availDetailOpen}
+        setAvailDetailOpen={setAvailDetailOpen}
+        selectedAvailability={selectedAvailability}
+        removeAvailabilityOpen={removeAvailabilityOpen}
+        setRemoveAvailabilityOpen={setRemoveAvailabilityOpen}
+        detailOpen={detailOpen}
+        setDetailOpen={setDetailOpen}
+        selectedShift={selectedShift}
         subscriptions={subscriptionsQuery.data ?? []}
         assignments={assignmentsQuery.data ?? []}
-        onMarkAttendance={(assignmentId, status) =>
-          markAttendance.mutate({ assignmentId, status })
-        }
-        onBroadcast={() =>
-          selectedShift &&
-          broadcastMutation.mutate({ shiftId: selectedShift.shiftId })
-        }
-        isLoading={isMutating}
-        onApply={() =>
-          selectedShift && applyMutation.mutate({ shiftId: selectedShift.shiftId })
-        }
-        onWithdraw={() =>
-          selectedShift?.subscriptionId &&
-          withdrawMutation.mutate({
-            subscriptionId: selectedShift.subscriptionId,
-          })
-        }
-        onApprove={(id) => approveMutation.mutate({ subscriptionId: id })}
-        onReject={(id) => rejectMutation.mutate({ subscriptionId: id })}
-        onBulkApprove={(ids) =>
-          approveManyMutation.mutate({ subscriptionIds: ids })
-        }
-        onBulkReject={(ids) =>
-          rejectManyMutation.mutate({ subscriptionIds: ids })
-        }
-        onEditShift={handleEditShift}
-        onCancelShift={() => setCancelShiftOpen(true)}
-        onOfferSwap={() => setOfferSwapOpen(true)}
+        isMutating={isMutating}
         workerOptions={workerOptions}
-        onAssignWorker={(workerId) =>
-          selectedShift &&
-          assignWorker.mutate({
-            shiftId: selectedShift.shiftId,
-            workerId,
-          })
-        }
-      />
-
-      <ConfirmDialog
-        open={cancelShiftOpen}
-        onOpenChange={setCancelShiftOpen}
-        title={t("confirm.cancelShiftTitle")}
-        description={t("confirm.cancelShiftBody")}
-        confirmLabel={t("confirm.yes")}
-        cancelLabel={t("confirm.no")}
-        isPending={deleteShift.isPending}
-        onConfirm={() => {
-          if (selectedShift) {
-            deleteShift.mutate({ id: selectedShift.shiftId });
-          }
-        }}
-      />
-
-      <OfferSwapDialog
-        open={offerSwapOpen}
-        onOpenChange={setOfferSwapOpen}
-        subscriptionId={selectedShift?.subscriptionId ?? null}
-        onOffered={() => {
+        onEditShift={handleEditShift}
+        onCancelShiftClick={() => setCancelShiftOpen(true)}
+        onOfferSwapClick={() => setOfferSwapOpen(true)}
+        cancelShiftOpen={cancelShiftOpen}
+        setCancelShiftOpen={setCancelShiftOpen}
+        offerSwapOpen={offerSwapOpen}
+        setOfferSwapOpen={setOfferSwapOpen}
+        onSwapOffered={() => {
           utils.subscription.listMine.invalidate();
           utils.swap.listMine.invalidate();
         }}
       />
     </div>
-  );
-}
-
-function statusKey(status: DisplayStatus): string {
-  switch (status) {
-    case "Open":
-      return "status.open";
-    case "Pending":
-      return "status.pending";
-    case "Approved/Filled":
-      return "status.filled";
-    case "Rejected":
-      return "status.rejected";
-    case "Withdrawn":
-      return "status.withdrawn";
-    case "Cancelled":
-      return "status.cancelled";
-  }
-}
-
-/**
- * 24h / 12h time-display switcher. Pure two-button segmented control —
- * compact enough to sit between bulk actions without crowding the header.
- */
-function TimeFormatToggle({
-  value,
-  onChange,
-  labels,
-}: {
-  value: CalendarTimeFormat;
-  onChange: (next: CalendarTimeFormat) => void;
-  labels: { h24: string; h12: string; aria: string };
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={labels.aria}
-      className="inline-flex rounded-md border border-slate-200 bg-white p-0.5 text-xs shadow-sm"
-    >
-      <button
-        type="button"
-        onClick={() => onChange("24h")}
-        aria-pressed={value === "24h"}
-        className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
-          value === "24h"
-            ? "bg-indigo-600 text-white shadow-sm"
-            : "text-slate-600 hover:bg-slate-50"
-        }`}
-      >
-        {labels.h24}
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("12h")}
-        aria-pressed={value === "12h"}
-        className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
-          value === "12h"
-            ? "bg-indigo-600 text-white shadow-sm"
-            : "text-slate-600 hover:bg-slate-50"
-        }`}
-      >
-        {labels.h12}
-      </button>
-    </div>
-  );
-}
-
-function StatusDot({ status }: { status: DisplayStatus }) {
-  const palette = STATUS_HEX[status];
-  return (
-    <span
-      className="inline-block h-2.5 w-2.5 rounded-full"
-      style={{ background: palette.bg, boxShadow: `inset 0 0 0 1px ${palette.accent}` }}
-      aria-hidden
-    />
   );
 }

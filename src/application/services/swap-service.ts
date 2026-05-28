@@ -80,6 +80,72 @@ export class SwapService {
     return swap;
   }
 
+  /**
+   * Returns workers in the same business that the requesting worker can
+   * offer their shift to: active, distinct, and free of any overlapping
+   * assignment or approved time-off in the slot. Throws when the calling
+   * user does not own the subscription, so the router can map to NOT_FOUND.
+   */
+  async findCandidates(input: {
+    subscriptionId: string;
+    requestingUserId: string;
+    businessId: string;
+  }): Promise<Array<{ id: string; name: string }>> {
+    const subscription = await this.db.shiftSubscription.findFirst({
+      where: {
+        id: input.subscriptionId,
+        userId: input.requestingUserId,
+        status: "APPROVED",
+      },
+      include: { shift: true },
+    });
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+    const candidates = await this.db.user.findMany({
+      where: {
+        businessId: input.businessId,
+        status: "ACTIVE",
+        id: { not: input.requestingUserId },
+        role: { in: ["WORKER", "MANAGER"] },
+        ...(subscription.shift.requiredSkillId
+          ? {
+              skills: {
+                some: { skillId: subscription.shift.requiredSkillId },
+              },
+            }
+          : {}),
+      },
+      select: { id: true, name: true },
+    });
+    const [overlap, conflicts] = await Promise.all([
+      this.db.shiftAssignment.findMany({
+        where: {
+          userId: { in: candidates.map((c) => c.id) },
+          shift: {
+            startsAt: { lt: subscription.shift.endsAt },
+            endsAt: { gt: subscription.shift.startsAt },
+          },
+        },
+        select: { userId: true },
+      }),
+      this.db.timeOffRequest.findMany({
+        where: {
+          userId: { in: candidates.map((c) => c.id) },
+          status: "APPROVED",
+          startsAt: { lt: subscription.shift.endsAt },
+          endsAt: { gt: subscription.shift.startsAt },
+        },
+        select: { userId: true },
+      }),
+    ]);
+    const blocked = new Set<string>([
+      ...overlap.map((a) => a.userId),
+      ...conflicts.map((c) => c.userId),
+    ]);
+    return candidates.filter((c) => !blocked.has(c.id));
+  }
+
   async listMine(userId: string) {
     const [outgoing, incoming] = await Promise.all([
       this.db.shiftSwap.findMany({
