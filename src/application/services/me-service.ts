@@ -44,6 +44,10 @@ export class MeService {
         this.db.shiftAssignment.findFirst({
           where: {
             userId,
+            // Only confirmed commitments — an unaccepted offer
+            // (PENDING_ACCEPTANCE) or a shift awaiting reconfirmation is not
+            // yet the worker's "next shift".
+            status: "CONFIRMED",
             shift: { endsAt: { gt: now }, status: { not: "CANCELLED" } },
           },
           orderBy: { shift: { startsAt: "asc" } },
@@ -69,6 +73,9 @@ export class MeService {
         this.db.shiftAssignment.findMany({
           where: {
             userId,
+            // Scheduled hours reflect confirmed work only — unaccepted offers
+            // don't count until the worker accepts.
+            status: "CONFIRMED",
             shift: {
               startsAt: { gte: weekStart, lt: weekStartPlus7 },
               status: { not: "CANCELLED" },

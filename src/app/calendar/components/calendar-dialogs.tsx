@@ -224,6 +224,13 @@ export function CalendarDialogs(props: CalendarDialogsProps) {
             workerId,
           })
         }
+        onCancelOffer={(workerId: string) =>
+          selectedShift &&
+          m.shift.unassign.mutate({
+            shiftId: selectedShift.shiftId,
+            workerId,
+          })
+        }
       />
 
       <ConfirmDialog

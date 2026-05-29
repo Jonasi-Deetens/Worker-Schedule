@@ -55,6 +55,27 @@ describe("resolveShiftDisplayStatus", () => {
     expect(resolveShiftDisplayStatus(shift, "WORKER")).toBe("Pending");
     expect(resolveShiftDisplayStatus(shift, "OWNER")).toBe("Open");
   });
+
+  it("shows Pending for a worker offered the shift (PENDING_ACCEPTANCE, no subscription)", () => {
+    const shift: CalendarShift = {
+      ...baseShift,
+      assignments: [{ userId: "w1", status: "PENDING_ACCEPTANCE" }],
+    };
+    expect(resolveShiftDisplayStatus(shift, "WORKER", "w1")).toBe("Pending");
+    // Another worker who isn't on the shift just sees the staffing rollup.
+    expect(resolveShiftDisplayStatus(shift, "WORKER", "other")).toBe("Open");
+  });
+
+  it("shows Approved/Filled for a worker whose own assignment is CONFIRMED", () => {
+    const shift: CalendarShift = {
+      ...baseShift,
+      assignments: [{ userId: "w1", status: "CONFIRMED" }],
+      _count: { subscriptions: 0, assignments: 1 },
+    };
+    expect(resolveShiftDisplayStatus(shift, "WORKER", "w1")).toBe(
+      "Approved/Filled",
+    );
+  });
 });
 
 describe("shiftToCalendarEvent", () => {

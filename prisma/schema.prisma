@@ -63,6 +63,7 @@ enum NotificationType {
 enum AssignmentStatus {
   CONFIRMED
   PENDING_RECONFIRMATION
+  PENDING_ACCEPTANCE
 }
 
 enum AttendanceStatus {
@@ -109,6 +110,8 @@ enum AuditAction {
   SHIFT_RESCHEDULE_PENDING
   SHIFT_RECONFIRMED
   SHIFT_RECONFIRM_DECLINED
+  SHIFT_ASSIGNMENT_ACCEPTED
+  SHIFT_ASSIGNMENT_DECLINED
 }
 
 enum TimeOffStatus {

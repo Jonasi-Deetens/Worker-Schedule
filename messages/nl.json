@@ -170,6 +170,10 @@
     "reject": "Afwijzen",
     "assign": "Medewerker toewijzen",
     "assigning": "Toewijzen…",
+    "publishBeforeAssign": "Publiceer deze shift voordat je medewerkers toewijst — ze zien en bevestigen alleen gepubliceerde shifts.",
+    "awaitingAcceptance": "Wacht op bevestiging",
+    "awaitingAcceptanceHint": "Aangeboden — wacht op bevestiging van de medewerker",
+    "cancelOffer": "Aanbod annuleren",
     "publish": "Publiceren",
     "repeatWeekly": "Wekelijks herhalen",
     "repeatUntil": "Herhalen tot",
@@ -214,7 +218,8 @@
     "shiftUpdated": "Shift bijgewerkt",
     "shiftCancelled": "Shift geannuleerd",
     "shiftPublished": "Shifts gepubliceerd",
-    "shiftAssigned": "Medewerker toegewezen",
+    "shiftAssigned": "Shift aangeboden — wacht op bevestiging van de medewerker",
+    "offerCancelled": "Aanbod geannuleerd",
     "availabilitySet": "Beschikbaarheid opgeslagen",
     "availabilityRemoved": "Beschikbaarheid verwijderd",
     "applicationSubmitted": "Aanmelding verstuurd",
@@ -245,15 +250,15 @@
     "timeEntriesRejected": "Uren afgewezen",
     "timeEntryUpdated": "Registratie bijgewerkt",
     "rosterApplied": "Weekrooster toegepast",
-    "reconfirmConfirmed": "Shift opnieuw bevestigd",
+    "reconfirmConfirmed": "Shift bevestigd",
     "reconfirmDeclined": "Shift afgewezen — de eigenaar is op de hoogte gebracht"
   },
   "reconfirm": {
-    "title": "Verplaatste shifts opnieuw bevestigen",
-    "help": "Deze shifts zijn gewijzigd nadat je was ingepland. Bevestig dat je het nieuwe tijdstip kunt halen, of wijs af om de plek vrij te geven.",
-    "confirm": "Nieuwe tijd bevestigen",
+    "title": "Shifts die je moet bevestigen",
+    "help": "Je bent op deze shifts ingepland. Bevestig dat je kunt, of wijs af om de plek vrij te geven.",
+    "confirm": "Bevestigen",
     "decline": "Lukt niet",
-    "badge": "Opnieuw bevestigen nodig"
+    "badge": "Bevestiging nodig"
   },
   "applications": {
     "title": "Mijn aanmeldingen",

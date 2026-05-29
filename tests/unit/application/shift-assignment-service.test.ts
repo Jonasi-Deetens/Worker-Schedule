@@ -76,6 +76,57 @@ describe("ShiftAssignmentService.assignWorker", () => {
     expect(result).toEqual({ id: "a3" });
   });
 
+  it("offers the shift as a pending assignment with NO mirrored subscription", async () => {
+    prisma.shift.findFirst.mockResolvedValue(baseShift);
+    prisma.user.findFirst.mockResolvedValue({
+      id: "w1",
+      businessId: BUSINESS_ID,
+      status: "ACTIVE",
+      // A flexi worker would normally auto-declare Dimona on assign — assert we
+      // now defer that until the worker actually confirms.
+      contractType: "FLEXI",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue(null);
+    prisma.timeOffRequest.findFirst.mockResolvedValue(null);
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.shiftAssignment.create.mockResolvedValue({ id: "a1" });
+
+    await service.assignWorker({
+      shiftId: "s1",
+      workerId: "w1",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+    });
+
+    expect(prisma.shiftAssignment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "PENDING_ACCEPTANCE" }),
+      }),
+    );
+    // A direct-assign offer must NOT create/update a subscription — that would
+    // surface an owner "approve" button and a duplicate pending on the worker.
+    expect(prisma.shiftSubscription.create).not.toHaveBeenCalled();
+    expect(prisma.shiftSubscription.update).not.toHaveBeenCalled();
+    // Dimona is only declared once the worker confirms.
+    expect(prisma.dimonaDeclaration.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses to assign to an unpublished (draft) shift", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      ...baseShift,
+      publishedAt: null,
+    });
+    await expect(
+      service.assignWorker({
+        shiftId: "s1",
+        workerId: "w1",
+        businessId: BUSINESS_ID,
+        ownerId: OWNER_ID,
+      }),
+    ).rejects.toThrow(/publish/i);
+    expect(prisma.shiftAssignment.create).not.toHaveBeenCalled();
+  });
+
   it("rejects when the worker lacks the shift's required skill", async () => {
     prisma.shift.findFirst.mockResolvedValue({
       ...baseShift,
@@ -126,6 +177,22 @@ describe("ShiftAssignmentService.assignWorker", () => {
         ownerId: OWNER_ID,
       }),
     ).rejects.toThrow(/rest/i);
+    expect(prisma.shiftAssignment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects assigning a worker with no active membership in the business", async () => {
+    prisma.shift.findFirst.mockResolvedValue(baseShift);
+    // No active membership for the (worker, business) pair => the scoped lookup
+    // returns nothing, so a stale legacy businessId can't get them assigned.
+    prisma.user.findFirst.mockResolvedValue(null);
+    await expect(
+      service.assignWorker({
+        shiftId: "s1",
+        workerId: "outsider",
+        businessId: BUSINESS_ID,
+        ownerId: OWNER_ID,
+      }),
+    ).rejects.toThrow(/not found in this business/i);
     expect(prisma.shiftAssignment.create).not.toHaveBeenCalled();
   });
 
@@ -217,9 +284,11 @@ describe("ShiftAssignmentService.confirmReschedule", () => {
     id: "s1",
     businessId: BUSINESS_ID,
     status: "OPEN",
+    requiredSpots: 2,
     startsAt: new Date(Date.now() + 86_400_000),
     endsAt: new Date(Date.now() + 90_000_000),
     roleLabel: "Bartender",
+    assignments: [],
   };
 
   it("re-locks the spot when nothing now conflicts", async () => {
@@ -266,7 +335,7 @@ describe("ShiftAssignmentService.confirmReschedule", () => {
     expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
   });
 
-  it("errors when the assignment is not awaiting reconfirmation", async () => {
+  it("errors when the assignment is not awaiting confirmation", async () => {
     prisma.shift.findFirst.mockResolvedValue(liveShift);
     prisma.shiftAssignment.findUnique.mockResolvedValue({
       id: "a1",
@@ -279,7 +348,63 @@ describe("ShiftAssignmentService.confirmReschedule", () => {
         userId: "w1",
         businessId: BUSINESS_ID,
       }),
-    ).rejects.toThrow(/reconfirm/i);
+    ).rejects.toThrow(/confirmation/i);
+  });
+
+  it("accepts a pending direct-assign offer: confirms, approves the sub, audits", async () => {
+    prisma.shift.findFirst.mockResolvedValue(liveShift);
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_ACCEPTANCE",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue(null);
+    prisma.timeOffRequest.findFirst.mockResolvedValue(null);
+    prisma.shiftAssignment.update.mockResolvedValue({ id: "a1", status: "CONFIRMED" });
+    prisma.shiftSubscription.upsert.mockResolvedValue({ id: "sub1" });
+    prisma.user.findUnique.mockResolvedValue({ contractType: "EMPLOYEE" });
+
+    await service.confirmReschedule({
+      shiftId: "s1",
+      userId: "w1",
+      businessId: BUSINESS_ID,
+    });
+
+    expect(prisma.shiftAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "CONFIRMED" } }),
+    );
+    // The offer had no subscription; accepting upserts one as APPROVED.
+    expect(prisma.shiftSubscription.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: { status: "APPROVED" },
+        create: expect.objectContaining({ status: "APPROVED" }),
+      }),
+    );
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "SHIFT_ASSIGNMENT_ACCEPTED" }),
+      }),
+    );
+  });
+
+  it("rejects acceptance when the spot was just filled (capacity recheck)", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      ...liveShift,
+      requiredSpots: 1,
+      assignments: [{ userId: "w2", status: "CONFIRMED" }],
+    });
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_ACCEPTANCE",
+    });
+
+    await expect(
+      service.confirmReschedule({
+        shiftId: "s1",
+        userId: "w1",
+        businessId: BUSINESS_ID,
+      }),
+    ).rejects.toThrow(/capacity/i);
+    expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
   });
 });
 
@@ -322,6 +447,40 @@ describe("ShiftAssignmentService.declineReschedule", () => {
     expect(prisma.auditEvent.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ action: "SHIFT_RECONFIRM_DECLINED" }),
+      }),
+    );
+  });
+
+  it("declines a pending direct-assign offer with assignment-specific audit", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      id: "s1",
+      businessId: BUSINESS_ID,
+      startsAt: new Date(Date.now() + 86_400_000),
+      endsAt: new Date(Date.now() + 90_000_000),
+      roleLabel: "Bartender",
+    });
+    prisma.shiftAssignment.findUnique.mockResolvedValue({
+      id: "a1",
+      status: "PENDING_ACCEPTANCE",
+    });
+    prisma.user.findUnique.mockResolvedValue({ name: "Alex" });
+    prisma.shiftAssignment.delete.mockResolvedValue({ id: "a1" });
+    prisma.shiftSubscription.updateMany.mockResolvedValue({ count: 1 });
+    prisma.business.findUnique.mockResolvedValue({ ownerId: OWNER_ID });
+    prisma.notification.create.mockResolvedValue({ id: "n1" });
+
+    await service.declineReschedule({
+      shiftId: "s1",
+      userId: "w1",
+      businessId: BUSINESS_ID,
+    });
+
+    expect(prisma.shiftSubscription.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "WITHDRAWN" } }),
+    );
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "SHIFT_ASSIGNMENT_DECLINED" }),
       }),
     );
   });

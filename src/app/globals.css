@@ -283,12 +283,10 @@ body {
   display: none !important;
 }
 
-/* Avatar pile sits between the meta line and the bottom edge. */
+/* Avatar pile — anchored toward the bottom on tall time-grid events. */
 .tg-calendar-shell .tg-event .tg-event-avatars {
   display: flex;
   align-items: center;
-  margin-top: 4px;
-  padding-bottom: 2px;
   pointer-events: none;
 }
 /* Hide the stack on tiny month-view chips; there's just no room for it. */
@@ -317,8 +315,16 @@ body {
 .tg-calendar-shell .fc-timegrid-event .tg-event-body {
   /* Stretch to the harness so a 6h event paints from 12:00..18:00, not
    * just one row of text. */
+  container-type: size;
   height: 100%;
   min-height: 100%;
+}
+
+@container (min-height: 56px) {
+  .tg-calendar-shell .fc-timegrid-event .tg-event-body {
+    justify-content: space-between;
+    gap: 6px;
+  }
 }
 
 /* dayGridMonth view: events render at ~22px height — keep the rich treatment

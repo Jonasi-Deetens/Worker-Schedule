@@ -35,12 +35,15 @@ interface ShiftDetailDialogProps {
     status: string;
     user: { id: string; name: string; email: string; avatarUrl?: string | null };
   }[];
-  /** Approved assignments for past-shift attendance marking (owners only). */
+  /** Assignments on the shift (owners only): used for attendance, the assignee
+   * stack, the awaiting-acceptance list, and to exclude already-assigned
+   * workers from the assign dropdown. */
   assignments?: {
     id: string;
     userId: string;
     userName: string;
     avatarUrl?: string | null;
+    status?: "CONFIRMED" | "PENDING_RECONFIRMATION" | "PENDING_ACCEPTANCE";
     attendance: "ON_TIME" | "LATE" | "NO_SHOW" | "EXCUSED" | null;
   }[];
   workerOptions?: ReadonlyArray<{ id: string; name: string }>;
@@ -52,6 +55,8 @@ interface ShiftDetailDialogProps {
   onEditShift?: () => void;
   onPublish?: () => void;
   onAssignWorker?: (workerId: string) => void;
+  /** Owner cancels a pending offer (un-assigns a worker who hasn't accepted). */
+  onCancelOffer?: (workerId: string) => void;
   onMarkAttendance?: (
     assignmentId: string,
     status: "ON_TIME" | "LATE" | "NO_SHOW" | "EXCUSED",
@@ -85,6 +90,7 @@ export function ShiftDetailDialog({
   onEditShift,
   onPublish,
   onAssignWorker,
+  onCancelOffer,
   onMarkAttendance,
   onBroadcast,
   onAcceptBroadcast,
@@ -98,18 +104,24 @@ export function ShiftDetailDialog({
   isLoading,
 }: ShiftDetailDialogProps) {
   const t = useTranslations();
-  const assignedIds = new Set(
-    subscriptions
-      .filter((s) => s.status === "APPROVED")
-      .map((s) => s.user.id),
-  );
+  // Exclude anyone already on the shift from the assign dropdown — both
+  // approved applicants and workers who already hold an assignment (incl. a
+  // PENDING_ACCEPTANCE offer), so the owner can't double-offer.
+  const assignedIds = new Set<string>([
+    ...subscriptions.filter((s) => s.status === "APPROVED").map((s) => s.user.id),
+    ...assignments.map((a) => a.userId),
+  ]);
   const eligibleAssignees = workerOptions.filter((w) => !assignedIds.has(w.id));
+  const awaitingAcceptance = assignments.filter(
+    (a) => a.status === "PENDING_ACCEPTANCE",
+  );
 
   if (!shift) return null;
 
   const canApply =
     !isOwner &&
     !shift.subscriptionId &&
+    !workerNeedsReconfirm &&
     shift.displayStatus !== "Cancelled" &&
     shift.displayStatus !== "Approved/Filled";
 
@@ -260,7 +272,16 @@ export function ShiftDetailDialog({
             )}
           </div>
 
-          {isOwner && onAssignWorker && eligibleAssignees.length > 0 && (
+          {isOwner && shift.isDraft && shift.displayStatus !== "Cancelled" && (
+            <p className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-600">
+              {t("shift.publishBeforeAssign")}
+            </p>
+          )}
+
+          {isOwner &&
+            !shift.isDraft &&
+            onAssignWorker &&
+            eligibleAssignees.length > 0 && (
             <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {t("shift.assign")}
@@ -292,6 +313,44 @@ export function ShiftDetailDialog({
                   disabled={isLoading}
                 />
               )}
+            </div>
+          )}
+
+          {isOwner && awaitingAcceptance.length > 0 && (
+            <div className="mt-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                {t("shift.awaitingAcceptance")}
+              </h3>
+              <ul className="space-y-2">
+                {awaitingAcceptance.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar name={a.userName} url={a.avatarUrl} size="md" />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-900">
+                          {a.userName}
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          {t("shift.awaitingAcceptanceHint")}
+                        </p>
+                      </div>
+                    </div>
+                    {onCancelOffer && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onCancelOffer(a.userId)}
+                        disabled={isLoading}
+                      >
+                        {t("shift.cancelOffer")}
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

@@ -209,4 +209,28 @@ describe("ShiftReadModel.listForCalendar", () => {
 
     expect(result[0]?.displayStatus).toBe("Pending");
   });
+
+  it("surfaces a shift with only a PENDING_ACCEPTANCE offer as Pending", async () => {
+    // Direct-assign offers carry no PENDING subscription, so the owner pill
+    // must be driven by the PENDING_ACCEPTANCE assignment instead.
+    prisma.shift.findMany.mockResolvedValue([
+      {
+        id: "shift-1",
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T18:00:00Z"),
+        status: "OPEN",
+        requiredSpots: 1,
+        assignments: [{ status: "PENDING_ACCEPTANCE" }],
+        _count: { subscriptions: 0, assignments: 0 },
+      },
+    ]);
+
+    const result = await readModel.listForCalendar({
+      businessId: BUSINESS_ID,
+      from: new Date("2026-06-01T00:00:00Z"),
+      to: new Date("2026-06-30T00:00:00Z"),
+    });
+
+    expect(result[0]?.displayStatus).toBe("Pending");
+  });
 });

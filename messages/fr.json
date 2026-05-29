@@ -170,6 +170,10 @@
     "reject": "Refuser",
     "assign": "Assigner un travailleur",
     "assigning": "Assignation…",
+    "publishBeforeAssign": "Publiez ce shift avant d'assigner des travailleurs — ils ne voient et ne confirment que les shifts publiés.",
+    "awaitingAcceptance": "En attente d'acceptation",
+    "awaitingAcceptanceHint": "Proposé — en attente de la confirmation du travailleur",
+    "cancelOffer": "Annuler la proposition",
     "publish": "Publier",
     "repeatWeekly": "Répéter chaque semaine",
     "repeatUntil": "Répéter jusqu'au",
@@ -214,7 +218,8 @@
     "shiftUpdated": "Shift mis à jour",
     "shiftCancelled": "Shift annulé",
     "shiftPublished": "Shifts publiés",
-    "shiftAssigned": "Travailleur assigné",
+    "shiftAssigned": "Shift proposé — en attente de la confirmation du travailleur",
+    "offerCancelled": "Proposition annulée",
     "availabilitySet": "Disponibilité enregistrée",
     "availabilityRemoved": "Disponibilité supprimée",
     "applicationSubmitted": "Candidature envoyée",
@@ -245,15 +250,15 @@
     "timeEntriesRejected": "Heures refusées",
     "timeEntryUpdated": "Registre mis à jour",
     "rosterApplied": "Roster appliqué",
-    "reconfirmConfirmed": "Shift reconfirmé",
+    "reconfirmConfirmed": "Shift confirmé",
     "reconfirmDeclined": "Shift décliné — le responsable a été prévenu"
   },
   "reconfirm": {
-    "title": "Reconfirmer les shifts modifiés",
-    "help": "Ces shifts ont changé après votre planification. Confirmez que vous êtes disponible au nouvel horaire, ou déclinez pour libérer la place.",
-    "confirm": "Confirmer le nouvel horaire",
+    "title": "Shifts en attente de votre confirmation",
+    "help": "Vous avez été placé sur ces shifts. Confirmez votre disponibilité, ou déclinez pour libérer la place.",
+    "confirm": "Confirmer",
     "decline": "Pas disponible",
-    "badge": "Reconfirmation requise"
+    "badge": "Confirmation requise"
   },
   "applications": {
     "title": "Mes candidatures",

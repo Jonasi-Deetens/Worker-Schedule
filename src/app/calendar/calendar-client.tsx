@@ -240,6 +240,7 @@ export function CalendarPageClient({
   const baseEvents = useMemo<CalendarEvent[]>(() => {
     return buildCalendarEvents({
       viewer: role,
+      viewerUserId: session?.user?.id,
       shifts: (shiftsQuery.data ?? []) as unknown as CalendarShift[],
       availabilities: isOwner
         ? showAvailabilityOverlay
@@ -253,6 +254,7 @@ export function CalendarPageClient({
     availQuery.data,
     ownerAvailQuery.data,
     role,
+    session?.user?.id,
     t,
     isOwner,
     showAvailabilityOverlay,

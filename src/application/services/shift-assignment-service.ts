@@ -30,10 +30,13 @@ export class ShiftAssignmentService {
   }
 
   /**
-   * Owner directly assigns a worker to a shift, bypassing the apply/approve
-   * flow. Respects capacity, overlap, and approved time-off. If the shift had
-   * a pending subscription for this worker, it is upgraded to APPROVED instead
-   * of creating duplicates.
+   * Owner directly *offers* a shift to a worker. This does NOT instantly
+   * confirm them: the assignment lands in PENDING_ACCEPTANCE and the mirrored
+   * subscription in PENDING, so the worker still has to accept (or decline) it
+   * themselves before it occupies a spot. Respects capacity (CONFIRMED only),
+   * overlap, approved time-off, and scheduling rules. The actual Dimona
+   * declaration is deferred to acceptance — we don't declare to ONSS for a
+   * worker who hasn't committed yet.
    */
   async assignWorker(input: {
     shiftId: string;
@@ -49,6 +52,11 @@ export class ShiftAssignmentService {
     if (shift.status === "CANCELLED") {
       throw new Error("Cannot assign to a cancelled shift");
     }
+    // Workers only ever see published shifts, so offering a draft would put the
+    // worker on something they can't see or act on. Publish it first.
+    if (shift.publishedAt === null) {
+      throw new Error("Publish the shift before assigning workers");
+    }
     // Only CONFIRMED assignments occupy a spot (mirrors the read model and the
     // approve/broadcast paths) — workers in PENDING_RECONFIRMATION don't count.
     const confirmedCount = shift.assignments.filter(
@@ -61,8 +69,15 @@ export class ShiftAssignmentService {
       throw new Error("Worker already assigned");
     }
 
+    // Gate on an *active membership*, not the legacy User.businessId column.
+    // Otherwise a worker who was never added to (or was removed from) the shop
+    // could still be directly assigned — and instantly approved — purely
+    // because a stale businessId happened to match.
     const worker = await this.db.user.findFirst({
-      where: { id: input.workerId, businessId: input.businessId },
+      where: {
+        id: input.workerId,
+        memberships: { some: { businessId: input.businessId, status: "ACTIVE" } },
+      },
     });
     if (!worker) throw new Error("Worker not found in this business");
     if (worker.status !== "ACTIVE") {
@@ -109,36 +124,28 @@ export class ShiftAssignmentService {
       endsAt: shift.endsAt,
     });
 
-    const existingSub = await this.db.shiftSubscription.findUnique({
-      where: { shiftId_userId: { shiftId: input.shiftId, userId: input.workerId } },
+    // No subscription is created here. A direct assignment is an *offer*: the
+    // worker's pending state is represented purely by the PENDING_ACCEPTANCE
+    // assignment. Mirroring a PENDING subscription would make the offer look
+    // like a worker application — surfacing an owner "approve" button and a
+    // duplicate pending entry on the worker side. The subscription is created
+    // (APPROVED) only once the worker accepts, in `confirmReschedule`.
+    const assignment = await this.db.shiftAssignment.create({
+      data: {
+        shiftId: input.shiftId,
+        userId: input.workerId,
+        status: "PENDING_ACCEPTANCE",
+      },
     });
 
-    const [assignment] = await this.db.$transaction([
-      this.db.shiftAssignment.create({
-        data: { shiftId: input.shiftId, userId: input.workerId },
-      }),
-      existingSub
-        ? this.db.shiftSubscription.update({
-            where: { id: existingSub.id },
-            data: { status: "APPROVED" },
-          })
-        : this.db.shiftSubscription.create({
-            data: {
-              shiftId: input.shiftId,
-              userId: input.workerId,
-              status: "APPROVED",
-            },
-          }),
-    ]);
-
-    await this.db.notification.create({
-      data: {
-        userId: input.workerId,
-        type: "SHIFT_ASSIGNED",
-        title: "You were assigned a shift",
-        body: `${shift.roleLabel} on ${shift.startsAt.toISOString().slice(0, 10)}`,
-        payload: { shiftId: shift.id },
-      },
+    const dateLabel = shift.startsAt.toISOString().slice(0, 10);
+    await this.notifications.create({
+      userId: input.workerId,
+      type: "SHIFT_ASSIGNED",
+      title: "You were offered a shift",
+      body: `${shift.roleLabel} on ${dateLabel}. Confirm you can make it, or decline to free the spot.`,
+      payload: { shiftId: shift.id, kind: "assignment" },
+      url: `/applications`,
     });
 
     await this.db.auditEvent.create({
@@ -152,7 +159,7 @@ export class ShiftAssignmentService {
     });
 
     logger.info({
-      event: "shift.assignedDirectly",
+      event: "shift.offeredDirectly",
       shiftId: shift.id,
       workerId: input.workerId,
     });
@@ -160,19 +167,6 @@ export class ShiftAssignmentService {
       type: "assignment.changed",
       shiftId: shift.id,
     });
-
-    if (DimonaService.shouldAutoDeclare(worker.contractType)) {
-      const dimona = new DimonaService(this.db);
-      await dimona
-        .declareIn({ shiftId: shift.id, workerId: input.workerId })
-        .catch((err) =>
-          logger.warn({
-            event: "dimona.declare.failed",
-            shiftId: shift.id,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-    }
 
     return assignment;
   }
@@ -325,9 +319,11 @@ export class ShiftAssignmentService {
   }
 
   /**
-   * Worker-facing list of shifts they are currently expected to reconfirm
-   * after a reschedule. Mirrors `BroadcastService.listForUser` in shape so the
-   * worker surfaces can render reconfirm cards exactly like broadcast cards.
+   * Worker-facing list of shifts that are waiting on the worker's confirmation
+   * — both freshly offered direct assignments (PENDING_ACCEPTANCE) and shifts
+   * that were rescheduled after they were already on (PENDING_RECONFIRMATION).
+   * Mirrors `BroadcastService.listForUser` in shape so the worker surfaces can
+   * render confirm/decline cards exactly like broadcast cards.
    */
   async listPendingReconfirmations(input: {
     userId: string;
@@ -336,7 +332,7 @@ export class ShiftAssignmentService {
     const assignments = await this.db.shiftAssignment.findMany({
       where: {
         userId: input.userId,
-        status: "PENDING_RECONFIRMATION",
+        status: { in: ["PENDING_RECONFIRMATION", "PENDING_ACCEPTANCE"] },
         shift: {
           businessId: input.businessId,
           endsAt: { gt: new Date() },
@@ -356,10 +352,14 @@ export class ShiftAssignmentService {
   }
 
   /**
-   * Worker re-locks their spot on a rescheduled shift. Mirrors the safety of
-   * `BroadcastService.accept`: the shift must be live, the assignment must be
-   * in PENDING_RECONFIRMATION, and the *new* time must not clash with the
-   * worker's other assignments or approved time-off.
+   * Worker locks in a shift that is waiting on them — either accepting a fresh
+   * direct-assign offer (PENDING_ACCEPTANCE) or re-confirming a rescheduled
+   * shift (PENDING_RECONFIRMATION). Mirrors the safety of
+   * `BroadcastService.accept`: the shift must be live, still have a free
+   * CONFIRMED spot, and the time must not clash with the worker's other
+   * assignments or approved time-off. On success the assignment becomes
+   * CONFIRMED, the mirrored subscription APPROVED, the shift is marked FILLED
+   * if now full, and a Dimona IN is filed for auto-declare contracts.
    */
   async confirmReschedule(input: {
     shiftId: string;
@@ -368,6 +368,7 @@ export class ShiftAssignmentService {
   }) {
     const shift = await this.db.shift.findFirst({
       where: { id: input.shiftId, businessId: input.businessId },
+      include: { assignments: true },
     });
     if (!shift) throw new Error("Shift not found");
     if (shift.status === "CANCELLED") throw new Error("Shift is cancelled");
@@ -378,8 +379,22 @@ export class ShiftAssignmentService {
         shiftId_userId: { shiftId: input.shiftId, userId: input.userId },
       },
     });
-    if (!assignment || assignment.status !== "PENDING_RECONFIRMATION") {
-      throw new Error("This shift does not need reconfirmation");
+    if (
+      !assignment ||
+      (assignment.status !== "PENDING_RECONFIRMATION" &&
+        assignment.status !== "PENDING_ACCEPTANCE")
+    ) {
+      throw new Error("This shift is not awaiting your confirmation");
+    }
+
+    // Only CONFIRMED assignments occupy a spot. Several workers can be offered
+    // the same shift, so re-check capacity at acceptance time — whoever
+    // confirms first claims the remaining spot(s).
+    const confirmedCount = (shift.assignments ?? []).filter(
+      (a) => a.status === "CONFIRMED",
+    ).length;
+    if (confirmedCount >= shift.requiredSpots) {
+      throw new Error("Shift already at capacity — the spot was just filled");
     }
 
     const overlap = await this.db.shiftAssignment.findFirst({
@@ -391,7 +406,7 @@ export class ShiftAssignmentService {
     });
     if (overlap) {
       throw new Error(
-        "The new time overlaps another shift — decline this one instead",
+        "This time overlaps another shift — decline this one instead",
       );
     }
 
@@ -405,26 +420,52 @@ export class ShiftAssignmentService {
     });
     if (timeOff) {
       throw new Error(
-        "You have approved time-off at the new time — decline this one instead",
+        "You have approved time-off at this time — decline this one instead",
       );
     }
+
+    const wasReschedule = assignment.status === "PENDING_RECONFIRMATION";
 
     const updated = await this.db.shiftAssignment.update({
       where: { id: assignment.id },
       data: { status: "CONFIRMED" },
     });
+    // Mirror the committed state onto a subscription. Direct-assign offers have
+    // no subscription yet, so upsert (rather than update) to create it; the
+    // reschedule path already has an APPROVED subscription and is left as-is.
+    await this.db.shiftSubscription.upsert({
+      where: {
+        shiftId_userId: { shiftId: input.shiftId, userId: input.userId },
+      },
+      update: { status: "APPROVED" },
+      create: {
+        shiftId: input.shiftId,
+        userId: input.userId,
+        status: "APPROVED",
+      },
+    });
+
+    // Mark the shift FILLED once the worker takes the last open spot.
+    if (confirmedCount + 1 >= shift.requiredSpots && shift.status !== "FILLED") {
+      await this.db.shift.update({
+        where: { id: shift.id },
+        data: { status: "FILLED" },
+      });
+    }
 
     await this.db.auditEvent.create({
       data: {
         userId: input.userId,
-        action: "SHIFT_RECONFIRMED",
+        action: wasReschedule ? "SHIFT_RECONFIRMED" : "SHIFT_ASSIGNMENT_ACCEPTED",
         entityType: "Shift",
         entityId: shift.id,
       },
     });
 
     logger.info({
-      event: "shift.reschedule.reconfirmed",
+      event: wasReschedule
+        ? "shift.reschedule.reconfirmed"
+        : "shift.assignment.accepted",
       shiftId: shift.id,
       userId: input.userId,
     });
@@ -433,13 +474,31 @@ export class ShiftAssignmentService {
       shiftId: shift.id,
     });
 
+    // Declare the Dimona IN now that the worker has actually committed.
+    const worker = await this.db.user.findUnique({
+      where: { id: input.userId },
+      select: { contractType: true },
+    });
+    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
+      await new DimonaService(this.db)
+        .declareIn({ shiftId: shift.id, workerId: input.userId })
+        .catch((err) =>
+          logger.warn({
+            event: "dimona.declare.failed",
+            shiftId: shift.id,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+    }
+
     return updated;
   }
 
   /**
-   * Worker can't make the rescheduled shift: drop the assignment, withdraw the
-   * mirrored subscription, and notify the owner so they can re-broadcast the
-   * now-open spot.
+   * Worker can't make a shift that was waiting on them — either declining a
+   * fresh direct-assign offer or a rescheduled shift. Drops the assignment,
+   * withdraws the mirrored subscription, and notifies the owner so they can
+   * re-broadcast the now-open spot.
    */
   async declineReschedule(input: {
     shiftId: string;
@@ -456,9 +515,15 @@ export class ShiftAssignmentService {
         shiftId_userId: { shiftId: input.shiftId, userId: input.userId },
       },
     });
-    if (!assignment || assignment.status !== "PENDING_RECONFIRMATION") {
-      throw new Error("This shift does not need reconfirmation");
+    if (
+      !assignment ||
+      (assignment.status !== "PENDING_RECONFIRMATION" &&
+        assignment.status !== "PENDING_ACCEPTANCE")
+    ) {
+      throw new Error("This shift is not awaiting your confirmation");
     }
+
+    const wasReschedule = assignment.status === "PENDING_RECONFIRMATION";
 
     const worker = await this.db.user.findUnique({
       where: { id: input.userId },
@@ -496,9 +561,14 @@ export class ShiftAssignmentService {
       await this.notifications.create({
         userId: business.ownerId,
         type: "APPLICATION_WITHDRAWN",
-        title: "Worker declined a rescheduled shift",
+        title: wasReschedule
+          ? "Worker declined a rescheduled shift"
+          : "Worker declined an assignment",
         body: `${worker?.name ?? "A worker"} can't make ${shift.roleLabel} on ${dateLabel}. The spot is open again.`,
-        payload: { shiftId: shift.id, kind: "reschedule" },
+        payload: {
+          shiftId: shift.id,
+          kind: wasReschedule ? "reschedule" : "assignment",
+        },
         url: `/calendar`,
       });
     }
@@ -506,14 +576,18 @@ export class ShiftAssignmentService {
     await this.db.auditEvent.create({
       data: {
         userId: input.userId,
-        action: "SHIFT_RECONFIRM_DECLINED",
+        action: wasReschedule
+          ? "SHIFT_RECONFIRM_DECLINED"
+          : "SHIFT_ASSIGNMENT_DECLINED",
         entityType: "Shift",
         entityId: shift.id,
       },
     });
 
     logger.info({
-      event: "shift.reschedule.declined",
+      event: wasReschedule
+        ? "shift.reschedule.declined"
+        : "shift.assignment.declined",
       shiftId: shift.id,
       userId: input.userId,
     });

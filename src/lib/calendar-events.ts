@@ -40,7 +40,11 @@ export interface CalendarShift {
   location?: { id: string; name: string } | null;
   _count?: { subscriptions?: number; assignments?: number };
   subscriptions?: Array<{ id: string; status: SubscriptionStatus }>;
-  assignments?: Array<{ userId: string; user?: { id: string; name: string; avatarUrl?: string | null } | null }>;
+  assignments?: Array<{
+    userId: string;
+    status?: "CONFIRMED" | "PENDING_RECONFIRMATION" | "PENDING_ACCEPTANCE";
+    user?: { id: string; name: string; avatarUrl?: string | null } | null;
+  }>;
 }
 
 export interface CalendarAvailability {
@@ -99,12 +103,29 @@ export type CalendarViewer = "OWNER" | "WORKER" | "MANAGER";
 export function resolveShiftDisplayStatus(
   shift: CalendarShift,
   viewer: CalendarViewer,
+  viewerUserId?: string,
 ): DisplayStatus {
   const isOwnerView = viewer === "OWNER" || viewer === "MANAGER";
-  if (!isOwnerView && shift.subscriptions && shift.subscriptions.length > 0) {
-    const sub = shift.subscriptions[0];
-    if (sub) {
-      return subscriptionToDisplayStatus(sub.status);
+  if (!isOwnerView) {
+    // A direct-assign offer (or a reschedule) has no PENDING subscription, so
+    // derive the worker's own pill from their assignment status first.
+    const ownAssignment = viewerUserId
+      ? shift.assignments?.find((a) => a.userId === viewerUserId)
+      : undefined;
+    if (ownAssignment?.status === "CONFIRMED") {
+      return "Approved/Filled";
+    }
+    if (
+      ownAssignment?.status === "PENDING_ACCEPTANCE" ||
+      ownAssignment?.status === "PENDING_RECONFIRMATION"
+    ) {
+      return "Pending";
+    }
+    if (shift.subscriptions && shift.subscriptions.length > 0) {
+      const sub = shift.subscriptions[0];
+      if (sub) {
+        return subscriptionToDisplayStatus(sub.status);
+      }
     }
   }
   return computeShiftDisplayStatus({
@@ -118,8 +139,9 @@ export function resolveShiftDisplayStatus(
 export function shiftToCalendarEvent(
   shift: CalendarShift,
   viewer: CalendarViewer,
+  viewerUserId?: string,
 ): CalendarEvent {
-  const status = resolveShiftDisplayStatus(shift, viewer);
+  const status = resolveShiftDisplayStatus(shift, viewer, viewerUserId);
   const palette = STATUS_HEX[status];
   const subscription = shift.subscriptions?.[0];
   const approvedCount = shift._count?.assignments ?? 0;
@@ -236,10 +258,12 @@ export function buildCalendarEvents(input: {
   shifts: CalendarShift[];
   availabilities?: CalendarAvailability[];
   viewer: CalendarViewer;
+  /** The logged-in user's id — used to resolve a worker's own pill. */
+  viewerUserId?: string;
   availabilityLabel?: string;
 }): CalendarEvent[] {
   const shiftEvents = input.shifts.map((s) =>
-    shiftToCalendarEvent(s, input.viewer),
+    shiftToCalendarEvent(s, input.viewer, input.viewerUserId),
   );
   const availabilityEvents = (input.availabilities ?? []).map((a) =>
     availabilityToCalendarEvent(a, input.availabilityLabel ?? "Available"),

@@ -70,8 +70,14 @@ export class ShiftReadModel {
     });
 
     return shifts.map((shift) => {
-      const reconfirmCount = (shift.assignments ?? []).filter(
-        (a) => a.status === "PENDING_RECONFIRMATION",
+      // Assignments awaiting the worker's action (a fresh offer or a reschedule
+      // reconfirmation) don't occupy a CONFIRMED spot but should still read as
+      // "Pending" for the owner. Direct-assign offers no longer carry a PENDING
+      // subscription, so they are counted here instead.
+      const pendingAssignmentCount = (shift.assignments ?? []).filter(
+        (a) =>
+          a.status === "PENDING_RECONFIRMATION" ||
+          a.status === "PENDING_ACCEPTANCE",
       ).length;
       return {
         ...shift,
@@ -79,7 +85,7 @@ export class ShiftReadModel {
           shiftStatus: shift.status,
           approvedCount: shift._count.assignments,
           requiredSpots: shift.requiredSpots,
-          pendingCount: shift._count.subscriptions + reconfirmCount,
+          pendingCount: shift._count.subscriptions + pendingAssignmentCount,
         }),
         isDraft: shift.publishedAt === null,
       };
@@ -129,14 +135,16 @@ export class ShiftReadModel {
     let labourCostCents = 0;
 
     for (const shift of shifts) {
-      const reconfirmCount = shift.assignments.filter(
-        (a) => a.status === "PENDING_RECONFIRMATION",
+      const pendingAssignmentCount = shift.assignments.filter(
+        (a) =>
+          a.status === "PENDING_RECONFIRMATION" ||
+          a.status === "PENDING_ACCEPTANCE",
       ).length;
       const status = computeShiftDisplayStatus({
         shiftStatus: shift.status,
         approvedCount: shift._count.assignments,
         requiredSpots: shift.requiredSpots,
-        pendingCount: shift._count.subscriptions + reconfirmCount,
+        pendingCount: shift._count.subscriptions + pendingAssignmentCount,
       });
       if (status === "Open") open += 1;
       else if (status === "Pending") pending += 1;

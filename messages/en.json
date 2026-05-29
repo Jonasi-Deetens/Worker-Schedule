@@ -170,6 +170,10 @@
     "reject": "Reject",
     "assign": "Assign worker",
     "assigning": "Assigning…",
+    "publishBeforeAssign": "Publish this shift before assigning workers — they can only see and confirm published shifts.",
+    "awaitingAcceptance": "Awaiting acceptance",
+    "awaitingAcceptanceHint": "Offered — waiting for the worker to confirm",
+    "cancelOffer": "Cancel offer",
     "publish": "Publish",
     "repeatWeekly": "Repeat weekly",
     "repeatUntil": "Repeat until",
@@ -214,7 +218,8 @@
     "shiftUpdated": "Shift updated",
     "shiftCancelled": "Shift cancelled",
     "shiftPublished": "Shifts published",
-    "shiftAssigned": "Worker assigned",
+    "shiftAssigned": "Worker offered the shift — awaiting their confirmation",
+    "offerCancelled": "Offer cancelled",
     "availabilitySet": "Availability saved",
     "availabilityRemoved": "Availability removed",
     "applicationSubmitted": "Application submitted",
@@ -245,15 +250,15 @@
     "timeEntriesRejected": "Time entries rejected",
     "timeEntryUpdated": "Time entry updated",
     "rosterApplied": "Roster applied",
-    "reconfirmConfirmed": "Shift reconfirmed",
+    "reconfirmConfirmed": "Shift confirmed",
     "reconfirmDeclined": "Shift declined — the owner has been notified"
   },
   "reconfirm": {
-    "title": "Reconfirm rescheduled shifts",
-    "help": "These shifts changed after you were scheduled. Confirm you can still make the new time, or decline to free the spot.",
-    "confirm": "Confirm new time",
+    "title": "Shifts awaiting your confirmation",
+    "help": "You've been put on these shifts. Confirm you can make them, or decline to free the spot.",
+    "confirm": "Confirm",
     "decline": "Can't make it",
-    "badge": "Needs reconfirmation"
+    "badge": "Needs your confirmation"
   },
   "applications": {
     "title": "My applications",

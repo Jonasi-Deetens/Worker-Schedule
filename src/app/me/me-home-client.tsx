@@ -210,7 +210,7 @@ export function MeHomeClient() {
         />
       </section>
 
-      {/* Rescheduled shifts awaiting reconfirmation */}
+      {/* Shifts awaiting the worker's confirmation (new offers + reschedules) */}
       {reconfirmQuery.data && reconfirmQuery.data.length > 0 && (
         <section className="mt-6">
           <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rose-700">

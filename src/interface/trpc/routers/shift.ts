@@ -79,6 +79,7 @@ export const shiftRouter = router({
         userId: a.userId,
         userName: a.user.name,
         avatarUrl: a.user.avatarUrl ?? null,
+        status: a.status,
         attendance: a.attendance,
       }));
     }),

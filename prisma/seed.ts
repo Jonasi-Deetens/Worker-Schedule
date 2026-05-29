@@ -72,6 +72,22 @@ async function main() {
     ),
   );
 
+  // Membership is the source of truth for "who belongs to a business" — the
+  // legacy User.businessId column alone is no longer enough (e.g. assignment
+  // requires an active membership). Mirror the role for the owner and workers.
+  await Promise.all(
+    [
+      { userId: owner.id, role: "OWNER" as const },
+      ...workers.map((w) => ({ userId: w.id, role: "WORKER" as const })),
+    ].map(({ userId, role }) =>
+      prisma.membership.upsert({
+        where: { userId_businessId: { userId, businessId: business.id } },
+        update: { role, status: "ACTIVE" },
+        create: { userId, businessId: business.id, role, status: "ACTIVE" },
+      }),
+    ),
+  );
+
   await prisma.shift.deleteMany({ where: { businessId: business.id } });
   await prisma.availability.deleteMany({
     where: { userId: { in: workers.map((w) => w.id) } },
@@ -88,9 +104,14 @@ async function main() {
   ];
 
   const shiftCreations: Promise<unknown>[] = [];
+  const now = new Date();
   for (let day = 1; day <= 14; day++) {
     SHIFT_TEMPLATES.forEach((tpl, idx) => {
       const role = ROLES[(day + idx) % ROLES.length] ?? "Barista";
+      // Publish everything except the final day, which stays a draft so the
+      // owner can still see the publish workflow (workers only see published
+      // shifts).
+      const isDraft = day === 14;
       shiftCreations.push(
         prisma.shift.create({
           data: {
@@ -100,6 +121,8 @@ async function main() {
             roleLabel: role,
             requiredSpots: tpl.spots,
             notes: idx === 0 ? "Opening shift" : undefined,
+            publishedAt: isDraft ? null : now,
+            publishedById: isDraft ? null : owner.id,
           },
         }),
       );

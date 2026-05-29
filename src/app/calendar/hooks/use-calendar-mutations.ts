@@ -157,7 +157,18 @@ export function useCalendarMutations(
     onSuccess: () => {
       utils.shift.list.invalidate();
       utils.subscription.listForShift.invalidate();
+      callbacks.refetchAssignments?.();
       toast.success(t("toast.shiftAssigned"));
+    },
+    onError,
+  });
+
+  const unassignWorker = trpc.shift.unassign.useMutation({
+    onSuccess: () => {
+      utils.shift.list.invalidate();
+      utils.subscription.listForShift.invalidate();
+      callbacks.refetchAssignments?.();
+      toast.success(t("toast.offerCancelled"));
     },
     onError,
   });
@@ -277,6 +288,7 @@ export function useCalendarMutations(
       duplicateWeek,
       cancelDay,
       assign: assignWorker,
+      unassign: unassignWorker,
       broadcast,
       acceptBroadcast,
       bulkReschedule,
