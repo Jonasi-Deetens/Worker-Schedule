@@ -11,6 +11,9 @@ export const toast = {
   error(message: string, options?: { description?: string }) {
     sonnerToast.error(message, options);
   },
+  warning(message: string, options?: { description?: string }) {
+    sonnerToast.warning(message, options);
+  },
   info(message: string, options?: { description?: string }) {
     sonnerToast.message(message, options);
   },

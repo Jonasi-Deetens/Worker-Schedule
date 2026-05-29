@@ -6,8 +6,10 @@ import {
 } from "../init";
 import {
   dateRangeSchema,
+  idSchema,
   timeEntryApproveSchema,
   timeEntryClockInSchema,
+  timeEntryClockInViaQrSchema,
   timeEntryClockOutSchema,
   timeEntryRejectSchema,
   timeEntryUpdateSchema,
@@ -25,6 +27,20 @@ export const timeClockRouter = router({
         return await timeClockService.clockIn({
           userId: ctx.session.user.id,
           shiftId: input.shiftId ?? null,
+          lat: input.lat,
+          lng: input.lng,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  clockInViaQr: protectedProcedure
+    .input(timeEntryClockInViaQrSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await timeClockService.clockInViaQr({
+          userId: ctx.session.user.id,
+          token: input.token,
         });
       } catch (error) {
         mapServiceError(error);
@@ -94,10 +110,24 @@ export const timeClockRouter = router({
           id: input.id,
           businessId,
           reviewerId: ctx.session.user.id,
+          reason: input.reason,
           clockInAt: input.clockInAt,
           clockOutAt: input.clockOutAt ?? undefined,
           breakMinutes: input.breakMinutes,
           notes: input.notes,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  corrections: managerProcedure
+    .input(idSchema)
+    .query(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await timeClockService.listCorrections({
+          timeEntryId: input.id,
+          businessId,
         });
       } catch (error) {
         mapServiceError(error);

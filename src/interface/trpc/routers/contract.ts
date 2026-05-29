@@ -42,6 +42,11 @@ export const contractRouter = router({
         contractType: z
           .enum(["FLEXI", "JOBSTUDENT", "EMPLOYEE", "EXTRA"])
           .optional(),
+        startDate: z.coerce.date().nullable().optional(),
+        endDate: z.coerce.date().nullable().optional(),
+        scheduleText: z.string().max(2000).nullable().optional(),
+        hourlyWageCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
+        jobDescription: z.string().max(4000).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -55,6 +60,11 @@ export const contractRouter = router({
           body: input.body,
           fileUrl: input.fileUrl,
           contractType: input.contractType,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          scheduleText: input.scheduleText,
+          hourlyWageCents: input.hourlyWageCents,
+          jobDescription: input.jobDescription,
         });
       } catch (error) {
         mapServiceError(error);

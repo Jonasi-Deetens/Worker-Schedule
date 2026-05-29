@@ -1,6 +1,25 @@
+import { createHash } from "node:crypto";
 import type { ContractStatus, ContractType, PrismaClient } from "@prisma/client";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
+import { logger } from "@/infrastructure/logging/logger";
+import { decryptPiiNullable } from "@/infrastructure/crypto/pii";
+import {
+  generateContractPdf,
+  type ContractPdfInput,
+} from "@/infrastructure/contracts/contract-pdf";
+import { isStorageConfigured } from "./document-service";
+import { contractPdfKey, uploadBytes } from "@/infrastructure/storage/s3-upload";
 import { NotificationService } from "./notification-service";
+
+/**
+ * Belgian student contracts may not exceed 12 uninterrupted months. Returns
+ * true when [start, end] is within that window (inclusive).
+ */
+function withinTwelveMonths(start: Date, end: Date): boolean {
+  const maxEnd = new Date(start);
+  maxEnd.setMonth(maxEnd.getMonth() + 12);
+  return end.getTime() <= maxEnd.getTime();
+}
 
 export class WorkerContractService {
   private readonly notifications: NotificationService;
@@ -44,6 +63,11 @@ export class WorkerContractService {
     body?: string;
     fileUrl?: string;
     contractType?: ContractType;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    scheduleText?: string | null;
+    hourlyWageCents?: number | null;
+    jobDescription?: string | null;
   }) {
     const membership = await this.db.membership.findFirst({
       where: {
@@ -53,6 +77,101 @@ export class WorkerContractService {
       },
     });
     if (!membership) throw new Error("Worker not found in this business");
+
+    // Belgian rule: a student contract may not exceed 12 uninterrupted months.
+    if (
+      input.startDate &&
+      input.endDate &&
+      !withinTwelveMonths(input.startDate, input.endDate)
+    ) {
+      throw new Error("errors.contractTooLong");
+    }
+
+    // Snapshot the legally-relevant employer + student data at send time so the
+    // signed record is self-contained even if profiles change later.
+    const [business, student] = await Promise.all([
+      this.db.business.findUnique({
+        where: { id: input.businessId },
+        select: {
+          name: true,
+          dimonaEmployerId: true,
+          addressLine: true,
+          postalCode: true,
+          city: true,
+          cbeNumber: true,
+        },
+      }),
+      this.db.user.findUnique({
+        where: { id: input.userId },
+        select: {
+          name: true,
+          nationalNumber: true,
+          addressLine: true,
+          postalCode: true,
+          city: true,
+        },
+      }),
+    ]);
+
+    const studentAddress = [
+      student?.addressLine,
+      [student?.postalCode, student?.city].filter(Boolean).join(" "),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const employerAddress = [
+      business?.addressLine,
+      [business?.postalCode, business?.city].filter(Boolean).join(" "),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    const employerSnapshot = {
+      name: business?.name ?? null,
+      enterpriseNumber:
+        business?.cbeNumber ?? business?.dimonaEmployerId ?? null,
+      address: employerAddress || null,
+    };
+    const studentSnapshot = {
+      name: student?.name ?? null,
+      nationalNumber: decryptPiiNullable(student?.nationalNumber ?? null),
+      address: studentAddress || null,
+    };
+
+    // Generate the contract PDF server-side and persist its sha256 hash. When
+    // object storage is configured we upload it and store the URL; otherwise we
+    // degrade gracefully — the hash is still recorded so the document is
+    // verifiable once storage is set up.
+    const pdfInput: ContractPdfInput = {
+      title: input.title,
+      employer: employerSnapshot,
+      student: studentSnapshot,
+      startDate: input.startDate ?? null,
+      endDate: input.endDate ?? null,
+      scheduleText: input.scheduleText ?? null,
+      hourlyWageCents: input.hourlyWageCents ?? null,
+      jobDescription: input.jobDescription ?? null,
+      contractType: input.contractType ?? null,
+    };
+    let pdfUrl: string | null = input.fileUrl ?? null;
+    let pdfHash: string | null = null;
+    try {
+      const bytes = await generateContractPdf(pdfInput);
+      pdfHash = createHash("sha256").update(bytes).digest("hex");
+      if (isStorageConfigured()) {
+        pdfUrl = await uploadBytes({
+          key: contractPdfKey(input.userId),
+          body: bytes,
+          contentType: "application/pdf",
+        });
+      }
+    } catch (err) {
+      logger.warn({
+        event: "contract.pdf.failed",
+        userId: input.userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     const contract = await this.db.workerContract.create({
       data: {
@@ -64,6 +183,15 @@ export class WorkerContractService {
         contractType: input.contractType,
         status: "SENT",
         sentAt: new Date(),
+        startDate: input.startDate ?? null,
+        endDate: input.endDate ?? null,
+        scheduleText: input.scheduleText ?? null,
+        hourlyWageCents: input.hourlyWageCents ?? null,
+        jobDescription: input.jobDescription ?? null,
+        employerSnapshot,
+        studentSnapshot,
+        pdfUrl,
+        pdfHash,
       },
     });
 
@@ -97,6 +225,10 @@ export class WorkerContractService {
     signatureName: string;
     signatureIp?: string | null;
   }) {
+    // Only a SENT contract can be signed. Because a SIGNED contract never
+    // returns from this query, the signature is effectively immutable — there
+    // is no path to re-sign or edit it; a correction must be a brand-new
+    // contract version sent via `send`.
     const contract = await this.db.workerContract.findFirst({
       where: {
         id: input.contractId,
@@ -112,11 +244,12 @@ export class WorkerContractService {
       throw new Error("Signature name is too short");
     }
 
+    const signedAt = new Date();
     const updated = await this.db.workerContract.update({
       where: { id: contract.id },
       data: {
         status: "SIGNED",
-        signedAt: new Date(),
+        signedAt,
         signatureName: trimmed,
         signatureIp: input.signatureIp ?? null,
       },
@@ -128,6 +261,7 @@ export class WorkerContractService {
         action: "CONTRACT_SIGNED",
         entityType: "WorkerContract",
         entityId: contract.id,
+        metadata: { signedAt: signedAt.toISOString() },
       },
     });
 

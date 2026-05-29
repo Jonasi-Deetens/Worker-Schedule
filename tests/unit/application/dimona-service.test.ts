@@ -55,6 +55,12 @@ describe("DimonaService.declareIn", () => {
       nationalNumber: "12.34.56-789.01",
     });
     db.dimonaDeclaration.findFirst.mockResolvedValue(null);
+    // A covering signed contract is required before Dimona may be filed.
+    db.workerContract.findFirst.mockResolvedValue({
+      id: "c1",
+      startDate: null,
+      endDate: null,
+    });
     db.dimonaDeclaration.create.mockImplementation(async ({ data }) => ({ id: "d1", ...data }));
     db.auditEvent.create.mockResolvedValue({ id: "a1" });
 
@@ -78,11 +84,98 @@ describe("DimonaService.declareIn", () => {
       nationalNumber: null,
     });
     db.dimonaDeclaration.findFirst.mockResolvedValue(null);
+    db.workerContract.findFirst.mockResolvedValue({
+      id: "c1",
+      startDate: null,
+      endDate: null,
+    });
     db.dimonaDeclaration.create.mockImplementation(async ({ data }) => ({ id: "d1", ...data }));
 
     const service = new DimonaService(db as unknown as PrismaClient, adapter);
     const result = await service.declareIn({ shiftId: "s1", workerId: "u1" });
     expect(result?.status).toBe("REJECTED");
+  });
+});
+
+describe("DimonaService.declareIn contract gating", () => {
+  let db: PrismaMock;
+  let adapter: MockDimonaAdapter;
+  beforeEach(() => {
+    db = createPrismaMock();
+    adapter = new MockDimonaAdapter();
+    db.shift.findUnique.mockResolvedValue({
+      id: "s1",
+      businessId: "b1",
+      startsAt: new Date("2026-07-01"),
+      endsAt: new Date("2026-07-01"),
+      business: {
+        id: "b1",
+        ownerId: "owner1",
+        dimonaEmployerId: "RSZ-1",
+      },
+    });
+    db.user.findUnique.mockResolvedValue({
+      id: "u1",
+      name: "Jane",
+      contractType: "JOBSTUDENT",
+      nationalNumber: "90010112345",
+    });
+    db.dimonaDeclaration.findFirst.mockResolvedValue(null);
+    db.dimonaDeclaration.create.mockImplementation(async ({ data }) => ({
+      id: "d1",
+      ...data,
+    }));
+    db.auditEvent.create.mockResolvedValue({});
+    db.notification.create.mockResolvedValue({});
+  });
+
+  it("blocks the declaration and flags it when no signed contract exists", async () => {
+    db.workerContract.findFirst.mockResolvedValue(null);
+
+    const service = new DimonaService(db as unknown as PrismaClient, adapter);
+    await expect(
+      service.declareIn({ shiftId: "s1", workerId: "u1" }),
+    ).rejects.toThrow("errors.dimonaContractRequired");
+
+    // A REJECTED declaration + an owner notification are the manager-visible flag.
+    expect(db.dimonaDeclaration.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "REJECTED",
+          errorMessage: "errors.dimonaContractRequired",
+        }),
+      }),
+    );
+    expect(db.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: "owner1" }),
+      }),
+    );
+  });
+
+  it("blocks when the signed contract does not cover the shift date", async () => {
+    db.workerContract.findFirst.mockResolvedValue({
+      id: "c1",
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-03-31"),
+    });
+
+    const service = new DimonaService(db as unknown as PrismaClient, adapter);
+    await expect(
+      service.declareIn({ shiftId: "s1", workerId: "u1" }),
+    ).rejects.toThrow("errors.dimonaContractRequired");
+  });
+
+  it("allows the declaration when a covering signed contract exists", async () => {
+    db.workerContract.findFirst.mockResolvedValue({
+      id: "c1",
+      startDate: new Date("2026-06-01"),
+      endDate: new Date("2026-08-31"),
+    });
+
+    const service = new DimonaService(db as unknown as PrismaClient, adapter);
+    const result = await service.declareIn({ shiftId: "s1", workerId: "u1" });
+    expect(result?.status).toBe("CONFIRMED");
   });
 });
 

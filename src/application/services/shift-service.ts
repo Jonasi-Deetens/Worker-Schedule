@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { DimonaService } from "./dimona-service";
+import { recomputeStuQuartersIfStudent } from "./dimona-hooks";
 import { NotificationService } from "./notification-service";
 import { requestShiftReconfirmations } from "./shift-reconfirmation";
 import { WebhookService } from "./webhook-service";
@@ -240,6 +241,23 @@ export class ShiftService {
         businessId: input.businessId,
         ownerId: input.ownerId,
       });
+
+      // A time change can move planned hours between quarters — re-declare the
+      // per-quarter Dimona STU + quota for every assigned student across both
+      // the old and the new quarter.
+      if (startChanged || endChanged) {
+        const assignments = await this.db.shiftAssignment.findMany({
+          where: { shiftId: shift.id },
+          select: { userId: true },
+        });
+        for (const a of assignments) {
+          await recomputeStuQuartersIfStudent(this.db, {
+            workerId: a.userId,
+            businessId: input.businessId,
+            dates: [existing.startsAt, shift.startsAt],
+          });
+        }
+      }
     }
 
     return shift;
@@ -324,6 +342,13 @@ export class ShiftService {
             }),
           );
       }
+      // Cancelling a shift removes its planned hours — recompute the worker's
+      // STU quarter (which may now be empty and get its Dimona cancelled).
+      await recomputeStuQuartersIfStudent(this.db, {
+        workerId: assignment.userId,
+        businessId: input.businessId,
+        dates: [existing.startsAt],
+      });
     }
 
     publishEvent(input.businessId, { type: "shift.updated", shiftId: shift.id });

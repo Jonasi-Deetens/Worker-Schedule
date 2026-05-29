@@ -234,10 +234,14 @@ export class SubscriptionService {
         })),
       );
 
-      await this.rules.assertAssignable(subscription.userId, {
-        startsAt: subscription.shift.startsAt,
-        endsAt: subscription.shift.endsAt,
-      });
+      await this.rules.assertAssignable(
+        subscription.userId,
+        {
+          startsAt: subscription.shift.startsAt,
+          endsAt: subscription.shift.endsAt,
+        },
+        { businessId: subscription.shift.businessId },
+      );
 
       await tx.shiftSubscription.update({
         where: { id: subscription.id },

@@ -226,10 +226,11 @@ export class SwapService {
     // Centralised scheduling-rule enforcement for the worker taking over the
     // shift (min rest, weekly cap, age, time-off) — same guard as the
     // approve/assign/broadcast paths.
-    await this.rules.assertAssignable(input.decidingUserId, {
-      startsAt: shift.startsAt,
-      endsAt: shift.endsAt,
-    });
+    await this.rules.assertAssignable(
+      input.decidingUserId,
+      { startsAt: shift.startsAt, endsAt: shift.endsAt },
+      { businessId: shift.businessId },
+    );
 
     await this.db.$transaction([
       this.db.shiftAssignment.deleteMany({

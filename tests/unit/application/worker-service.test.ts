@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WorkerService } from "@/application/services/worker-service";
+import { decryptPii } from "@/infrastructure/crypto/pii";
 import { asPrisma, createPrismaMock } from "../../helpers/mock-prisma";
 
 function setup() {
@@ -76,9 +77,11 @@ describe("WorkerService.updateProfile NISS", () => {
       nationalNumber: "90.01.01-123.45",
     });
 
-    expect(db.user.update.mock.calls[0][0].data.nationalNumber).toBe(
-      "90010112345",
-    );
+    // NISS is encrypted at rest — the stored value must round-trip back to the
+    // canonical digits-only form, and must not be stored as plaintext.
+    const stored = db.user.update.mock.calls[0][0].data.nationalNumber as string;
+    expect(stored).not.toBe("90010112345");
+    expect(decryptPii(stored)).toBe("90010112345");
     expect(db.auditEvent.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ action: "WORKER_PROFILE_UPDATED" }),

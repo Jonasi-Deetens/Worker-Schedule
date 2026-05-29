@@ -16,7 +16,18 @@ type PendingContract = {
   body: string | null;
   fileUrl: string | null;
   sentAt: Date | string | null;
+  startDate: Date | string | null;
+  endDate: Date | string | null;
+  scheduleText: string | null;
+  hourlyWageCents: number | null;
+  jobDescription: string | null;
+  pdfUrl: string | null;
 };
+
+function fmtDate(value: Date | string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString();
+}
 
 /**
  * Surfaces pending worker contracts with a sign / decline dialog.
@@ -102,12 +113,53 @@ export function ContractSigningPanel() {
               {active?.title}
             </Dialog.Description>
 
+            {active &&
+              (active.startDate ||
+                active.endDate ||
+                active.scheduleText ||
+                active.hourlyWageCents != null ||
+                active.jobDescription) && (
+                <dl className="mt-4 space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("contracts.termsHeading")}
+                  </p>
+                  {active.startDate && (
+                    <Term label={t("contracts.termStart")} value={fmtDate(active.startDate)} />
+                  )}
+                  {active.endDate && (
+                    <Term label={t("contracts.termEnd")} value={fmtDate(active.endDate)} />
+                  )}
+                  {active.hourlyWageCents != null && (
+                    <Term
+                      label={t("contracts.termWage")}
+                      value={`€ ${(active.hourlyWageCents / 100).toFixed(2)}`}
+                    />
+                  )}
+                  {active.scheduleText && (
+                    <Term label={t("contracts.termSchedule")} value={active.scheduleText} />
+                  )}
+                  {active.jobDescription && (
+                    <Term label={t("contracts.termJob")} value={active.jobDescription} />
+                  )}
+                </dl>
+              )}
+
             {active?.body && (
               <div className="mt-4 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 whitespace-pre-wrap">
                 {active.body}
               </div>
             )}
-            {active?.fileUrl && (
+            {active?.pdfUrl && (
+              <a
+                href={active.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:underline"
+              >
+                {t("contracts.viewPdf")}
+              </a>
+            )}
+            {active?.fileUrl && !active?.pdfUrl && (
               <a
                 href={active.fileUrl}
                 target="_blank"
@@ -170,5 +222,14 @@ export function ContractSigningPanel() {
         </Dialog.Portal>
       </Dialog.Root>
     </>
+  );
+}
+
+function Term({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-wrap justify-between gap-2">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="font-medium text-slate-800">{value}</dd>
+    </div>
   );
 }

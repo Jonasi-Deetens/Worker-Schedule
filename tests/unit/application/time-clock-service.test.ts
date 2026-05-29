@@ -216,17 +216,20 @@ describe("TimeClockService", () => {
     db.timeEntry.findFirst.mockResolvedValue({
       id: "te1",
       userId: "u1",
+      status: "PENDING",
       clockInAt,
       clockOutAt: new Date("2026-06-01T17:00:00Z"),
       breakMinutes: 30,
     });
     db.timeEntry.update.mockResolvedValue({ id: "te1" });
+    db.timeEntryCorrection.create.mockResolvedValue({ id: "c1" });
     const svc = new TimeClockService(asPrisma(db));
 
     await svc.updateEntry({
       id: "te1",
       businessId: "biz1",
       reviewerId: "m1",
+      reason: "Worker forgot break",
       breakMinutes: 45,
     });
 
@@ -235,11 +238,89 @@ describe("TimeClockService", () => {
     );
   });
 
+  it("requires a reason to edit an entry", async () => {
+    const db = createPrismaMock();
+    const svc = new TimeClockService(asPrisma(db));
+    await expect(
+      svc.updateEntry({
+        id: "te1",
+        businessId: "biz1",
+        reviewerId: "m1",
+        reason: "   ",
+        breakMinutes: 45,
+      }),
+    ).rejects.toThrow(/correctionReasonRequired/);
+    expect(db.timeEntry.update).not.toHaveBeenCalled();
+    expect(db.timeEntryCorrection.create).not.toHaveBeenCalled();
+  });
+
+  it("writes an immutable before/after correction before applying the edit", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findFirst.mockResolvedValue({
+      id: "te1",
+      userId: "u1",
+      status: "PENDING",
+      clockInAt: new Date("2026-06-01T09:00:00Z"),
+      clockOutAt: new Date("2026-06-01T17:00:00Z"),
+      breakMinutes: 30,
+    });
+    db.timeEntry.update.mockResolvedValue({ id: "te1" });
+    db.timeEntryCorrection.create.mockResolvedValue({ id: "c1" });
+    const svc = new TimeClockService(asPrisma(db));
+
+    await svc.updateEntry({
+      id: "te1",
+      businessId: "biz1",
+      reviewerId: "m1",
+      reason: "Adjusted break",
+      breakMinutes: 45,
+    });
+
+    const correction = db.timeEntryCorrection.create.mock.calls[0][0].data;
+    expect(correction.reason).toBe("Adjusted break");
+    expect(correction.prevBreakMinutes).toBe(30);
+    expect(correction.newBreakMinutes).toBe(45);
+    expect(correction.editedById).toBe("m1");
+  });
+
+  it("re-opens an approved entry to PENDING and notifies the worker on correction", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findFirst.mockResolvedValue({
+      id: "te1",
+      userId: "u1",
+      status: "APPROVED",
+      clockInAt: new Date("2026-06-01T09:00:00Z"),
+      clockOutAt: new Date("2026-06-01T17:00:00Z"),
+      breakMinutes: 30,
+    });
+    db.timeEntry.update.mockResolvedValue({ id: "te1" });
+    db.timeEntryCorrection.create.mockResolvedValue({ id: "c1" });
+    db.notification.create.mockResolvedValue({ id: "n1" });
+    const svc = new TimeClockService(asPrisma(db));
+
+    await svc.updateEntry({
+      id: "te1",
+      businessId: "biz1",
+      reviewerId: "m1",
+      reason: "Late correction",
+      breakMinutes: 45,
+    });
+
+    const data = db.timeEntry.update.mock.calls[0][0].data;
+    expect(data.status).toBe("PENDING");
+    expect(data.approvedAt).toBeNull();
+    expect(data.approvedById).toBeNull();
+    const notif = db.notification.create.mock.calls[0][0].data;
+    expect(notif.type).toBe("TIME_ENTRY_CORRECTED");
+    expect(notif.userId).toBe("u1");
+  });
+
   it("rejects an edit that would put clock-out before clock-in", async () => {
     const db = createPrismaMock();
     db.timeEntry.findFirst.mockResolvedValue({
       id: "te1",
       userId: "u1",
+      status: "PENDING",
       clockInAt: new Date("2026-06-01T09:00:00Z"),
       clockOutAt: new Date("2026-06-01T17:00:00Z"),
       breakMinutes: 0,
@@ -250,9 +331,115 @@ describe("TimeClockService", () => {
         id: "te1",
         businessId: "biz1",
         reviewerId: "m1",
+        reason: "Fix",
         clockOutAt: new Date("2026-06-01T08:00:00Z"),
       }),
     ).rejects.toThrow(/after clock-in/i);
+  });
+
+  it("requires a reason to reject entries", async () => {
+    const db = createPrismaMock();
+    const svc = new TimeClockService(asPrisma(db));
+    await expect(
+      svc.rejectMany({
+        ids: ["te1"],
+        businessId: "biz1",
+        reviewerId: "m1",
+        reason: "",
+      }),
+    ).rejects.toThrow(/rejectReasonRequired/);
+  });
+
+  describe("geofence enforcement on clock-in", () => {
+    function seedGeofence(opts: { enforce: boolean }) {
+      const db = createPrismaMock();
+      db.timeEntry.findFirst.mockResolvedValue(null);
+      db.user.findUnique.mockResolvedValue({ businessId: "b1" });
+      db.business.findUnique.mockResolvedValue({
+        requireSignedContract: false,
+        enforceGeofence: opts.enforce,
+      });
+      db.shiftAssignment.findFirst.mockResolvedValue({ id: "a1" });
+      db.shift.findUnique.mockResolvedValue({
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T14:00:00Z"),
+        location: {
+          geofenceLat: 50.85,
+          geofenceLng: 4.35,
+          geofenceRadiusM: 100,
+        },
+      });
+      db.timeEntry.create.mockResolvedValue({ id: "te1" });
+      return db;
+    }
+
+    it("allows clock-in when inside the geofence", async () => {
+      const db = seedGeofence({ enforce: true });
+      const svc = new TimeClockService(asPrisma(db));
+      const result = await svc.clockIn({
+        userId: "u1",
+        shiftId: "shift1",
+        lat: 50.85001,
+        lng: 4.35001,
+      });
+      expect(result.id).toBe("te1");
+      expect(db.timeEntry.create.mock.calls[0][0].data.clockInLat).toBe(50.85001);
+    });
+
+    it("rejects clock-in when outside the geofence", async () => {
+      const db = seedGeofence({ enforce: true });
+      const svc = new TimeClockService(asPrisma(db));
+      await expect(
+        svc.clockIn({ userId: "u1", shiftId: "shift1", lat: 0, lng: 0 }),
+      ).rejects.toThrow(/errors\.outsideGeofence/);
+    });
+
+    it("requires coordinates when geofencing is enforced", async () => {
+      const db = seedGeofence({ enforce: true });
+      const svc = new TimeClockService(asPrisma(db));
+      await expect(
+        svc.clockIn({ userId: "u1", shiftId: "shift1" }),
+      ).rejects.toThrow(/errors\.geolocationRequired/);
+    });
+
+    it("ignores the geofence when the business has not enabled it", async () => {
+      const db = seedGeofence({ enforce: false });
+      const svc = new TimeClockService(asPrisma(db));
+      const result = await svc.clockIn({ userId: "u1", shiftId: "shift1" });
+      expect(result.id).toBe("te1");
+    });
+  });
+
+  describe("QR clock-in", () => {
+    it("clocks in via a valid signed location token", async () => {
+      const db = createPrismaMock();
+      const secret = "loc-secret";
+      const { signLocationToken } = await import("@/lib/location-token");
+      const token = signLocationToken("loc1", secret);
+      db.location.findUnique.mockResolvedValue({ id: "loc1", qrSecret: secret });
+      db.shiftAssignment.findFirst.mockResolvedValue(null);
+      db.timeEntry.findFirst.mockResolvedValue(null);
+      db.user.findUnique.mockResolvedValue(null);
+      db.timeEntry.create.mockResolvedValue({ id: "te1" });
+      const svc = new TimeClockService(asPrisma(db));
+
+      const result = await svc.clockInViaQr({ userId: "u1", token });
+      expect(result.id).toBe("te1");
+    });
+
+    it("rejects a tampered QR token", async () => {
+      const db = createPrismaMock();
+      const { signLocationToken } = await import("@/lib/location-token");
+      const token = signLocationToken("loc1", "real-secret");
+      db.location.findUnique.mockResolvedValue({
+        id: "loc1",
+        qrSecret: "different-secret",
+      });
+      const svc = new TimeClockService(asPrisma(db));
+      await expect(
+        svc.clockInViaQr({ userId: "u1", token }),
+      ).rejects.toThrow(/errors\.invalidQrToken/);
+    });
   });
 
   it("aggregates approved worked hours over a window", async () => {

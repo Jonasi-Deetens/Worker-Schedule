@@ -20,6 +20,7 @@ import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
 import { formatTimeRange } from "@/lib/calendar-utils";
 import { ContractSigningPanel } from "@/interface/components/contract-signing-panel";
+import { StudentQuotaWidget } from "@/interface/components/student-quota-widget";
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -117,6 +118,8 @@ export function MeHomeClient() {
       </header>
 
       <ContractSigningPanel />
+
+      <StudentQuotaWidget mode="self" />
 
       {/* Next shift hero */}
       <section className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-card">

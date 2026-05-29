@@ -154,6 +154,16 @@ export const workerProfileSchema = z.object({
         v == null || v === "" || /^\d{11}$/.test(v.replace(/\D/g, "")),
       { message: "National number must be 11 digits" },
     ),
+  addressLine: z.string().max(200).nullable().optional(),
+  postalCode: z.string().max(20).nullable().optional(),
+  city: z.string().max(120).nullable().optional(),
+  iban: z.string().max(40).nullable().optional(),
+  emergencyContactName: z.string().max(120).nullable().optional(),
+  emergencyContactPhone: z.string().max(40).nullable().optional(),
+  region: z
+    .enum(["FLANDERS", "BRUSSELS", "WALLONIA", "EAST_BELGIUM"])
+    .nullable()
+    .optional(),
 });
 
 export const workerStatusSchema = z.object({
@@ -253,17 +263,24 @@ export const timeEntryClockOutSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+export const timeEntryClockInViaQrSchema = z.object({
+  token: z.string().min(1).max(400),
+});
+
 export const timeEntryApproveSchema = z.object({
   ids: z.array(z.string().cuid()).min(1).max(200),
 });
 
 export const timeEntryRejectSchema = z.object({
   ids: z.array(z.string().cuid()).min(1).max(200),
-  reason: z.string().max(500).optional(),
+  // A reason is mandatory so every rejection is auditable.
+  reason: z.string().min(1).max(500),
 });
 
 export const timeEntryUpdateSchema = z.object({
   id: z.string().cuid(),
+  // Mandatory correction reason — time registration is immutable + audited.
+  reason: z.string().min(1).max(500),
   clockInAt: z.coerce.date().optional(),
   clockOutAt: z.coerce.date().nullable().optional(),
   breakMinutes: z.number().int().min(0).max(720).optional(),

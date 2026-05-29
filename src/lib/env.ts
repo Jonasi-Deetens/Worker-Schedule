@@ -32,12 +32,30 @@ const schema = z.object({
   VAPID_SUBJECT: z.string().optional(),
 
   // Belgian Dimona (ONSS) declaration adapter
-  DIMONA_ENV: z.enum(["mock", "sandbox", "prod"]).default("mock"),
+  DIMONA_ENV: z.enum(["mock", "sandbox", "prod", "simulation"]).default("mock"),
   DIMONA_SANDBOX_URL: z.string().url().optional(),
   DIMONA_PROD_URL: z.string().url().optional(),
   DIMONA_TOKEN: z.string().optional(),
+  // Direct RSZ REST v2 channel (OAuth2 client-credentials + X.509). All
+  // optional — when unset the mock adapter stays the default. `simulation`
+  // points DIMONA_REST_BASE_URL/DIMONA_OAUTH_URL at the RSZ simulation host.
+  DIMONA_REST_BASE_URL: z.string().url().optional(),
+  DIMONA_OAUTH_URL: z.string().url().optional(),
+  DIMONA_REST_CLIENT_ID: z.string().optional(),
+  // PEM-encoded X.509 private key, or a filesystem path to one.
+  DIMONA_REST_PRIVATE_KEY: z.string().optional(),
+  DIMONA_REST_PRIVATE_KEY_PATH: z.string().optional(),
+  // Optional social-secretariat provider seam (Securex/SD Worx/Partena/Liantis).
+  // When set, declarations route through the provider adapter (a stub until
+  // provider credentials are configured).
+  DIMONA_PROVIDER: z
+    .enum(["securex", "sdworx", "partena", "liantis"])
+    .optional(),
   // 32+ char secret used to AES-256-GCM encrypt Business.dimonaCredentials
   DIMONA_ENCRYPTION_KEY: z.string().optional(),
+  // 32+ char secret used to AES-256-GCM encrypt PII at rest (e.g. NISS).
+  // Falls back to DIMONA_ENCRYPTION_KEY when unset.
+  PII_ENCRYPTION_KEY: z.string().optional(),
 
   // Observability
   SENTRY_DSN: z.string().url().optional(),

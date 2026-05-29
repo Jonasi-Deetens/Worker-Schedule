@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Play, Square } from "lucide-react";
 import { AppHeader } from "@/interface/components/app-header";
@@ -12,7 +12,13 @@ import { toast, trpcErrorMessage } from "@/lib/toast";
 import { formatTimeRange } from "@/lib/calendar-utils";
 import { ContractSigningPanel } from "@/interface/components/contract-signing-panel";
 
-export function ClockClient({ initialShiftId }: { initialShiftId: string | null }) {
+export function ClockClient({
+  initialShiftId,
+  initialLoc = null,
+}: {
+  initialShiftId: string | null;
+  initialLoc?: string | null;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const active = trpc.timeClock.active.useQuery();
@@ -35,6 +41,44 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
     },
     onError: (error) => toast.error(trpcErrorMessage(error, t)),
   });
+
+  // Best-effort geolocation capture: pass coordinates when the browser grants
+  // them, otherwise clock in without — the server enforces geofencing only when
+  // the business opts in, and surfaces a clear error if location is required.
+  const clockInWithGeo = (shiftId?: string) => {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          clockIn.mutate({
+            shiftId,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          }),
+        () => clockIn.mutate({ shiftId }),
+        { enableHighAccuracy: true, timeout: 8000 },
+      );
+    } else {
+      clockIn.mutate({ shiftId });
+    }
+  };
+
+  const clockInViaQr = trpc.timeClock.clockInViaQr.useMutation({
+    onSuccess: () => {
+      utils.timeClock.active.invalidate();
+      toast.success(t("toast.clockedIn"));
+    },
+    onError: (error) => toast.error(trpcErrorMessage(error, t)),
+  });
+
+  // A location QR deep-link (/clock?loc=<token>) clocks the worker in once.
+  const qrHandled = useRef(false);
+  useEffect(() => {
+    if (initialLoc && !qrHandled.current && !active.data) {
+      qrHandled.current = true;
+      clockInViaQr.mutate({ token: initialLoc });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLoc, active.data]);
 
   const clockOut = trpc.timeClock.clockOut.useMutation({
     onSuccess: () => {
@@ -71,6 +115,12 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
         {(pendingContracts.data?.length ?? 0) > 0 && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             {t("clock.contractRequiredHint")}
+          </p>
+        )}
+
+        {clockInViaQr.isPending && (
+          <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            {t("clock.qrClockingIn")}
           </p>
         )}
 
@@ -150,9 +200,7 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
                     )}
                   </p>
                   <Button
-                    onClick={() =>
-                      clockIn.mutate({ shiftId: targetShift.shiftId })
-                    }
+                    onClick={() => clockInWithGeo(targetShift.shiftId)}
                     disabled={clockIn.isPending}
                     className="mt-6 h-14 w-full text-lg"
                   >
@@ -161,7 +209,7 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
                   </Button>
                   <button
                     type="button"
-                    onClick={() => clockIn.mutate({})}
+                    onClick={() => clockInWithGeo()}
                     disabled={clockIn.isPending}
                     className="mt-3 text-sm text-slate-500 underline hover:text-slate-700"
                   >
@@ -174,7 +222,7 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
                     {t("clock.noActiveShift")}
                   </p>
                   <Button
-                    onClick={() => clockIn.mutate({})}
+                    onClick={() => clockInWithGeo()}
                     disabled={clockIn.isPending}
                     className="mt-6 h-14 w-full text-lg"
                   >

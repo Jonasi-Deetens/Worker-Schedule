@@ -18,6 +18,11 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [contractType, setContractType] = useState<string>("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [scheduleText, setScheduleText] = useState("");
+  const [hourlyWage, setHourlyWage] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
 
   const send = trpc.contract.send.useMutation({
     onSuccess: () => {
@@ -25,11 +30,23 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
       utils.contract.listForWorker.invalidate({ userId: workerId });
       setTitle("");
       setBody("");
+      setStartDate("");
+      setEndDate("");
+      setScheduleText("");
+      setHourlyWage("");
+      setJobDescription("");
     },
     onError: (error) => toast.error(trpcErrorMessage(error, t)),
   });
 
-  const contracts = contractsQuery.data ?? [];
+  const contracts = (contractsQuery.data ?? []) as Array<{
+    id: string;
+    title: string;
+    status: string;
+    signedAt: Date | string | null;
+    signatureName: string | null;
+    pdfUrl: string | null;
+  }>;
 
   const statusLabel = (status: string) => {
     const keys: Record<string, string> = {
@@ -64,9 +81,23 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
                     })}`}
                 </p>
               </div>
-              {c.signatureName && (
-                <span className="text-xs text-slate-600">{c.signatureName}</span>
-              )}
+              <div className="flex items-center gap-3">
+                {c.pdfUrl && (
+                  <a
+                    href={c.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-emerald-600 hover:underline"
+                  >
+                    {t("contracts.viewPdf")}
+                  </a>
+                )}
+                {c.signatureName && (
+                  <span className="text-xs text-slate-600">
+                    {c.signatureName}
+                  </span>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -85,6 +116,13 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
             title,
             body: body || undefined,
             contractType: (contractType as (typeof CONTRACT_TYPES)[number]) || undefined,
+            startDate: startDate ? new Date(startDate) : null,
+            endDate: endDate ? new Date(endDate) : null,
+            scheduleText: scheduleText || null,
+            hourlyWageCents: hourlyWage
+              ? Math.round(parseFloat(hourlyWage) * 100)
+              : null,
+            jobDescription: jobDescription || null,
           });
         }}
       >
@@ -96,16 +134,6 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-          />
-        </div>
-        <div>
-          <Label htmlFor="contractBody">{t("contracts.bodyLabel")}</Label>
-          <textarea
-            id="contractBody"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={4}
-            className="flex w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           />
         </div>
         <div>
@@ -124,6 +152,67 @@ export function WorkerContractsSection({ workerId }: { workerId: string }) {
             ))}
           </select>
         </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="contractStart">{t("contracts.startDateLabel")}</Label>
+            <Input
+              id="contractStart"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="contractEnd">{t("contracts.endDateLabel")}</Label>
+            <Input
+              id="contractEnd"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="contractWage">{t("contracts.wageLabel")}</Label>
+            <Input
+              id="contractWage"
+              type="number"
+              step="0.01"
+              min="0"
+              value={hourlyWage}
+              onChange={(e) => setHourlyWage(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="contractSchedule">{t("contracts.scheduleLabel")}</Label>
+            <Input
+              id="contractSchedule"
+              value={scheduleText}
+              onChange={(e) => setScheduleText(e.target.value)}
+              placeholder={t("contracts.schedulePlaceholder")}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="contractJob">{t("contracts.jobDescriptionLabel")}</Label>
+          <textarea
+            id="contractJob"
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            rows={3}
+            className="flex w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <Label htmlFor="contractBody">{t("contracts.bodyLabel")}</Label>
+          <textarea
+            id="contractBody"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            className="flex w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          />
+        </div>
+        <p className="text-xs text-slate-500">{t("contracts.pdfPending")}</p>
         <Button type="submit" disabled={!title.trim() || send.isPending}>
           {t("contracts.sendButton")}
         </Button>

@@ -2,22 +2,29 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/infrastructure/auth/auth-options";
 import { prisma } from "@/infrastructure/db/prisma";
+import { decryptPiiNullable } from "@/infrastructure/crypto/pii";
+import { HolidayService } from "@/application/services/holiday-service";
 import {
+  buildAbsenceRows,
   buildPayrollRows,
+  payrollContentType,
+  payrollFilename,
   PROVIDERS,
-  renderPayrollCsv,
+  renderPayrollCsvWithVariance,
+  resolveFormat,
+  summarizeStuVariance,
 } from "@/infrastructure/payroll/providers";
 
 /**
- * Owner/manager-only payroll export. Combines approved `TimeEntry` rows with
- * the worker's `hourlyRate` and renders a CSV in the column layout requested
- * by the `?provider=` query (`sdworx`, `securex`, or `generic`).
+ * Owner/manager-only payroll export. Combines approved `TimeEntry` rows (split
+ * into per-wage-code rows: regular/overtime/night/weekend/holiday) with absence
+ * rows from approved time-off and a STU planned-vs-actual variance section.
  *
- * Only approved, closed time entries are exported — there is no fallback to
- * scheduled assignments. The `employee_id` column uses the worker's payroll
- * identifier (`nationalNumber`/NISS), never the internal database id, and the
- * date is formatted in the business timezone so a late-evening shift is not
- * pushed onto the next calendar day by UTC.
+ * The `?provider=` query selects the column layout (`sdworx`, `securex`,
+ * `partena`, `liantis`, or `generic`) and `?format=` selects CSV (default) or
+ * Excel (`xlsx`). JOBSTUDENT rows are flagged for the solidarity regime. The
+ * `employee_id` column uses the worker's decrypted NISS, never the internal
+ * database id, and dates are formatted in the business timezone.
  */
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -33,12 +40,14 @@ export async function GET(request: Request) {
   const toParam = url.searchParams.get("to");
   const providerKey = (url.searchParams.get("provider") ?? "generic").toLowerCase();
   const provider = PROVIDERS[providerKey] ?? PROVIDERS.generic!;
+  const format = resolveFormat(url.searchParams.get("format"));
 
   const now = new Date();
   const from = fromParam
     ? new Date(fromParam)
     : new Date(now.getFullYear(), now.getMonth(), 1);
   const to = toParam ? new Date(toParam) : now;
+  const periodEnd = new Date(to.getTime() + 86_400_000);
 
   const business = await prisma.business.findUnique({
     where: { id: session.user.businessId },
@@ -46,13 +55,22 @@ export async function GET(request: Request) {
   });
   const timeZone = business?.timezone ?? "Europe/Brussels";
 
+  // Effective public-holiday calendar (statutory Belgian holidays + custom
+  // business closure days) for the export window, so worked minutes on a
+  // holiday land in the HOLIDAY wage bucket.
+  const holidays = await new HolidayService(prisma).effectiveHolidaySet({
+    businessId: session.user.businessId,
+    from,
+    to: periodEnd,
+  });
+
   const entries = await prisma.timeEntry.findMany({
     where: {
       status: "APPROVED",
       approvedAt: { not: null },
       clockOutAt: { not: null },
       user: { businessId: session.user.businessId },
-      clockInAt: { gte: from, lte: new Date(to.getTime() + 86_400_000) },
+      clockInAt: { gte: from, lte: periodEnd },
     },
     include: {
       user: {
@@ -62,22 +80,102 @@ export async function GET(request: Request) {
           email: true,
           hourlyRate: true,
           nationalNumber: true,
+          contractType: true,
         },
       },
     },
     orderBy: { clockInAt: "asc" },
   });
 
-  const rows = buildPayrollRows(entries, timeZone);
+  // NISS is stored encrypted at rest; decrypt it for the payroll `employee_id`
+  // column. Legacy plaintext rows pass through unchanged.
+  const decryptedEntries = entries.map((entry) => ({
+    ...entry,
+    user: {
+      ...entry.user,
+      nationalNumber: decryptPiiNullable(entry.user.nationalNumber),
+    },
+  }));
 
-  const body = renderPayrollCsv(provider, rows);
-  return new NextResponse(body, {
+  const rows = buildPayrollRows(decryptedEntries, { timeZone, holidays });
+
+  // Approved time-off overlapping the window becomes one ABSENCE row per day.
+  const timeOff = await prisma.timeOffRequest.findMany({
+    where: {
+      status: "APPROVED",
+      user: { businessId: session.user.businessId },
+      startsAt: { lte: periodEnd },
+      endsAt: { gte: from },
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          hourlyRate: true,
+          nationalNumber: true,
+          contractType: true,
+        },
+      },
+    },
+  });
+  const absenceRows = buildAbsenceRows(
+    timeOff.map((request) => ({
+      startsAt: request.startsAt,
+      endsAt: request.endsAt,
+      user: {
+        ...request.user,
+        nationalNumber: decryptPiiNullable(request.user.nationalNumber),
+      },
+    })),
+    { from, to: periodEnd },
+    timeZone,
+  );
+
+  // STU planned (Dimona) vs actual approved hours for the period's quarter.
+  const year = from.getFullYear();
+  const quarter = Math.floor(from.getMonth() / 3) + 1;
+  const stuDeclarations = await prisma.dimonaStuDeclaration.findMany({
+    where: { businessId: session.user.businessId, year, quarter },
+    include: {
+      user: { select: { name: true, email: true, nationalNumber: true } },
+    },
+  });
+  const variance = summarizeStuVariance(
+    stuDeclarations.map((declaration) => ({
+      userId: declaration.userId,
+      plannedHours: declaration.plannedHours,
+      user: {
+        ...declaration.user,
+        nationalNumber: decryptPiiNullable(declaration.user.nationalNumber),
+      },
+    })),
+    decryptedEntries.map((entry) => ({
+      userId: entry.userId,
+      clockInAt: entry.clockInAt,
+      clockOutAt: entry.clockOutAt,
+      breakMinutes: entry.breakMinutes,
+    })),
+  );
+
+  const allRows = [...rows, ...absenceRows];
+  const fromIso = from.toISOString().slice(0, 10);
+  const toIso = to.toISOString().slice(0, 10);
+  const filename = payrollFilename(provider, format, fromIso, toIso);
+
+  let body: string | Buffer;
+  if (format === "xlsx") {
+    const { renderPayrollXlsx } = await import("@/infrastructure/payroll/xlsx");
+    body = await renderPayrollXlsx(provider, allRows, variance);
+  } else {
+    body = renderPayrollCsvWithVariance(provider, allRows, variance);
+  }
+
+  return new NextResponse(body as BodyInit, {
     status: 200,
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="payroll-${from
-        .toISOString()
-        .slice(0, 10)}-to-${to.toISOString().slice(0, 10)}${provider.fileSuffix}"`,
+      "Content-Type": payrollContentType(format),
+      "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
     },
   });

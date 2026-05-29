@@ -14,7 +14,20 @@ export type DocumentKind =
   | "WORK_CONTRACT"
   | "RESIDENCE_PERMIT"
   | "FOOD_SAFETY"
+  | "ENROLLMENT_CERTIFICATE"
+  | "STUDENT_AT_WORK_ATTESTATION"
   | "OTHER";
+
+/** All document kinds, in display order. Single source of truth for UI + API. */
+export const DOCUMENT_KINDS: readonly DocumentKind[] = [
+  "ID_CARD",
+  "WORK_CONTRACT",
+  "RESIDENCE_PERMIT",
+  "FOOD_SAFETY",
+  "ENROLLMENT_CERTIFICATE",
+  "STUDENT_AT_WORK_ATTESTATION",
+  "OTHER",
+] as const;
 
 /** Cap uploads at 10 MiB. Documents we accept are scans / PDFs / small images. */
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;

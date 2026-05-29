@@ -4,13 +4,21 @@ import { AvailabilityService } from "@/application/services/availability-service
 import type { DimonaDeclareJob } from "@/application/services/dimona-declare-job";
 import { DimonaService } from "@/application/services/dimona-service";
 import { EmailService } from "@/application/services/email-service";
+import { GdprService } from "@/application/services/gdpr-service";
+import type { GdprPurgeJob } from "@/application/services/gdpr-purge-job";
 import { NotificationService } from "@/application/services/notification-service";
 import {
   webhookHost,
   type WebhookDeliveryJob,
 } from "@/application/services/webhook-service";
 import { getDimonaAdapter } from "@/infrastructure/dimona/adapter";
+import { isStorageConfigured } from "@/application/services/document-service";
 import { logger } from "@/infrastructure/logging/logger";
+import { env } from "@/lib/env";
+import {
+  deleteObject,
+  objectKeyFromUrl,
+} from "@/infrastructure/storage/s3-delete";
 import { getTranslator } from "@/lib/server-i18n";
 
 /**
@@ -297,4 +305,63 @@ export async function runDimonaDeclare(
       throw new Error("Dimona CANCEL retry failed");
     }
   }
+}
+
+/**
+ * GDPR hard-delete purge. Runs after the retention window: deletes the user's
+ * uploaded documents from S3/MinIO (best-effort) and then anonymises their
+ * personal data in the database. The S3 deletes are tolerant — a missing object
+ * or unconfigured storage never blocks the DB anonymisation.
+ */
+export async function runGdprPurge(
+  db: PrismaClient,
+  job: GdprPurgeJob,
+  fetcher: typeof fetch = fetch,
+): Promise<{ documentsPurged: number; anonymized: boolean }> {
+  let documentsPurged = 0;
+
+  if (isStorageConfigured()) {
+    const documents = await db.document.findMany({
+      where: { userId: job.userId },
+      select: { id: true, url: true },
+    });
+    const forcePathStyle = env.STORAGE_FORCE_PATH_STYLE === true;
+    for (const document of documents) {
+      const key = objectKeyFromUrl(document.url, {
+        bucket: env.STORAGE_BUCKET!,
+        forcePathStyle,
+      });
+      if (!key) continue;
+      try {
+        const ok = await deleteObject(
+          {
+            endpoint: env.STORAGE_ENDPOINT!,
+            region: env.STORAGE_REGION!,
+            bucket: env.STORAGE_BUCKET!,
+            key,
+            accessKeyId: env.STORAGE_ACCESS_KEY!,
+            secretAccessKey: env.STORAGE_SECRET_KEY!,
+            forcePathStyle,
+          },
+          fetcher,
+        );
+        if (ok) documentsPurged += 1;
+      } catch (err) {
+        logger.warn({
+          event: "gdpr.purge.document.failed",
+          documentId: document.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+
+  const service = new GdprService(db);
+  const result = await service.purgeUser(job.userId);
+  logger.info({
+    event: "gdpr.purge.done",
+    userId: job.userId,
+    documentsPurged,
+  });
+  return { documentsPurged, anonymized: result.anonymized };
 }

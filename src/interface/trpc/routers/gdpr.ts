@@ -11,7 +11,7 @@ export const gdprRouter = router({
   }),
   deleteMine: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      return await gdprService.softDelete(ctx.session.user.id);
+      return await gdprService.requestDeletion(ctx.session.user.id);
     } catch (error) {
       mapServiceError(error);
     }

@@ -25,6 +25,7 @@ import {
   broadcastService,
   bulkShiftService,
   requireBusinessId,
+  schedulingRules,
   shiftAssignmentService,
   shiftReadModel,
   shiftService,
@@ -201,12 +202,27 @@ export const shiftRouter = router({
     .mutation(async ({ ctx, input }) => {
       const businessId = requireBusinessId(ctx.session.user.businessId);
       try {
-        return await shiftAssignmentService.assignWorker({
+        const assignment = await shiftAssignmentService.assignWorker({
           shiftId: input.shiftId,
           workerId: input.workerId,
           businessId,
           ownerId: ctx.session.user.id,
         });
+        // Non-blocking advisory: warn (don't block) if the student is being
+        // scheduled during typical school hours/term.
+        const shift = await prisma.shift.findUnique({
+          where: { id: input.shiftId },
+          select: { startsAt: true, endsAt: true },
+        });
+        const advisories: string[] = [];
+        if (shift) {
+          const advisory = await schedulingRules.schoolPeriodAdvisory(
+            input.workerId,
+            { startsAt: shift.startsAt, endsAt: shift.endsAt },
+          );
+          if (advisory) advisories.push(advisory.message);
+        }
+        return { assignment, advisories };
       } catch (error) {
         mapServiceError(error);
       }

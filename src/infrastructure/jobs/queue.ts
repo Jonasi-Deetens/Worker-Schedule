@@ -34,6 +34,7 @@ export const JOBS = {
   DIMONA_RECONCILE: "dimona.reconcile",
   DIMONA_DECLARE: "dimona.declare",
   WEBHOOK_DELIVER: "webhook.deliver",
+  GDPR_PURGE: "gdpr.purge",
 } as const;
 
 export type JobName = (typeof JOBS)[keyof typeof JOBS];

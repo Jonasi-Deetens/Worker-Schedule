@@ -1,10 +1,20 @@
 import type { PrismaClient } from "@prisma/client";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { logger } from "@/infrastructure/logging/logger";
+import { isWithinRadius } from "@/lib/geo";
+import {
+  parseLocationTokenId,
+  verifyLocationToken,
+} from "@/lib/location-token";
 import { declareOutIfAuto } from "./dimona-hooks";
+import { SchedulingRules } from "./scheduling-rules";
 
 export class TimeClockService {
-  constructor(private readonly db: PrismaClient) {}
+  private readonly rules: SchedulingRules;
+
+  constructor(private readonly db: PrismaClient) {
+    this.rules = new SchedulingRules(db);
+  }
 
   async activeFor(userId: string) {
     return this.db.timeEntry.findFirst({
@@ -14,7 +24,15 @@ export class TimeClockService {
     });
   }
 
-  async clockIn(input: { userId: string; shiftId: string | null }) {
+  async clockIn(input: {
+    userId: string;
+    shiftId: string | null;
+    /** Captured browser coordinates, required when geofencing is enforced. */
+    lat?: number;
+    lng?: number;
+    /** Set by the QR path: scanning a location's code proves presence. */
+    skipGeofence?: boolean;
+  }) {
     const open = await this.db.timeEntry.findFirst({
       where: { userId: input.userId, clockOutAt: null },
     });
@@ -24,10 +42,12 @@ export class TimeClockService {
       where: { id: input.userId },
       select: { businessId: true },
     });
+    let business: { requireSignedContract: boolean; enforceGeofence: boolean } | null =
+      null;
     if (worker?.businessId) {
-      const business = await this.db.business.findUnique({
+      business = await this.db.business.findUnique({
         where: { id: worker.businessId },
-        select: { requireSignedContract: true },
+        select: { requireSignedContract: true, enforceGeofence: true },
       });
       if (business?.requireSignedContract) {
         const signed = await this.db.workerContract.findFirst({
@@ -45,6 +65,17 @@ export class TimeClockService {
 
     // A linked shift must belong to one of the worker's own assignments,
     // otherwise the entry would be attributed to a shift they never worked.
+    let shift:
+      | {
+          startsAt: Date;
+          endsAt: Date;
+          location: {
+            geofenceLat: unknown;
+            geofenceLng: unknown;
+            geofenceRadiusM: number | null;
+          } | null;
+        }
+      | null = null;
     if (input.shiftId) {
       const assignment = await this.db.shiftAssignment.findFirst({
         where: { shiftId: input.shiftId, userId: input.userId },
@@ -52,6 +83,63 @@ export class TimeClockService {
       if (!assignment) {
         throw new Error("Cannot clock in against a shift you are not assigned to");
       }
+      shift = await this.db.shift.findUnique({
+        where: { id: input.shiftId },
+        select: {
+          startsAt: true,
+          endsAt: true,
+          location: {
+            select: {
+              geofenceLat: true,
+              geofenceLng: true,
+              geofenceRadiusM: true,
+            },
+          },
+        },
+      });
+    }
+
+    // Eligibility gates (Phase F): required documents always apply to students;
+    // minor / birth-date rules need the shift's time window.
+    const docViolation = await this.rules.checkRequiredDocuments(input.userId, {
+      startsAt: new Date(),
+    });
+    if (docViolation) throw new Error(docViolation.message);
+    if (input.shiftId && shift) {
+      const candidate = { startsAt: shift.startsAt, endsAt: shift.endsAt };
+      const youth =
+        (await this.rules.checkStudentBirthDateRequired(
+          input.userId,
+          candidate,
+        )) ??
+        (await this.rules.checkMinorDailyHours(input.userId, candidate)) ??
+        (await this.rules.checkMinorNightWork(input.userId, candidate));
+      if (youth) throw new Error(youth.message);
+    }
+
+    // Optional geofence enforcement: only when the business opted in and the
+    // clocked shift's location actually defines a geofence.
+    const geofence =
+      shift?.location &&
+      shift.location.geofenceLat != null &&
+      shift.location.geofenceLng != null &&
+      shift.location.geofenceRadiusM != null
+        ? {
+            lat: Number(shift.location.geofenceLat),
+            lng: Number(shift.location.geofenceLng),
+            radiusM: shift.location.geofenceRadiusM,
+          }
+        : null;
+    if (!input.skipGeofence && business?.enforceGeofence && geofence) {
+      if (input.lat == null || input.lng == null) {
+        throw new Error("errors.geolocationRequired");
+      }
+      const within = isWithinRadius(
+        { lat: geofence.lat, lng: geofence.lng },
+        { lat: input.lat, lng: input.lng },
+        geofence.radiusM,
+      );
+      if (!within) throw new Error("errors.outsideGeofence");
     }
 
     const entry = await this.db.timeEntry.create({
@@ -59,11 +147,52 @@ export class TimeClockService {
         userId: input.userId,
         shiftId: input.shiftId ?? undefined,
         clockInAt: new Date(),
+        clockInLat: input.lat ?? null,
+        clockInLng: input.lng ?? null,
       },
     });
 
     await this.publishEntryCreated(input.userId);
     return entry;
+  }
+
+  /**
+   * Clock in by scanning a location's signed QR code. The token proves which
+   * location the worker is physically at, so geofence coordinate checks are
+   * skipped. When the worker has an assigned shift at that location around now,
+   * the entry is linked to it; otherwise it is a plain clock-in.
+   */
+  async clockInViaQr(input: { userId: string; token: string }) {
+    const locationId = parseLocationTokenId(input.token);
+    if (!locationId) throw new Error("errors.invalidQrToken");
+    const location = await this.db.location.findUnique({
+      where: { id: locationId },
+      select: { id: true, qrSecret: true },
+    });
+    if (!location?.qrSecret || !verifyLocationToken(input.token, location.qrSecret)) {
+      throw new Error("errors.invalidQrToken");
+    }
+
+    const now = Date.now();
+    const window = 12 * 60 * 60 * 1000;
+    const assignment = await this.db.shiftAssignment.findFirst({
+      where: {
+        userId: input.userId,
+        shift: {
+          locationId,
+          startsAt: { lte: new Date(now + window) },
+          endsAt: { gte: new Date(now - window) },
+        },
+      },
+      include: { shift: { select: { id: true } } },
+      orderBy: { shift: { startsAt: "asc" } },
+    });
+
+    return this.clockIn({
+      userId: input.userId,
+      shiftId: assignment?.shift.id ?? null,
+      skipGeofence: true,
+    });
   }
 
   async clockOut(input: {
@@ -288,8 +417,13 @@ export class TimeClockService {
     ids: string[];
     businessId: string;
     reviewerId: string;
-    reason?: string;
+    reason: string;
   }) {
+    // A reason is mandatory so every rejection is auditable, mirroring the
+    // mandatory reason on time-entry corrections.
+    const reason = input.reason?.trim();
+    if (!reason) throw new Error("errors.rejectReasonRequired");
+
     const entries = await this.db.timeEntry.findMany({
       where: {
         id: { in: input.ids },
@@ -308,7 +442,7 @@ export class TimeClockService {
         status: "REJECTED",
         approvedAt: null,
         approvedById: input.reviewerId,
-        reviewNote: input.reason ?? null,
+        reviewNote: reason,
       },
     });
 
@@ -319,7 +453,7 @@ export class TimeClockService {
           action: "TIME_ENTRY_REJECTED",
           entityType: "TimeEntry",
           entityId: entry.id,
-          metadata: input.reason ? { reason: input.reason } : undefined,
+          metadata: { reason },
         },
       });
       await this.db.notification.create({
@@ -327,9 +461,7 @@ export class TimeClockService {
           userId: entry.userId,
           type: "TIME_ENTRY_REJECTED",
           title: "Hours rejected",
-          body: input.reason
-            ? `Your submitted hours were rejected: ${input.reason}`
-            : "Your submitted hours were rejected.",
+          body: `Your submitted hours were rejected: ${reason}`,
           payload: { timeEntryId: entry.id },
         },
       });
@@ -338,15 +470,26 @@ export class TimeClockService {
     return { count: result.count };
   }
 
+  /**
+   * Corrects a time entry. Time registration is immutable: a non-empty reason
+   * is mandatory and, BEFORE the values change, an append-only
+   * {@link TimeEntryCorrection} captures the prior + new snapshot. If the entry
+   * had already been APPROVED it is re-opened to PENDING (approval cleared) and
+   * the worker is notified that their approved hours were corrected.
+   */
   async updateEntry(input: {
     id: string;
     businessId: string;
     reviewerId: string;
+    reason: string;
     clockInAt?: Date;
     clockOutAt?: Date;
     breakMinutes?: number;
     notes?: string | null;
   }) {
+    const reason = input.reason?.trim();
+    if (!reason) throw new Error("errors.correctionReasonRequired");
+
     const entry = await this.db.timeEntry.findFirst({
       where: { id: input.id, user: { businessId: input.businessId } },
     });
@@ -370,6 +513,23 @@ export class TimeClockService {
       }
     }
 
+    // Immutable before/after snapshot is written FIRST, so the history is
+    // preserved even if the subsequent update somehow fails.
+    await this.db.timeEntryCorrection.create({
+      data: {
+        timeEntryId: entry.id,
+        editedById: input.reviewerId,
+        reason,
+        prevClockInAt: entry.clockInAt,
+        prevClockOutAt: entry.clockOutAt,
+        prevBreakMinutes: entry.breakMinutes,
+        newClockInAt: clockInAt,
+        newClockOutAt: clockOutAt ?? null,
+        newBreakMinutes: breakMinutes,
+      },
+    });
+
+    const wasApproved = entry.status === "APPROVED";
     const updated = await this.db.timeEntry.update({
       where: { id: entry.id },
       data: {
@@ -377,6 +537,10 @@ export class TimeClockService {
         clockOutAt: input.clockOutAt,
         breakMinutes: input.breakMinutes,
         notes: input.notes === undefined ? undefined : input.notes,
+        // Editing approved hours re-opens them for review.
+        ...(wasApproved
+          ? { status: "PENDING", approvedAt: null, approvedById: null }
+          : {}),
       },
     });
 
@@ -387,14 +551,47 @@ export class TimeClockService {
         entityType: "TimeEntry",
         entityId: entry.id,
         metadata: {
+          reason,
+          prevClockInAt: entry.clockInAt.toISOString(),
+          prevClockOutAt: entry.clockOutAt ? entry.clockOutAt.toISOString() : null,
+          prevBreakMinutes: entry.breakMinutes,
           clockInAt: clockInAt.toISOString(),
           clockOutAt: clockOutAt ? clockOutAt.toISOString() : null,
           breakMinutes,
+          reopened: wasApproved,
         },
       },
     });
 
+    if (wasApproved) {
+      await this.db.notification.create({
+        data: {
+          userId: entry.userId,
+          type: "TIME_ENTRY_CORRECTED",
+          title: "Approved hours corrected",
+          body: `Your approved hours were corrected and are pending review again: ${reason}`,
+          payload: { timeEntryId: entry.id },
+        },
+      });
+    }
+
     return updated;
+  }
+
+  /**
+   * Append-only correction history for one time entry, newest first. Scoped to
+   * the business so a manager can only read corrections for their own entries.
+   */
+  async listCorrections(input: { timeEntryId: string; businessId: string }) {
+    const entry = await this.db.timeEntry.findFirst({
+      where: { id: input.timeEntryId, user: { businessId: input.businessId } },
+      select: { id: true },
+    });
+    if (!entry) throw new Error("Time entry not found");
+    return this.db.timeEntryCorrection.findMany({
+      where: { timeEntryId: input.timeEntryId },
+      orderBy: { editedAt: "desc" },
+    });
   }
 
   /**

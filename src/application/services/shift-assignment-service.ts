@@ -3,7 +3,11 @@ import { assertNoAssignmentOverlap } from "@/domain/rules/scheduling";
 import type { TimeRange } from "@/domain/types";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
-import { cancelIfAuto, declareInIfAuto } from "./dimona-hooks";
+import {
+  cancelIfAuto,
+  declareInIfAuto,
+  recomputeStuQuartersIfStudent,
+} from "./dimona-hooks";
 import { NotificationService } from "./notification-service";
 import { SchedulingRules } from "./scheduling-rules";
 
@@ -119,10 +123,11 @@ export class ShiftAssignmentService {
 
     // Centralised scheduling-rule enforcement (min rest, weekly cap, age,
     // time-off) — identical guard used by approve/broadcast/swap.
-    await this.rules.assertAssignable(input.workerId, {
-      startsAt: shift.startsAt,
-      endsAt: shift.endsAt,
-    });
+    await this.rules.assertAssignable(
+      input.workerId,
+      { startsAt: shift.startsAt, endsAt: shift.endsAt },
+      { businessId: input.businessId },
+    );
 
     // No subscription is created here. A direct assignment is an *offer*: the
     // worker's pending state is represented purely by the PENDING_ACCEPTANCE
@@ -229,6 +234,13 @@ export class ShiftAssignmentService {
     });
 
     await cancelIfAuto(this.db, input.shiftId, input.workerId);
+    // Removing a worker may empty (or shrink) their STU quarter — recompute so
+    // the per-quarter Dimona + quota ledger reflect the dropped hours.
+    await recomputeStuQuartersIfStudent(this.db, {
+      workerId: input.workerId,
+      businessId: input.businessId,
+      dates: [shift.startsAt],
+    });
 
     publishEvent(input.businessId, {
       type: "assignment.changed",
@@ -460,6 +472,13 @@ export class ShiftAssignmentService {
     });
 
     await declareInIfAuto(this.db, shift.id, input.userId);
+    // A newly-confirmed JOBSTUDENT adds planned hours to their quarter — file
+    // (or update) the per-quarter Dimona STU declaration and quota ledger.
+    await recomputeStuQuartersIfStudent(this.db, {
+      workerId: input.userId,
+      businessId: input.businessId,
+      dates: [shift.startsAt],
+    });
 
     return updated;
   }
@@ -507,6 +526,11 @@ export class ShiftAssignmentService {
     });
 
     await cancelIfAuto(this.db, input.shiftId, input.userId);
+    await recomputeStuQuartersIfStudent(this.db, {
+      workerId: input.userId,
+      businessId: input.businessId,
+      dates: [shift.startsAt],
+    });
 
     const business = await this.db.business.findUnique({
       where: { id: input.businessId },

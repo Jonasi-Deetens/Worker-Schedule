@@ -211,10 +211,11 @@ export class BroadcastService {
     // Centralised scheduling-rule enforcement (min rest, weekly cap, age,
     // time-off). Mirrors the approve/assign/swap paths so no entry point can
     // commit an assignment that breaks a hard rule.
-    await this.rules.assertAssignable(input.userId, {
-      startsAt: shift.startsAt,
-      endsAt: shift.endsAt,
-    });
+    await this.rules.assertAssignable(
+      input.userId,
+      { startsAt: shift.startsAt, endsAt: shift.endsAt },
+      { businessId: input.businessId },
+    );
 
     try {
       const assignment = await this.db.$transaction(async (tx) => {

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, History, Pencil, X } from "lucide-react";
 import { AppHeader } from "@/interface/components/app-header";
 import { Button } from "@/interface/components/ui/button";
 import { Input } from "@/interface/components/ui/input";
@@ -18,6 +18,7 @@ interface EditState {
   clockOutAt: string;
   breakMinutes: number;
   notes: string;
+  reason: string;
 }
 
 function grossMinutesOf(entry: {
@@ -68,6 +69,7 @@ export function TimeEntriesClient() {
   const [rejectReason, setRejectReason] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [edit, setEdit] = useState<EditState | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const invalidate = () => {
     utils.timeClock.listPending.invalidate();
@@ -115,13 +117,15 @@ export function TimeEntriesClient() {
       clockOutAt: toLocalInput(entry.clockOutAt),
       breakMinutes: entry.breakMinutes,
       notes: entry.notes ?? "",
+      reason: "",
     });
   };
 
   const saveEdit = (id: string) => {
-    if (!edit) return;
+    if (!edit || !edit.reason.trim()) return;
     update.mutate({
       id,
+      reason: edit.reason.trim(),
       clockInAt: edit.clockInAt ? new Date(edit.clockInAt) : undefined,
       clockOutAt: edit.clockOutAt ? new Date(edit.clockOutAt) : undefined,
       breakMinutes: edit.breakMinutes,
@@ -164,11 +168,15 @@ export function TimeEntriesClient() {
               </Button>
               <Button
                 variant="destructive"
-                disabled={selected.size === 0 || reject.isPending}
+                disabled={
+                  selected.size === 0 ||
+                  reject.isPending ||
+                  !rejectReason.trim()
+                }
                 onClick={() =>
                   reject.mutate({
                     ids: [...selected],
-                    reason: rejectReason || undefined,
+                    reason: rejectReason.trim(),
                   })
                 }
               >
@@ -327,8 +335,21 @@ export function TimeEntriesClient() {
                                 ? setEditingId(null)
                                 : startEdit(entry)
                             }
+                            aria-label={t("payroll.editSave")}
                           >
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setHistoryId(
+                                historyId === entry.id ? null : entry.id,
+                              )
+                            }
+                            aria-label={t("payroll.correctionsToggle")}
+                          >
+                            <History className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -390,6 +411,20 @@ export function TimeEntriesClient() {
                               }
                             />
                           </div>
+                          <div className="sm:col-span-2">
+                            <Label htmlFor={`reason-${entry.id}`}>
+                              {t("payroll.editReason")}
+                            </Label>
+                            <Input
+                              id={`reason-${entry.id}`}
+                              required
+                              value={edit.reason}
+                              onChange={(e) =>
+                                setEdit({ ...edit, reason: e.target.value })
+                              }
+                              placeholder={t("payroll.editReasonPlaceholder")}
+                            />
+                          </div>
                           <div className="sm:col-span-2 flex justify-end gap-2">
                             <Button
                               size="sm"
@@ -403,13 +438,17 @@ export function TimeEntriesClient() {
                             </Button>
                             <Button
                               size="sm"
-                              disabled={update.isPending}
+                              disabled={update.isPending || !edit.reason.trim()}
                               onClick={() => saveEdit(entry.id)}
                             >
                               {t("payroll.editSave")}
                             </Button>
                           </div>
                         </div>
+                      )}
+
+                      {historyId === entry.id && (
+                        <CorrectionHistory entryId={entry.id} />
                       )}
                     </li>
                   );
@@ -498,20 +537,83 @@ export function TimeEntriesClient() {
   );
 }
 
-type Provider = "sdworx" | "securex" | "generic";
+/**
+ * Per-entry append-only correction trail (who/when/reason/before→after). Lazily
+ * fetched only when the manager expands the history for a given entry.
+ */
+function CorrectionHistory({ entryId }: { entryId: string }) {
+  const t = useTranslations();
+  const corrections = trpc.timeClock.corrections.useQuery({ id: entryId });
+  const items = corrections.data ?? [];
+
+  const fmt = (value: string | Date | null) =>
+    value ? new Date(value).toLocaleString() : "—";
+
+  return (
+    <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {t("payroll.correctionsTitle")}
+      </h3>
+      {corrections.isLoading && (
+        <p className="mt-2 text-xs text-slate-500">{t("hours.loading")}</p>
+      )}
+      {!corrections.isLoading && items.length === 0 && (
+        <p className="mt-2 text-xs text-slate-500">
+          {t("payroll.correctionsEmpty")}
+        </p>
+      )}
+      {items.length > 0 && (
+        <ul className="mt-2 space-y-2">
+          {items.map((c) => (
+            <li
+              key={c.id}
+              className="rounded border border-slate-200 bg-white p-2 text-xs text-slate-600"
+            >
+              <p className="font-medium text-slate-700">
+                {t("payroll.correctionMeta", {
+                  date: new Date(c.editedAt).toLocaleString(),
+                  reason: c.reason,
+                })}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">
+                  {t("payroll.correctionBefore")}:
+                </span>{" "}
+                {fmt(c.prevClockInAt)} → {fmt(c.prevClockOutAt)} ·{" "}
+                {c.prevBreakMinutes}m
+              </p>
+              <p>
+                <span className="font-semibold">
+                  {t("payroll.correctionAfter")}:
+                </span>{" "}
+                {fmt(c.newClockInAt)} → {fmt(c.newClockOutAt)} ·{" "}
+                {c.newBreakMinutes}m
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+type Provider = "sdworx" | "securex" | "partena" | "liantis" | "generic";
+type ExportFormat = "csv" | "xlsx";
 
 /**
- * Builds a `/api/payroll` download link from a from/to range and provider, and
- * triggers a CSV download. The route is owner/manager-gated server-side.
+ * Builds a `/api/payroll` download link from a from/to range, provider and
+ * format, and triggers the download. The route is owner/manager-gated
+ * server-side.
  */
 function ExportPanel() {
   const t = useTranslations();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [provider, setProvider] = useState<Provider>("generic");
+  const [format, setFormat] = useState<ExportFormat>("csv");
 
   const download = () => {
-    const params = new URLSearchParams({ provider });
+    const params = new URLSearchParams({ provider, format });
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     window.location.href = `/api/payroll?${params.toString()}`;
@@ -553,9 +655,23 @@ function ExportPanel() {
             <option value="generic">{t("payroll.providerGeneric")}</option>
             <option value="sdworx">SD Worx</option>
             <option value="securex">Securex</option>
+            <option value="partena">Partena</option>
+            <option value="liantis">Liantis</option>
           </select>
         </div>
-        <Button onClick={download}>{t("payroll.export")}</Button>
+        <div>
+          <Label htmlFor="exportFormat">{t("payroll.format")}</Label>
+          <select
+            id="exportFormat"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as ExportFormat)}
+            className="block h-10 rounded-md border border-slate-300 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <option value="csv">{t("payroll.formatCsv")}</option>
+            <option value="xlsx">{t("payroll.formatExcel")}</option>
+          </select>
+        </div>
+        <Button onClick={download}>{t("payroll.download")}</Button>
       </div>
     </section>
   );

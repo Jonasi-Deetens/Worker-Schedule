@@ -11,11 +11,13 @@ import {
   runAvailabilityMaterialise,
   runDimonaDeclare,
   runDimonaReconcile,
+  runGdprPurge,
   runInviteCleanup,
   runShiftReminders24h,
   runWebhookDelivery,
 } from "@/infrastructure/jobs/handlers";
 import type { DimonaDeclareJob } from "@/application/services/dimona-declare-job";
+import type { GdprPurgeJob } from "@/application/services/gdpr-purge-job";
 import type { WebhookDeliveryJob } from "@/application/services/webhook-service";
 import { logger } from "@/infrastructure/logging/logger";
 
@@ -56,6 +58,16 @@ async function main() {
   await boss.work<DimonaDeclareJob>(JOBS.DIMONA_DECLARE, async (jobs) => {
     for (const job of jobs) {
       await runDimonaDeclare(prisma, job.data);
+    }
+  });
+
+  // GDPR hard-delete purge is event-driven: enqueued on a deletion request with
+  // `startAfter` set to the retention window, then anonymises the user + purges
+  // their S3 documents when it runs.
+  await boss.createQueue(JOBS.GDPR_PURGE);
+  await boss.work<GdprPurgeJob>(JOBS.GDPR_PURGE, async (jobs) => {
+    for (const job of jobs) {
+      await runGdprPurge(prisma, job.data);
     }
   });
 

@@ -59,4 +59,72 @@ export const businessRouter = router({
         mapServiceError(error);
       }
     }),
+
+  updateEmployerProfile: ownerProcedure
+    .input(
+      z.object({
+        addressLine: z.string().max(200).nullable(),
+        postalCode: z.string().max(20).nullable(),
+        city: z.string().max(120).nullable(),
+        cbeNumber: z.string().max(40).nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await businessService.updateEmployerProfile({
+          businessId,
+          actorId: ctx.session.user.id,
+          addressLine: input.addressLine,
+          postalCode: input.postalCode,
+          city: input.city,
+          cbeNumber: input.cbeNumber,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  updateStudentQuotaPolicy: ownerProcedure
+    .input(
+      z.object({
+        studentQuotaHardStop: z.boolean(),
+        studentQuotaHardStopBufferHours: z.number().int().min(0).max(650),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await businessService.updateStudentQuotaPolicy({
+          businessId,
+          actorId: ctx.session.user.id,
+          studentQuotaHardStop: input.studentQuotaHardStop,
+          studentQuotaHardStopBufferHours:
+            input.studentQuotaHardStopBufferHours,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  updateStudentAttestationPolicy: ownerProcedure
+    .input(
+      z.object({
+        requireStudentAttestation: z.boolean(),
+        attestationMaxAgeDays: z.number().int().min(1).max(3650),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await businessService.updateStudentAttestationPolicy({
+          businessId,
+          actorId: ctx.session.user.id,
+          requireStudentAttestation: input.requireStudentAttestation,
+          attestationMaxAgeDays: input.attestationMaxAgeDays,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
 });

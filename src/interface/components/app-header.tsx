@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  CalendarDays,
   CalendarRange,
   ClipboardCheck,
   ClipboardList,
@@ -146,6 +147,11 @@ export function AppHeader() {
             href: "/settings/locations",
             label: t("locations.title"),
             icon: <MapPin className="h-5 w-5" />,
+          },
+          {
+            href: "/settings/holidays",
+            label: t("holidays.title"),
+            icon: <CalendarDays className="h-5 w-5" />,
           },
         ]
       : []),

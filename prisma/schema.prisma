@@ -26,6 +26,13 @@ enum ContractType {
   EXTRA
 }
 
+enum StudentRegion {
+  FLANDERS
+  BRUSSELS
+  WALLONIA
+  EAST_BELGIUM
+}
+
 enum ShiftStatus {
   OPEN
   PENDING
@@ -57,6 +64,7 @@ enum NotificationType {
   TIME_ENTRY_SUBMITTED
   TIME_ENTRY_APPROVED
   TIME_ENTRY_REJECTED
+  TIME_ENTRY_CORRECTED
   DIMONA_GAP_DETECTED
   CONTRACT_SENT
 }
@@ -117,6 +125,8 @@ enum AuditAction {
   SHIFT_RECONFIRM_DECLINED
   SHIFT_ASSIGNMENT_ACCEPTED
   SHIFT_ASSIGNMENT_DECLINED
+  GDPR_DELETE_REQUESTED
+  GDPR_PURGED
 }
 
 enum TimeOffStatus {
@@ -163,6 +173,24 @@ model Business {
   dimonaCredentials String?
   dimonaEmployerId  String?
   requireSignedContract Boolean @default(false)
+  // Real employer identification used by contracts + Dimona declarations.
+  addressLine       String?
+  postalCode        String?
+  city              String?
+  cbeNumber         String?
+  // When true, blocks JOBSTUDENT assignments that would exceed the 650h quota.
+  studentQuotaHardStop Boolean @default(false)
+  // Safety margin (hours) subtracted from the 650h cap before the hard stop
+  // trips, so a business can stop scheduling students a little before the cap.
+  studentQuotaHardStopBufferHours Int @default(0)
+  // When true, a JOBSTUDENT cannot be assigned without a non-stale Student@Work
+  // attestation on file; staleness is measured against `attestationMaxAgeDays`.
+  requireStudentAttestation Boolean @default(false)
+  // Maximum age (days) of a Student@Work attestation before it counts as stale.
+  attestationMaxAgeDays Int @default(365)
+  // When true, shift-linked clock-in requires the worker to be physically
+  // inside the shift location's geofence (optional, off by default).
+  enforceGeofence   Boolean @default(false)
   revenueWeeklyJson Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -178,6 +206,9 @@ model Business {
   apiKeys     ApiKey[]
   webhooks    WebhookSubscription[]
   contracts   WorkerContract[]
+  stuDeclarations DimonaStuDeclaration[]
+  studentQuotas   StudentQuota[]
+  holidays        Holiday[]
 
   @@map("businesses")
 }
@@ -200,6 +231,13 @@ model User {
   notificationPrefs Json?
   twoFactorSecret   String?
   nationalNumber    String?
+  addressLine       String?
+  postalCode        String?
+  city              String?
+  iban              String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  region            StudentRegion?
   icsRotation       Int           @default(0)
   businessId        String?
   business          Business?     @relation("BusinessWorkers", fields: [businessId], references: [id])
@@ -227,6 +265,8 @@ model User {
   shiftMessages         ShiftMessage[]
   memberships           Membership[]
   passwordResetTokens   PasswordResetToken[]
+  stuDeclarations       DimonaStuDeclaration[]
+  studentQuotas         StudentQuota[]
 
   @@index([businessId])
   @@index([status])
@@ -461,6 +501,9 @@ model TimeEntry {
   clockInAt    DateTime
   clockOutAt   DateTime?
   breakMinutes Int             @default(0)
+  // Coordinates captured at clock-in when geofence enforcement is enabled.
+  clockInLat   Decimal?        @db.Decimal(10, 7)
+  clockInLng   Decimal?        @db.Decimal(10, 7)
   status       TimeEntryStatus @default(PENDING)
   approvedAt   DateTime?
   approvedById String?
@@ -470,10 +513,37 @@ model TimeEntry {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
+  corrections  TimeEntryCorrection[]
+
   @@index([userId, clockInAt])
   @@index([shiftId])
   @@index([status])
   @@map("time_entries")
+}
+
+/**
+ * Append-only audit trail of manager edits to a {@link TimeEntry}. Time
+ * registration is immutable: instead of silently overwriting hours, every
+ * correction is preserved here with the mandatory reason and a full
+ * before/after snapshot so the original registration can always be reconstructed.
+ */
+model TimeEntryCorrection {
+  id               String    @id @default(cuid())
+  timeEntryId      String
+  timeEntry        TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  editedById       String
+  editedAt         DateTime  @default(now())
+  reason           String
+  prevClockInAt    DateTime
+  prevClockOutAt   DateTime?
+  prevBreakMinutes Int
+  newClockInAt     DateTime
+  newClockOutAt    DateTime?
+  newBreakMinutes  Int
+  createdAt        DateTime  @default(now())
+
+  @@index([timeEntryId])
+  @@map("time_entry_corrections")
 }
 
 model ShiftSwap {
@@ -532,6 +602,8 @@ model Location {
   geofenceLat     Decimal? @db.Decimal(10, 7)
   geofenceLng     Decimal? @db.Decimal(10, 7)
   geofenceRadiusM Int?
+  // Per-location HMAC secret backing the signed QR clock-in token.
+  qrSecret        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -607,6 +679,82 @@ model DimonaDeclaration {
   @@map("dimona_declarations")
 }
 
+/**
+ * Per-quarter Belgian Dimona STU (student) declaration. Unlike the per-shift
+ * `DimonaDeclaration`, a student worker is declared once per calendar quarter
+ * with the total planned hours for that quarter. Planned hours are editable
+ * until the last day of the month following the quarter; a quarter must never
+ * be declared with 0 hours (it is cancelled instead).
+ */
+model DimonaStuDeclaration {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId      String
+  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  year            Int
+  quarter         Int
+  plannedHours    Int          @default(0)
+  reservedHours   Int          @default(0)
+  status          DimonaStatus @default(PENDING)
+  dimonaPeriodId  String?
+  requestPayload  Json?
+  responsePayload Json?
+  errorMessage    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([userId, businessId, year, quarter])
+  @@index([businessId, year, quarter])
+  @@map("dimona_stu_declarations")
+}
+
+/**
+ * Belgian student-worker 650h/calendar-year quota ledger, one row per
+ * (user, year). `reservedHours` is the sum of STU planned hours across this
+ * employer's quarters; `workedHours` is derived from approved time entries in
+ * the year. The national remaining balance is NOT API-readable, so
+ * `studentAtWorkBalanceHours` is entered manually from the student's
+ * Student@Work attestation when available.
+ */
+model StudentQuota {
+  id                        String    @id @default(cuid())
+  userId                    String
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId                String
+  business                  Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  year                      Int
+  reservedHours             Int       @default(0)
+  workedHours               Int       @default(0)
+  studentAtWorkBalanceHours Int?
+  attestationUploadedAt     DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@unique([userId, year])
+  @@index([businessId, year])
+  @@map("student_quotas")
+}
+
+/**
+ * Per-business public-holiday override. The Belgian statutory holidays are
+ * computed in code ({@link computeBelgianHolidays}); this table only stores a
+ * business's *custom* closure days. The effective holiday set used by payroll
+ * is the union of the computed defaults and these rows.
+ */
+model Holiday {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  name       String
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, date])
+  @@index([businessId])
+  @@map("holidays")
+}
+
 model WorkerContract {
   id            String         @id @default(cuid())
   businessId    String
@@ -622,6 +770,15 @@ model WorkerContract {
   signedAt      DateTime?
   signatureName String?
   signatureIp   String?
+  startDate       DateTime?
+  endDate         DateTime?
+  scheduleText    String?
+  hourlyWageCents Int?
+  jobDescription  String?
+  employerSnapshot Json?
+  studentSnapshot  Json?
+  pdfUrl          String?
+  pdfHash         String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

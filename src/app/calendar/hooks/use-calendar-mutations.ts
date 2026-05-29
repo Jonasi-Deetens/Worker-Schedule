@@ -154,11 +154,15 @@ export function useCalendarMutations(
   });
 
   const assignWorker = trpc.shift.assign.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.shift.list.invalidate();
       utils.subscription.listForShift.invalidate();
       callbacks.refetchAssignments?.();
       toast.success(t("toast.shiftAssigned"));
+      // Non-blocking eligibility advisories (e.g. school-period scheduling).
+      if (data?.advisories?.includes("errors.schoolPeriodAdvisory")) {
+        toast.warning(t("scheduling.schoolPeriodAdvisory"));
+      }
     },
     onError,
   });

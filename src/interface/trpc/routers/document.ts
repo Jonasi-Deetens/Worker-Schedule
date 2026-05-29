@@ -52,6 +52,8 @@ export const documentRouter = router({
           "WORK_CONTRACT",
           "RESIDENCE_PERMIT",
           "FOOD_SAFETY",
+          "ENROLLMENT_CERTIFICATE",
+          "STUDENT_AT_WORK_ATTESTATION",
           "OTHER",
         ]),
         url: z.string().url(),

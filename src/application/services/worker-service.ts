@@ -1,5 +1,11 @@
-import type { ContractType, PrismaClient, UserStatus } from "@prisma/client";
+import type {
+  ContractType,
+  PrismaClient,
+  StudentRegion,
+  UserStatus,
+} from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
+import { decryptPiiNullable, encryptPii } from "@/infrastructure/crypto/pii";
 
 export class WorkerService {
   constructor(private readonly db: PrismaClient) {}
@@ -27,7 +33,9 @@ export class WorkerService {
       },
     });
     if (!user) throw new Error("Worker not found");
-    return user;
+    // NISS is stored encrypted at rest; expose the plaintext to the manager
+    // detail response. Legacy plaintext rows are returned unchanged.
+    return { ...user, nationalNumber: decryptPiiNullable(user.nationalNumber) };
   }
 
   async stats(input: { id: string; businessId: string }) {
@@ -146,6 +154,13 @@ export class WorkerService {
     weeklyHourCap?: number | null;
     birthDate?: Date | null;
     nationalNumber?: string | null;
+    addressLine?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    iban?: string | null;
+    emergencyContactName?: string | null;
+    emergencyContactPhone?: string | null;
+    region?: StudentRegion | null;
   }) {
     const worker = await this.db.user.findFirst({
       where: { id: input.id, businessId: input.businessId },
@@ -161,6 +176,14 @@ export class WorkerService {
           ? null
           : input.nationalNumber.replace(/\D/g, "");
 
+    // NISS is compliance-sensitive PII — encrypt at rest (AES-256-GCM).
+    const storedNiss =
+      normalizedNiss === undefined
+        ? undefined
+        : normalizedNiss === null
+          ? null
+          : encryptPii(normalizedNiss);
+
     const updated = await this.db.user.update({
       where: { id: input.id },
       data: {
@@ -170,14 +193,23 @@ export class WorkerService {
         hourlyRate: input.hourlyRate ?? undefined,
         weeklyHourCap: input.weeklyHourCap,
         birthDate: input.birthDate,
-        nationalNumber: normalizedNiss,
+        nationalNumber: storedNiss,
+        addressLine: input.addressLine,
+        postalCode: input.postalCode,
+        city: input.city,
+        iban: input.iban,
+        emergencyContactName: input.emergencyContactName,
+        emergencyContactPhone: input.emergencyContactPhone,
+        region: input.region,
       },
     });
 
-    // Audit NISS changes specifically — it's compliance-sensitive PII.
+    // Audit NISS changes specifically — it's compliance-sensitive PII. Compare
+    // against the decrypted stored value so re-saving an unchanged number is
+    // not logged as a change.
     if (
       normalizedNiss !== undefined &&
-      normalizedNiss !== worker.nationalNumber
+      normalizedNiss !== decryptPiiNullable(worker.nationalNumber)
     ) {
       await this.db.auditEvent.create({
         data: {

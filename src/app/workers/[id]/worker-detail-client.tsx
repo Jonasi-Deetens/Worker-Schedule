@@ -3,16 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, X } from "lucide-react";
 import { AppHeader } from "@/interface/components/app-header";
 import { Button } from "@/interface/components/ui/button";
 import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
+import { StudentQuotaWidget } from "@/interface/components/student-quota-widget";
 import { WorkerContractsSection } from "./worker-contracts-section";
 
 const CONTRACT_TYPES = ["FLEXI", "JOBSTUDENT", "EMPLOYEE", "EXTRA"] as const;
+const REGIONS = ["FLANDERS", "BRUSSELS", "WALLONIA", "EAST_BELGIUM"] as const;
 
 export function WorkerDetailClient({ workerId }: { workerId: string }) {
   const t = useTranslations();
@@ -20,6 +22,9 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
   const workerQuery = trpc.worker.get.useQuery({ id: workerId });
   const statsQuery = trpc.worker.stats.useQuery({ id: workerId });
   const documentsQuery = trpc.worker.documents.useQuery({ id: workerId });
+  const contractsQuery = trpc.contract.listForWorker.useQuery({
+    userId: workerId,
+  });
   const skillsQuery = trpc.skill.list.useQuery();
 
   const [name, setName] = useState("");
@@ -29,6 +34,14 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
   const [weeklyCap, setWeeklyCap] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
   const [nationalNumber, setNationalNumber] = useState<string>("");
+  const [addressLine, setAddressLine] = useState<string>("");
+  const [postalCode, setPostalCode] = useState<string>("");
+  const [city, setCity] = useState<string>("");
+  const [iban, setIban] = useState<string>("");
+  const [emergencyContactName, setEmergencyContactName] = useState<string>("");
+  const [emergencyContactPhone, setEmergencyContactPhone] =
+    useState<string>("");
+  const [region, setRegion] = useState<string>("");
   const [selectedSkills, setSelectedSkills] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -41,6 +54,13 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
       weeklyHourCap: number | null;
       birthDate: Date | string | null;
       nationalNumber: string | null;
+      addressLine: string | null;
+      postalCode: string | null;
+      city: string | null;
+      iban: string | null;
+      emergencyContactName: string | null;
+      emergencyContactPhone: string | null;
+      region: string | null;
       skills: { skill: { id: string } }[];
     };
     setName(w.name ?? "");
@@ -52,6 +72,13 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
       w.birthDate ? new Date(w.birthDate).toISOString().slice(0, 10) : "",
     );
     setNationalNumber(w.nationalNumber ?? "");
+    setAddressLine(w.addressLine ?? "");
+    setPostalCode(w.postalCode ?? "");
+    setCity(w.city ?? "");
+    setIban(w.iban ?? "");
+    setEmergencyContactName(w.emergencyContactName ?? "");
+    setEmergencyContactPhone(w.emergencyContactPhone ?? "");
+    setRegion(w.region ?? "");
     setSelectedSkills(new Set(w.skills.map((s) => s.skill.id)));
   }, [workerQuery.data]);
 
@@ -83,6 +110,13 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
       weeklyHourCap: weeklyCap ? parseInt(weeklyCap, 10) : null,
       birthDate: birthDate ? new Date(birthDate) : null,
       nationalNumber: nationalNumber ? nationalNumber : null,
+      addressLine: addressLine || null,
+      postalCode: postalCode || null,
+      city: city || null,
+      iban: iban || null,
+      emergencyContactName: emergencyContactName || null,
+      emergencyContactPhone: emergencyContactPhone || null,
+      region: (region as typeof REGIONS[number]) || null,
     });
     setSkills.mutate({
       userId: workerId,
@@ -127,6 +161,8 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
     email: string;
     status: string;
     contractType: string | null;
+    nationalNumber: string | null;
+    birthDate: Date | string | null;
   };
 
   const documents = (documentsQuery.data ?? []) as Array<{
@@ -136,6 +172,18 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
     url: string;
     expiresOn: string | Date | null;
   }>;
+
+  const contracts = (contractsQuery.data ?? []) as Array<{ status: string }>;
+  const hasDoc = (kind: string) => documents.some((d) => d.kind === kind);
+  const onboardingItems = [
+    { key: "signedContract", done: contracts.some((c) => c.status === "SIGNED") },
+    { key: "niss", done: Boolean(worker.nationalNumber) },
+    { key: "birthDate", done: Boolean(worker.birthDate) },
+    { key: "idDocument", done: hasDoc("ID_CARD") },
+    { key: "enrollment", done: hasDoc("ENROLLMENT_CERTIFICATE") },
+    { key: "studentAtWork", done: hasDoc("STUDENT_AT_WORK_ATTESTATION") },
+  ];
+  const onboardingDone = onboardingItems.filter((i) => i.done).length;
   const now = Date.now();
   const soonMs = 30 * 86_400_000;
   const expiringSoon = documents.filter(
@@ -242,6 +290,62 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
           </section>
         )}
 
+        {worker.contractType === "JOBSTUDENT" && (
+          <section
+            className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            aria-labelledby="onboarding-heading"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2
+                id="onboarding-heading"
+                className="text-sm font-semibold text-slate-900"
+              >
+                {t("onboarding.title")}
+              </h2>
+              <span className="text-xs font-medium text-slate-500">
+                {t("onboarding.progress", {
+                  done: onboardingDone,
+                  total: onboardingItems.length,
+                })}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">{t("onboarding.help")}</p>
+            <ul className="mt-3 space-y-2">
+              {onboardingItems.map((item) => (
+                <li key={item.key} className="flex items-center gap-2 text-sm">
+                  <span
+                    className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                      item.done
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {item.done ? (
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                  </span>
+                  <span
+                    className={item.done ? "text-slate-700" : "text-slate-500"}
+                  >
+                    {t(`onboarding.items.${item.key}`)}
+                  </span>
+                  <span className="sr-only">
+                    {item.done
+                      ? t("onboarding.statusDone")
+                      : t("onboarding.statusMissing")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {worker.contractType === "JOBSTUDENT" && (
+          <StudentQuotaWidget mode="manager" userId={workerId} />
+        )}
+
         <WorkerContractsSection workerId={workerId} />
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -320,6 +424,75 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
               <p className="mt-1 text-xs text-slate-500">
                 {t("workers.nationalNumberHelp")}
               </p>
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="addressLine">{t("workers.addressLine")}</Label>
+              <Input
+                id="addressLine"
+                value={addressLine}
+                onChange={(e) => setAddressLine(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="postalCode">{t("workers.postalCode")}</Label>
+              <Input
+                id="postalCode"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="city">{t("workers.city")}</Label>
+              <Input
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="region">{t("workers.region")}</Label>
+              <select
+                id="region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">{t("workers.regionNone")}</option>
+                {REGIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {t(`workers.regions.${r}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="iban">{t("workers.iban")}</Label>
+              <Input
+                id="iban"
+                value={iban}
+                onChange={(e) => setIban(e.target.value)}
+                placeholder="BE00 0000 0000 0000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="emergencyContactName">
+                {t("workers.emergencyContactName")}
+              </Label>
+              <Input
+                id="emergencyContactName"
+                value={emergencyContactName}
+                onChange={(e) => setEmergencyContactName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="emergencyContactPhone">
+                {t("workers.emergencyContactPhone")}
+              </Label>
+              <Input
+                id="emergencyContactPhone"
+                value={emergencyContactPhone}
+                onChange={(e) => setEmergencyContactPhone(e.target.value)}
+              />
             </div>
           </div>
 

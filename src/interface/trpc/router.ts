@@ -11,11 +11,13 @@ import { contractRouter } from "./routers/contract";
 import { dimonaRouter } from "./routers/dimona";
 import { documentRouter } from "./routers/document";
 import { gdprRouter } from "./routers/gdpr";
+import { holidayRouter } from "./routers/holiday";
 import { inviteRouter } from "./routers/invite";
 import { locationRouter } from "./routers/location";
 import { meRouter } from "./routers/me";
 import { membershipRouter } from "./routers/membership";
 import { notificationRouter } from "./routers/notification";
+import { quotaRouter } from "./routers/quota";
 import { rosterRouter } from "./routers/roster";
 import { shiftRouter } from "./routers/shift";
 import { shiftMessageRouter } from "./routers/shift-message";
@@ -61,6 +63,8 @@ export const appRouter = router({
   staffing: staffingRouter,
   attendance: attendanceRouter,
   audit: auditRouter,
+  quota: quotaRouter,
+  holiday: holidayRouter,
 });
 
 export type AppRouter = typeof appRouter;

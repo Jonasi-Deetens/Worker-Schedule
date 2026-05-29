@@ -1,6 +1,7 @@
 import type { PrismaClient, ShiftStatus } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
+import { recomputeStuQuartersIfStudent } from "./dimona-hooks";
 import { requestShiftReconfirmations } from "./shift-reconfirmation";
 
 /**
@@ -187,16 +188,32 @@ export class BulkShiftService {
     // reconfirm the new slot, exactly like the single-shift update path.
     if (deltaMs !== 0) {
       for (const s of targets) {
+        const newStart = new Date(s.startsAt.getTime() + deltaMs);
         await requestShiftReconfirmations(this.db, {
           shift: {
             id: s.id,
-            startsAt: new Date(s.startsAt.getTime() + deltaMs),
+            startsAt: newStart,
             endsAt: new Date(s.endsAt.getTime() + deltaMs),
             roleLabel: s.roleLabel,
           },
           businessId: input.businessId,
           ownerId: input.ownerId,
         });
+
+        // Re-declare per-quarter Dimona STU + quota for assigned students,
+        // covering both the old and new quarter of each moved shift.
+        const assignments =
+          (await this.db.shiftAssignment.findMany({
+            where: { shiftId: s.id },
+            select: { userId: true },
+          })) ?? [];
+        for (const a of assignments) {
+          await recomputeStuQuartersIfStudent(this.db, {
+            workerId: a.userId,
+            businessId: input.businessId,
+            dates: [s.startsAt, newStart],
+          });
+        }
       }
     }
 

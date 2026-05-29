@@ -10,10 +10,12 @@ export const metadata = {
 export default async function ClockPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shiftId?: string }>;
+  searchParams: Promise<{ shiftId?: string; loc?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const { shiftId } = await searchParams;
-  return <ClockClient initialShiftId={shiftId ?? null} />;
+  const { shiftId, loc } = await searchParams;
+  return (
+    <ClockClient initialShiftId={shiftId ?? null} initialLoc={loc ?? null} />
+  );
 }
