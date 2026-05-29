@@ -18,6 +18,7 @@ test-results
 .env
 .env.local
 .env.*.local
+scripts/.storage-cors.json
 
 # Debug
 npm-debug.log*

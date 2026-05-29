@@ -21,6 +21,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "worker": "tsx src/worker.ts",
     "db:studio": "prisma studio",
+    "storage:up": "docker compose up -d minio",
+    "storage:setup": "tsx scripts/setup-storage.ts",
+    "storage:init": "npm run storage:up && npm run storage:setup",
     "postinstall": "prisma generate",
     "validate": "npm run lint && npm run typecheck && npm run test",
     "ci": "npm run lint && npm run typecheck && npm run test"
