@@ -122,3 +122,74 @@ export const STATUS_COLORS: Record<
 export function getStatusClasses(status: DisplayStatus) {
   return STATUS_COLORS[status];
 }
+
+export interface CalendarEventSurface {
+  accent: string;
+  fill: string;
+  text: "#000000" | "#ffffff";
+  textHover: "#000000" | "#ffffff";
+}
+
+function parseHex(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace("#", "");
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : normalized;
+  return {
+    r: Number.parseInt(full.slice(0, 2), 16),
+    g: Number.parseInt(full.slice(2, 4), 16),
+    b: Number.parseInt(full.slice(4, 6), 16),
+  };
+}
+
+function toHex(r: number, g: number, b: number): string {
+  const clamp = (n: number) =>
+    Math.max(0, Math.min(255, Math.round(n)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${clamp(r)}${clamp(g)}${clamp(b)}`;
+}
+
+/** Mixes a hex color with white; `accentWeight` is the share of the accent hue. */
+export function mixHexWithWhite(hex: string, accentWeight: number): string {
+  const { r, g, b } = parseHex(hex);
+  const whiteWeight = 1 - accentWeight;
+  return toHex(
+    r * accentWeight + 255 * whiteWeight,
+    g * accentWeight + 255 * whiteWeight,
+    b * accentWeight + 255 * whiteWeight,
+  );
+}
+
+/** Picks black or white label text for readable contrast on a solid fill. */
+export function contrastTextOnBackground(hex: string): "#000000" | "#ffffff" {
+  const { r, g, b } = parseHex(hex);
+  const channel = (v: number) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance =
+    0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  return luminance > 0.45 ? "#000000" : "#ffffff";
+}
+
+/** Calendar pill: bold left accent + ~10% tint fill + contrast-safe text. */
+export function calendarEventSurface(
+  status: DisplayStatus | "Available",
+): CalendarEventSurface {
+  const accent =
+    status === "Available"
+      ? AVAILABILITY_HEX.accent
+      : STATUS_HEX[status].accent;
+  const fill = mixHexWithWhite(accent, 0.1);
+  return {
+    accent,
+    fill,
+    text: contrastTextOnBackground(fill),
+    textHover: contrastTextOnBackground(accent),
+  };
+}

@@ -23,6 +23,7 @@ import {
 import { useMemo, useRef, type ComponentType } from "react";
 import type { DisplayStatus } from "@/domain/types";
 import type { CalendarEvent } from "@/lib/calendar-events";
+import { calendarEventSurface } from "@/lib/status-colors";
 import { AvatarStack } from "./avatar";
 
 export interface CalendarRangeChange {
@@ -117,8 +118,21 @@ function makeRenderEventContent(fmt: CalendarTimeFormat) {
     ? (props.roleLabel ?? arg.event.title)
     : arg.event.title;
 
+  const surface = calendarEventSurface(status);
+
   return (
-    <div className="tg-event-body" aria-label={`${titleText}, ${status}`}>
+    <div
+      className="tg-event-body"
+      style={
+        {
+          "--tg-accent": surface.accent,
+          "--tg-fill": surface.fill,
+          "--tg-text": surface.text,
+          "--tg-text-hover": surface.textHover,
+        } as React.CSSProperties
+      }
+      aria-label={`${titleText}, ${status}`}
+    >
       <div className="tg-event-head">
         <Icon className="tg-event-icon" aria-hidden />
         <span className="tg-event-title">{titleText}</span>
@@ -140,7 +154,7 @@ function makeRenderEventContent(fmt: CalendarTimeFormat) {
             people={props.assignees}
             size="xs"
             max={4}
-            ringColor="#ffffff"
+            ringColor={surface.accent}
           />
         </div>
       )}
