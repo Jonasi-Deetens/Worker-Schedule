@@ -15,20 +15,21 @@ export async function register() {
     throw err;
   });
 
+  // Sentry is a real dependency now, but initialization stays gated on the
+  // optional `SENTRY_DSN` env so DSN-less dev/test/CI boots are unaffected and
+  // never open a transport. The import is dynamic so the SDK is only pulled in
+  // when error reporting is actually enabled.
   if (!process.env.SENTRY_DSN) return;
 
   try {
-    // Dynamic import keeps the dependency optional.
-    const Sentry = await import(
-      /* webpackIgnore: true */ "@sentry/nextjs" as string
-    ).catch(() => null);
-    if (!Sentry) return;
-    (Sentry as { init?: (cfg: unknown) => void }).init?.({
+    const Sentry = await import("@sentry/nextjs");
+    Sentry.init({
       dsn: process.env.SENTRY_DSN,
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
       environment: process.env.NODE_ENV,
     });
-  } catch {
-    // Sentry not installed - silently skip
+  } catch (err) {
+    // Never let observability wiring crash the server boot.
+    console.error("Sentry initialization failed:", err);
   }
 }

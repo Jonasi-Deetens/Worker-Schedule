@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/interface/components/ui/button";
+import { useBusinessEvents } from "@/interface/hooks/use-business-events";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
 
@@ -29,6 +30,20 @@ export function ShiftMessagesPanel({ shiftId }: ShiftMessagesPanelProps) {
     },
     onError: (e) => toast.error(trpcErrorMessage(e, t)),
   });
+
+  // Live: refresh the thread when another participant posts a message.
+  useBusinessEvents(
+    useCallback(
+      (event: string, payload: unknown) => {
+        if (event !== "shift.message.created") return;
+        const eventShiftId = (payload as { shiftId?: string } | null)?.shiftId;
+        if (!eventShiftId || eventShiftId === shiftId) {
+          utils.shiftMessage.list.invalidate({ shiftId });
+        }
+      },
+      [shiftId, utils.shiftMessage.list],
+    ),
+  );
 
   return (
     <section className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">

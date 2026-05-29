@@ -116,6 +116,46 @@ export class AvailabilityService {
     });
   }
 
+  /**
+   * Partial update of a weekly availability template. Re-validates the
+   * resulting day-of-week and time window so a partial edit can never leave a
+   * row in an invalid state. Scoped to the owning user.
+   */
+  async updateTemplate(input: {
+    id: string;
+    userId: string;
+    dayOfWeek?: number;
+    startTime?: string;
+    endTime?: string;
+    validUntil?: Date | null;
+  }) {
+    const existing = await this.db.availabilityTemplate.findFirst({
+      where: { id: input.id, userId: input.userId },
+    });
+    if (!existing) throw new Error("Template not found");
+
+    const dayOfWeek = input.dayOfWeek ?? existing.dayOfWeek;
+    const startTime = input.startTime ?? existing.startTime;
+    const endTime = input.endTime ?? existing.endTime;
+    if (dayOfWeek < 0 || dayOfWeek > 6) {
+      throw new Error("dayOfWeek must be between 0 and 6");
+    }
+    if (startTime >= endTime) {
+      throw new Error("End time must be after start time");
+    }
+
+    return this.db.availabilityTemplate.update({
+      where: { id: input.id },
+      data: {
+        dayOfWeek,
+        startTime,
+        endTime,
+        validUntil:
+          input.validUntil === undefined ? existing.validUntil : input.validUntil,
+      },
+    });
+  }
+
   async deleteTemplate(input: { id: string; userId: string }) {
     const existing = await this.db.availabilityTemplate.findFirst({
       where: { id: input.id, userId: input.userId },

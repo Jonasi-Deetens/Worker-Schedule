@@ -35,6 +35,7 @@ export function InviteAcceptClient({ token }: { token: string }) {
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
 
   if (lookup.isLoading) {
     return (
@@ -67,14 +68,32 @@ export function InviteAcceptClient({ token }: { token: string }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          accept.mutate({ token, name, password });
+          accept.mutate({
+            token,
+            name,
+            password,
+            // Link-only invites have no fixed email, so we collect one here.
+            email: invite.email ? undefined : email,
+          });
         }}
         className="mt-6 space-y-3"
       >
-        {invite.email && (
+        {invite.email ? (
           <div>
             <Label>{t("auth.email")}</Label>
             <Input value={invite.email} disabled />
+          </div>
+        ) : (
+          <div>
+            <Label htmlFor="email">{t("auth.email")}</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder={t("invite.emailPlaceholder")}
+            />
           </div>
         )}
         <div>

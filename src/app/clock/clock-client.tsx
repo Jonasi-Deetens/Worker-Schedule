@@ -9,11 +9,13 @@ import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
+import { formatTimeRange } from "@/lib/calendar-utils";
 
-export function ClockClient() {
+export function ClockClient({ initialShiftId }: { initialShiftId: string | null }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const active = trpc.timeClock.active.useQuery();
+  const dashboard = trpc.me.dashboard.useQuery();
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -47,6 +49,15 @@ export function ClockClient() {
     ? Math.round((now - new Date(entry.clockInAt).getTime()) / 60000)
     : 0;
 
+  // The shift we offer to clock in against: the deep-linked one if it matches
+  // the worker's next assignment, otherwise simply their next assignment.
+  const nextShift = dashboard.data?.nextShift ?? null;
+  const targetShift =
+    nextShift && (!initialShiftId || nextShift.shiftId === initialShiftId)
+      ? nextShift
+      : null;
+  const linkedShift = entry?.shift ?? null;
+
   return (
     <div className="min-h-screen">
       <AppHeader />
@@ -62,6 +73,18 @@ export function ClockClient() {
               <p className="mt-1 text-3xl font-bold text-emerald-600">
                 {new Date(entry.clockInAt).toLocaleTimeString()}
               </p>
+
+              {linkedShift && (
+                <p className="mt-2 rounded-md bg-slate-50 p-2 text-xs text-slate-600">
+                  {t("clock.linkedShift", {
+                    role: linkedShift.roleLabel,
+                    window: formatTimeRange(
+                      new Date(linkedShift.startsAt),
+                      new Date(linkedShift.endsAt),
+                    ),
+                  })}
+                </p>
+              )}
 
               <div className="mt-4 grid grid-cols-1 gap-3 text-left">
                 <div>
@@ -102,15 +125,54 @@ export function ClockClient() {
             </>
           ) : (
             <>
-              <p className="text-sm text-slate-500">{t("clock.noActiveShift")}</p>
-              <Button
-                onClick={() => clockIn.mutate({})}
-                disabled={clockIn.isPending}
-                className="mt-6 h-14 w-full text-lg"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                {t("clock.clockIn")}
-              </Button>
+              {targetShift ? (
+                <>
+                  <p className="text-sm text-slate-500">
+                    {t("clock.forShift")}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {targetShift.roleLabel}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {formatTimeRange(
+                      new Date(targetShift.startsAt),
+                      new Date(targetShift.endsAt),
+                    )}
+                  </p>
+                  <Button
+                    onClick={() =>
+                      clockIn.mutate({ shiftId: targetShift.shiftId })
+                    }
+                    disabled={clockIn.isPending}
+                    className="mt-6 h-14 w-full text-lg"
+                  >
+                    <Play className="mr-2 h-5 w-5" />
+                    {t("clock.clockInForShift")}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => clockIn.mutate({})}
+                    disabled={clockIn.isPending}
+                    className="mt-3 text-sm text-slate-500 underline hover:text-slate-700"
+                  >
+                    {t("clock.clockInPlain")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-500">
+                    {t("clock.noActiveShift")}
+                  </p>
+                  <Button
+                    onClick={() => clockIn.mutate({})}
+                    disabled={clockIn.isPending}
+                    className="mt-6 h-14 w-full text-lg"
+                  >
+                    <Play className="mr-2 h-5 w-5" />
+                    {t("clock.clockIn")}
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>

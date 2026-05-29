@@ -58,6 +58,8 @@ interface WorkCalendarProps {
   ariaLabel?: string;
   /** "24h" = 13:00, "12h" = 1:00 PM. Defaults to "24h". */
   timeFormat?: CalendarTimeFormat;
+  /** Shift ids highlighted as selected (used by the bulk-reschedule flow). */
+  selectedShiftIds?: ReadonlySet<string>;
 }
 
 const STATUS_CLASS: Record<DisplayStatus | "Available", string> = {
@@ -173,6 +175,7 @@ export function WorkCalendar({
   editable = false,
   ariaLabel,
   timeFormat = "24h",
+  selectedShiftIds,
 }: WorkCalendarProps) {
   const fcRef = useRef<FullCalendar | null>(null);
   const tf = buildTimeFormat(timeFormat);
@@ -183,18 +186,25 @@ export function WorkCalendar({
 
   const fcEvents = useMemo(
     () =>
-      events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        start: e.start,
-        end: e.end,
-        editable: editable && e.extendedProps.kind === "shift",
-        classNames: [
-          STATUS_CLASS[e.extendedProps.status] ?? "tg-event tg-event-open",
-        ],
-        extendedProps: e.extendedProps,
-      })),
-    [events, editable],
+      events.map((e) => {
+        const isSelected =
+          e.extendedProps.kind === "shift" &&
+          !!e.extendedProps.shiftId &&
+          !!selectedShiftIds?.has(e.extendedProps.shiftId);
+        return {
+          id: e.id,
+          title: e.title,
+          start: e.start,
+          end: e.end,
+          editable: editable && e.extendedProps.kind === "shift",
+          classNames: [
+            STATUS_CLASS[e.extendedProps.status] ?? "tg-event tg-event-open",
+            ...(isSelected ? ["tg-event-selected"] : []),
+          ],
+          extendedProps: e.extendedProps,
+        };
+      }),
+    [events, editable, selectedShiftIds],
   );
 
   const handleEventClick = (arg: EventClickArg) => {

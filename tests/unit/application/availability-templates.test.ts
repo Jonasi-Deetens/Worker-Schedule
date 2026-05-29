@@ -60,6 +60,62 @@ describe("AvailabilityService – templates", () => {
     expect(payload).toHaveLength(2);
   });
 
+  it("updates an existing template and re-validates the time window", async () => {
+    const db = createPrismaMock();
+    db.availabilityTemplate.findFirst.mockResolvedValue({
+      id: "t1",
+      userId: "u1",
+      dayOfWeek: 1,
+      startTime: "09:00",
+      endTime: "17:00",
+      validFrom: new Date("2020-01-01"),
+      validUntil: null,
+    });
+    db.availabilityTemplate.update.mockResolvedValue({ id: "t1" });
+
+    const svc = new AvailabilityService(asPrisma(db));
+    await svc.updateTemplate({
+      id: "t1",
+      userId: "u1",
+      startTime: "10:00",
+    });
+
+    const call = db.availabilityTemplate.update.mock.calls[0] as
+      | [{ data: { dayOfWeek: number; startTime: string; endTime: string } }]
+      | undefined;
+    expect(call?.[0]?.data).toMatchObject({
+      dayOfWeek: 1,
+      startTime: "10:00",
+      endTime: "17:00",
+    });
+  });
+
+  it("rejects an update for a template the user does not own", async () => {
+    const db = createPrismaMock();
+    db.availabilityTemplate.findFirst.mockResolvedValue(null);
+    const svc = new AvailabilityService(asPrisma(db));
+    await expect(
+      svc.updateTemplate({ id: "t1", userId: "u1", startTime: "10:00" }),
+    ).rejects.toThrow(/not found/i);
+  });
+
+  it("rejects an update whose resulting start >= end", async () => {
+    const db = createPrismaMock();
+    db.availabilityTemplate.findFirst.mockResolvedValue({
+      id: "t1",
+      userId: "u1",
+      dayOfWeek: 1,
+      startTime: "09:00",
+      endTime: "17:00",
+      validFrom: new Date("2020-01-01"),
+      validUntil: null,
+    });
+    const svc = new AvailabilityService(asPrisma(db));
+    await expect(
+      svc.updateTemplate({ id: "t1", userId: "u1", startTime: "18:00" }),
+    ).rejects.toThrow(/must be after/i);
+  });
+
   it("skips slots already covered by an existing availability", async () => {
     const db = createPrismaMock();
     const existingStart = new Date(2026, 5, 1, 9);

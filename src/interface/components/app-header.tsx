@@ -2,6 +2,7 @@
 
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   Bell,
@@ -14,7 +15,9 @@ import {
   Home,
   LayoutTemplate,
   LogOut,
+  MapPin,
   Menu,
+  Plug,
   Settings,
   ShieldCheck,
   Tags,
@@ -118,6 +121,15 @@ export function AppHeader() {
   // Setup/admin links grouped into the desktop "Settings" dropdown and the
   // mobile drawer's settings section.
   const settingsItems: NavItem[] = [
+    ...(!isOwnerOrManager
+      ? [
+          {
+            href: "/settings/availability",
+            label: t("availabilityTemplates.title"),
+            icon: <CalendarRange className="h-5 w-5" />,
+          },
+        ]
+      : []),
     ...(isOwnerOrManager
       ? [
           {
@@ -130,6 +142,11 @@ export function AppHeader() {
             label: t("rosters.title"),
             icon: <CalendarRange className="h-5 w-5" />,
           },
+          {
+            href: "/settings/locations",
+            label: t("locations.title"),
+            icon: <MapPin className="h-5 w-5" />,
+          },
         ]
       : []),
     ...(isOwner
@@ -138,6 +155,11 @@ export function AppHeader() {
             href: "/settings/templates",
             label: t("templates.title"),
             icon: <LayoutTemplate className="h-5 w-5" />,
+          },
+          {
+            href: "/settings/integrations",
+            label: t("integrations.title"),
+            icon: <Plug className="h-5 w-5" />,
           },
           {
             href: "/settings/developers",
@@ -518,18 +540,36 @@ function BusinessSwitcher({
   memberships: { businessId: string; businessName: string }[];
   currentBusinessId: string | null;
 }) {
+  const { update } = useSession();
+  const router = useRouter();
+  const t = useTranslations();
+  const [pending, setPending] = useState(false);
+  const switchBusiness = trpc.membership.switch.useMutation();
+
+  const onSwitch = async (businessId: string) => {
+    if (!businessId || businessId === currentBusinessId) return;
+    setPending(true);
+    try {
+      // Validate membership server-side first, then push the new businessId
+      // into the JWT via NextAuth's update trigger (handled in the jwt
+      // callback), and finally refresh so server components re-read the role.
+      await switchBusiness.mutateAsync({ businessId });
+      await update({ businessId });
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <select
-      aria-label="Switch business"
+      aria-label={t("nav.switchBusiness")}
       value={currentBusinessId ?? undefined}
-      onChange={() => {
-        // Switching businesses currently requires a re-login because the
-        // session.businessId is fixed at sign-in time. We leave the control in
-        // place so users see their other memberships and can act on them once
-        // server-side switching ships.
-        window.location.assign("/login?reason=switch");
+      disabled={pending}
+      onChange={(event) => {
+        void onSwitch(event.target.value);
       }}
-      className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 sm:inline-flex"
+      className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 disabled:opacity-50 sm:inline-flex"
     >
       {memberships.map((m) => (
         <option key={m.businessId} value={m.businessId}>

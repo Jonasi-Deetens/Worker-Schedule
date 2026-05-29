@@ -3,7 +3,7 @@ import {
   mapServiceError,
   ownerProcedure,
   router,
-  workerProcedure,
+  workerOrManagerProcedure,
 } from "../init";
 import {
   availabilitySchema,
@@ -12,12 +12,12 @@ import {
 } from "../schemas";
 import {
   availabilityService,
-  requireBusinessId,
+  requireActiveMembership,
   timeOffService,
 } from "../services";
 
 export const availabilityRouter = router({
-  list: workerProcedure
+  list: workerOrManagerProcedure
     .input(dateRangeSchema)
     .query(async ({ ctx, input }) => {
       return availabilityService.list({
@@ -30,7 +30,10 @@ export const availabilityRouter = router({
   listForBusiness: ownerProcedure
     .input(dateRangeSchema)
     .query(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       return availabilityService.listForBusiness({
         businessId,
         from: input.from,
@@ -38,7 +41,7 @@ export const availabilityRouter = router({
       });
     }),
 
-  set: workerProcedure
+  set: workerOrManagerProcedure
     .input(availabilitySchema)
     .mutation(async ({ ctx, input }) => {
       const blocked = await timeOffService.hasConflict(
@@ -62,7 +65,7 @@ export const availabilityRouter = router({
       }
     }),
 
-  delete: workerProcedure
+  delete: workerOrManagerProcedure
     .input(idSchema)
     .mutation(async ({ ctx, input }) => {
       try {

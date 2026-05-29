@@ -27,6 +27,7 @@ export function useBusinessEvents(onEvent: Handler): void {
       "assignment.changed",
       "timeoff.decided",
       "time_entry.created",
+      "shift.message.created",
     ];
 
     const handlers = events.map((name) => {

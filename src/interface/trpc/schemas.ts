@@ -13,6 +13,7 @@ export const createShiftSchema = z
     requiredSpots: z.number().int().min(1).max(50),
     notes: z.string().max(500).optional(),
     requiredSkillId: z.string().cuid().nullable().optional(),
+    locationId: z.string().cuid().nullable().optional(),
     publish: z.boolean().optional(),
   })
   .refine((data) => data.endsAt > data.startsAt, {
@@ -28,6 +29,7 @@ export const updateShiftSchema = z.object({
   requiredSpots: z.number().int().min(1).max(50).optional(),
   notes: z.string().max(500).nullable().optional(),
   requiredSkillId: z.string().cuid().nullable().optional(),
+  locationId: z.string().cuid().nullable().optional(),
 });
 
 export const availabilitySchema = z
@@ -47,6 +49,15 @@ export const registerSchema = z.object({
   role: z.enum(["OWNER", "WORKER"]),
   businessName: z.string().min(1).max(100).optional(),
   businessId: z.string().cuid().optional(),
+});
+
+export const requestPasswordResetSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(8).max(500),
+  newPassword: z.string().min(8).max(100),
 });
 
 export const idSchema = z.object({ id: z.string().cuid() });
@@ -99,6 +110,8 @@ export const inviteAcceptSchema = z.object({
   token: z.string().min(8).max(200),
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(100),
+  // Only used for link-only invites that were created without a fixed email.
+  email: z.string().email().optional(),
 });
 
 export const skillInputSchema = z.object({
@@ -129,6 +142,18 @@ export const workerProfileSchema = z.object({
   hourlyRate: z.number().min(0).max(1000).nullable().optional(),
   weeklyHourCap: z.number().int().min(0).max(80).nullable().optional(),
   birthDate: z.coerce.date().nullable().optional(),
+  // Belgian national number (NISS/rijksregisternummer): 11 digits, optionally
+  // grouped with dots/dashes. Validated loosely on digit count only.
+  nationalNumber: z
+    .string()
+    .max(20)
+    .nullable()
+    .optional()
+    .refine(
+      (v) =>
+        v == null || v === "" || /^\d{11}$/.test(v.replace(/\D/g, "")),
+      { message: "National number must be 11 digits" },
+    ),
 });
 
 export const workerStatusSchema = z.object({
@@ -189,6 +214,14 @@ export const availabilityTemplateSchema = z.object({
   validUntil: z.coerce.date().nullable().optional(),
 });
 
+export const availabilityTemplateUpdateSchema = z.object({
+  id: z.string().cuid(),
+  dayOfWeek: z.number().int().min(0).max(6).optional(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  validUntil: z.coerce.date().nullable().optional(),
+});
+
 export const publishRangeSchema = z.object({
   from: z.coerce.date(),
   to: z.coerce.date(),
@@ -222,6 +255,19 @@ export const timeEntryClockOutSchema = z.object({
 
 export const timeEntryApproveSchema = z.object({
   ids: z.array(z.string().cuid()).min(1).max(200),
+});
+
+export const timeEntryRejectSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1).max(200),
+  reason: z.string().max(500).optional(),
+});
+
+export const timeEntryUpdateSchema = z.object({
+  id: z.string().cuid(),
+  clockInAt: z.coerce.date().optional(),
+  clockOutAt: z.coerce.date().nullable().optional(),
+  breakMinutes: z.number().int().min(0).max(720).optional(),
+  notes: z.string().max(500).nullable().optional(),
 });
 
 export const swapOfferSchema = z.object({

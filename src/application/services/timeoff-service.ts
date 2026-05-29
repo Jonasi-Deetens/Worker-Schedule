@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { EmailService } from "./email-service";
 import { logger } from "@/infrastructure/logging/logger";
 
@@ -113,6 +114,11 @@ export class TimeOffService {
         approved: input.approve,
       });
     }
+
+    publishEvent(input.businessId, {
+      type: "timeoff.decided",
+      userId: request.userId,
+    });
 
     return updated;
   }

@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SubscriptionService } from "@/application/services/subscription-service";
+import type { EmailService } from "@/application/services/email-service";
+import { subscribe, type BusinessEvent } from "@/infrastructure/events/bus";
 import {
   asPrisma,
   createPrismaMock,
@@ -282,6 +284,37 @@ describe("SubscriptionService.approve", () => {
     );
   });
 
+  it("counts only CONFIRMED assignments against capacity", async () => {
+    prisma.shiftSubscription.findFirst.mockResolvedValue({
+      id: "sub-1",
+      shiftId: "shift-1",
+      userId: WORKER_ID,
+      status: "PENDING",
+      shift: {
+        id: "shift-1",
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T14:00:00Z"),
+        requiredSpots: 2,
+        roleLabel: "Barista",
+      },
+    });
+    prisma.shiftAssignment.count.mockResolvedValue(0);
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.shiftAssignment.create.mockResolvedValue({ id: "assign-1" });
+
+    await service.approve({
+      subscriptionId: "sub-1",
+      ownerId: OWNER_USER_ID,
+      businessId: BUSINESS_ID,
+    });
+
+    expect(prisma.shiftAssignment.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { shiftId: "shift-1", status: "CONFIRMED" },
+      }),
+    );
+  });
+
   it("marks shift FILLED when last spot is approved", async () => {
     prisma.shiftSubscription.findFirst.mockResolvedValue({
       id: "sub-1",
@@ -356,6 +389,51 @@ describe("SubscriptionService.reject", () => {
           type: "APPLICATION_REJECTED",
         }),
       }),
+    );
+  });
+});
+
+describe("SubscriptionService events + email", () => {
+  it("publishes subscription.changed and emails the worker on approve", async () => {
+    const events: BusinessEvent[] = [];
+    const unsub = subscribe(BUSINESS_ID, (e) => events.push(e));
+    const emails = { sendApplicationDecision: vi.fn() };
+    const svc = new SubscriptionService(
+      asPrisma(prisma),
+      emails as unknown as EmailService,
+    );
+
+    prisma.shiftSubscription.findFirst.mockResolvedValue({
+      id: "sub-1",
+      shiftId: "shift-1",
+      userId: WORKER_ID,
+      status: "PENDING",
+      shift: {
+        id: "shift-1",
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T14:00:00Z"),
+        requiredSpots: 2,
+        roleLabel: "Barista",
+      },
+      user: { email: "w@example.com", name: "Wendy", notificationPrefs: null },
+    });
+    prisma.shiftAssignment.count.mockResolvedValue(0);
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.shiftAssignment.create.mockResolvedValue({ id: "assign-1" });
+    prisma.business.findUnique.mockResolvedValue({ name: "Café Central" });
+
+    await svc.approve({
+      subscriptionId: "sub-1",
+      ownerId: OWNER_USER_ID,
+      businessId: BUSINESS_ID,
+    });
+    unsub();
+
+    expect(events.some((e) => e.type === "subscription.changed")).toBe(true);
+    expect(events.some((e) => e.type === "assignment.changed")).toBe(true);
+    expect(emails.sendApplicationDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "w@example.com" }),
+      expect.objectContaining({ approved: true, shiftLabel: "Barista" }),
     );
   });
 });

@@ -5,6 +5,7 @@ import {
 } from "../init";
 import {
   availabilityTemplateSchema,
+  availabilityTemplateUpdateSchema,
   dateRangeSchema,
   idSchema,
 } from "../schemas";
@@ -19,6 +20,18 @@ export const availabilityTemplateRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await availabilityService.setTemplate({
+          userId: ctx.session.user.id,
+          ...input,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  update: workerProcedure
+    .input(availabilityTemplateUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await availabilityService.updateTemplate({
           userId: ctx.session.user.id,
           ...input,
         });

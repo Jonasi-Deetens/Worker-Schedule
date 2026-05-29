@@ -16,6 +16,7 @@ export function WorkersClient() {
   const utils = trpc.useUtils();
   const workersQuery = trpc.worker.list.useQuery();
   const invitesQuery = trpc.invite.list.useQuery();
+  const expiringQuery = trpc.document.listExpiring.useQuery({ days: 30 });
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -58,6 +59,13 @@ export function WorkersClient() {
   };
 
   const workers = workersQuery.data ?? [];
+  const expiringDocs = (expiringQuery.data ?? []) as Array<{
+    id: string;
+    kind: string;
+    fileName: string;
+    expiresOn: string | Date | null;
+    user: { id: string; name: string };
+  }>;
 
   return (
     <div className="min-h-screen">
@@ -167,6 +175,38 @@ export function WorkersClient() {
                   </li>
                 );
               })}
+            </ul>
+          </section>
+        )}
+
+        {expiringDocs.length > 0 && (
+          <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+            <h2 className="mb-3 text-sm font-semibold text-amber-900">
+              {t("workers.expiringTitle")}
+            </h2>
+            <ul className="space-y-1.5 text-sm">
+              {expiringDocs.map((doc) => (
+                <li key={doc.id} className="flex items-center gap-2">
+                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  <Link
+                    href={`/workers/${doc.user.id}`}
+                    className="font-medium text-slate-900 hover:underline"
+                  >
+                    {t("workers.expiringWorker", {
+                      name: doc.user.name,
+                      kind: doc.kind,
+                    })}
+                  </Link>
+                  <span className="text-slate-600">{doc.fileName}</span>
+                  {doc.expiresOn && (
+                    <span className="ml-auto text-xs text-amber-800">
+                      {t("workers.docsExpiringOn", {
+                        date: new Date(doc.expiresOn).toLocaleDateString(),
+                      })}
+                    </span>
+                  )}
+                </li>
+              ))}
             </ul>
           </section>
         )}

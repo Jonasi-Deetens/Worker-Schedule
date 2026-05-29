@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { SD_WORX, SECUREX, GENERIC, renderPayrollCsv } from "@/infrastructure/payroll/providers";
+import {
+  buildPayrollRows,
+  formatPayrollDate,
+  SD_WORX,
+  SECUREX,
+  GENERIC,
+  renderPayrollCsv,
+} from "@/infrastructure/payroll/providers";
 
 const ROW = {
   workerExternalId: "u1",
@@ -41,5 +48,52 @@ describe("Payroll provider presets", () => {
       { ...ROW, workerName: 'Bob, "the" Builder' },
     ]);
     expect(csv).toContain('"Bob, ""the"" Builder"');
+  });
+});
+
+describe("buildPayrollRows", () => {
+  const base = {
+    clockInAt: new Date("2026-06-01T09:00:00Z"),
+    clockOutAt: new Date("2026-06-01T17:30:00Z"),
+    breakMinutes: 30,
+    user: {
+      name: "Alice",
+      email: "alice@example.com",
+      hourlyRate: 16.5,
+      nationalNumber: "90010112345",
+    },
+  };
+
+  it("computes net hours and gross from rate", () => {
+    const [row] = buildPayrollRows([base], "Europe/Brussels");
+    // 8.5h gross - 0.5h break = 8h net
+    expect(row.hours).toBe(8);
+    expect(row.gross).toBe(132);
+  });
+
+  it("uses the NISS as the worker identifier, never the internal id", () => {
+    const [row] = buildPayrollRows([base], "Europe/Brussels");
+    expect(row.workerExternalId).toBe("90010112345");
+  });
+
+  it("falls back to the email local-part when NISS is missing", () => {
+    const [row] = buildPayrollRows(
+      [{ ...base, user: { ...base.user, nationalNumber: null } }],
+      "Europe/Brussels",
+    );
+    expect(row.workerExternalId).toBe("alice");
+  });
+
+  it("renders the date in the business timezone, not UTC", () => {
+    // 23:30 UTC on the 1st is 01:30 on the 2nd in Brussels (CEST, +02:00).
+    const lateNight = {
+      ...base,
+      clockInAt: new Date("2026-06-01T23:30:00Z"),
+      clockOutAt: new Date("2026-06-02T03:00:00Z"),
+      breakMinutes: 0,
+    };
+    const [row] = buildPayrollRows([lateNight], "Europe/Brussels");
+    expect(row.date).toBe("2026-06-02");
+    expect(formatPayrollDate(lateNight.clockInAt, "UTC")).toBe("2026-06-01");
   });
 });

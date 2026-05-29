@@ -2,9 +2,11 @@ import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import {
   getDimonaAdapter,
+  HttpDimonaAdapter,
   type DimonaAdapter,
   type DimonaDeclarationInput,
 } from "@/infrastructure/dimona/adapter";
+import { decryptString } from "@/infrastructure/dimona/crypto";
 
 /**
  * Maps a worker's contract type to the Dimona worker type code.
@@ -49,6 +51,39 @@ export class DimonaService {
   }
 
   /**
+   * Picks the adapter for a declaration. When `DIMONA_ENV` is prod/sandbox and
+   * the business has stored (encrypted) credentials, a per-business HTTP
+   * adapter is built from them; otherwise the process-default adapter (mock in
+   * dev/tests) is used.
+   */
+  private resolveAdapter(business: {
+    dimonaCredentials?: string | null;
+  }): DimonaAdapter {
+    const env = process.env.DIMONA_ENV;
+    if ((env === "prod" || env === "sandbox") && business.dimonaCredentials) {
+      try {
+        const creds = JSON.parse(
+          decryptString(business.dimonaCredentials),
+        ) as { token?: string; baseUrl?: string };
+        const baseUrl =
+          creds.baseUrl ??
+          (env === "prod"
+            ? process.env.DIMONA_PROD_URL
+            : process.env.DIMONA_SANDBOX_URL);
+        if (creds.token && baseUrl) {
+          return new HttpDimonaAdapter({ baseUrl, token: creds.token });
+        }
+      } catch (err) {
+        logger.warn({
+          event: "dimona.credentials.invalid",
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    return this.adapter;
+  }
+
+  /**
    * Declare a worker IN for the given shift. Idempotent: if a CONFIRMED
    * declaration already exists for this shift/worker pair, it is returned
    * unchanged.
@@ -86,7 +121,7 @@ export class DimonaService {
       action: "IN",
     };
 
-    const result = await this.adapter.declare(request);
+    const result = await this.resolveAdapter(shift.business).declare(request);
     const status = result.ok ? "CONFIRMED" : "REJECTED";
     const declaration = await this.db.dimonaDeclaration.create({
       data: {
@@ -127,7 +162,7 @@ export class DimonaService {
     });
     if (!shift?.business.dimonaEmployerId) return null;
 
-    const result = await this.adapter.declare({
+    const result = await this.resolveAdapter(shift.business).declare({
       workerNiss: "n/a",
       workerType: "OTH",
       startsAt: shift.startsAt,
@@ -136,7 +171,7 @@ export class DimonaService {
       action: "CANCEL",
       dimonaPeriodId: declaration.dimonaPeriodId,
     });
-    return this.db.dimonaDeclaration.update({
+    const updated = await this.db.dimonaDeclaration.update({
       where: { id: declaration.id },
       data: {
         status: result.ok ? "CANCELLED" : declaration.status,
@@ -144,6 +179,17 @@ export class DimonaService {
         errorMessage: result.ok ? null : result.errorMessage,
       },
     });
+
+    await this.db.auditEvent.create({
+      data: {
+        action: "DIMONA_CANCELLED",
+        entityType: "Shift",
+        entityId: input.shiftId,
+        metadata: { workerId: input.workerId, ok: result.ok },
+      },
+    });
+
+    return updated;
   }
 
   /**

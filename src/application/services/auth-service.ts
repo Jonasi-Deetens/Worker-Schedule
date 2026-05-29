@@ -34,38 +34,53 @@ export class AuthService {
     const passwordHash = await hash(input.password, 12);
 
     if (input.role === "OWNER") {
-      if (!input.businessName) {
+      const businessName = input.businessName;
+      if (!businessName) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Business name is required for owners",
         });
       }
 
-      const user = await this.db.user.create({
-        data: {
-          email: input.email,
-          passwordHash,
-          name: input.name,
-          role: "OWNER",
-        },
-      });
+      // Create user, business, owner backlink and the OWNER membership as one
+      // atomic unit so we never end up with a business that has no membership.
+      return this.db.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email: input.email,
+            passwordHash,
+            name: input.name,
+            role: "OWNER",
+          },
+        });
 
-      const business = await this.db.business.create({
-        data: {
-          name: input.businessName,
-          ownerId: user.id,
-        },
-      });
+        const business = await tx.business.create({
+          data: {
+            name: businessName,
+            ownerId: user.id,
+          },
+        });
 
-      await this.db.user.update({
-        where: { id: user.id },
-        data: { businessId: business.id },
-      });
+        await tx.user.update({
+          where: { id: user.id },
+          data: { businessId: business.id },
+        });
 
-      return { userId: user.id, businessId: business.id };
+        await tx.membership.create({
+          data: {
+            userId: user.id,
+            businessId: business.id,
+            role: "OWNER",
+            status: "ACTIVE",
+          },
+        });
+
+        return { userId: user.id, businessId: business.id };
+      });
     }
 
-    if (!input.businessId) {
+    const businessId = input.businessId;
+    if (!businessId) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Business ID is required for workers",
@@ -73,7 +88,7 @@ export class AuthService {
     }
 
     const business = await this.db.business.findUnique({
-      where: { id: input.businessId },
+      where: { id: businessId },
     });
     if (!business) {
       throw new TRPCError({
@@ -82,16 +97,31 @@ export class AuthService {
       });
     }
 
-    const user = await this.db.user.create({
-      data: {
-        email: input.email,
-        passwordHash,
-        name: input.name,
-        role: "WORKER",
-        businessId: input.businessId,
-      },
+    // Self-serve worker signups also get a membership so business-scoped
+    // authorization (active-membership checks) treats them like invited staff.
+    const user = await this.db.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          name: input.name,
+          role: "WORKER",
+          businessId,
+        },
+      });
+
+      await tx.membership.create({
+        data: {
+          userId: created.id,
+          businessId,
+          role: "WORKER",
+          status: "ACTIVE",
+        },
+      });
+
+      return created;
     });
 
-    return { userId: user.id, businessId: input.businessId };
+    return { userId: user.id, businessId };
   }
 }

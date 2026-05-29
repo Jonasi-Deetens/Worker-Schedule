@@ -10,7 +10,12 @@ import {
   mePasswordSchema,
   meProfileUpdateSchema,
 } from "../schemas";
-import { meService, requireBusinessId, workerService } from "../services";
+import {
+  meService,
+  requireBusinessId,
+  timeClockService,
+  workerService,
+} from "../services";
 
 export const meRouter = router({
   dashboard: protectedProcedure.query(async ({ ctx }) => {
@@ -92,12 +97,20 @@ export const meRouter = router({
     .input(hoursPeriodSchema)
     .query(async ({ ctx, input }) => {
       const businessId = requireBusinessId(ctx.session.user.businessId);
-      const total = await workerService.aggregateHours(
-        ctx.session.user.id,
-        businessId,
-        input.from,
-        input.to,
-      );
-      return { total };
+      const [scheduled, worked] = await Promise.all([
+        workerService.aggregateHours(
+          ctx.session.user.id,
+          businessId,
+          input.from,
+          input.to,
+        ),
+        timeClockService.aggregateWorkedHours(
+          ctx.session.user.id,
+          input.from,
+          input.to,
+        ),
+      ]);
+      // `total` is kept for backwards-compatible callers; it mirrors scheduled.
+      return { total: scheduled, scheduled, worked };
     }),
 });

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
+import { SchedulingRules } from "./scheduling-rules";
 
 /**
  * Worker-to-worker shift swap: the holder of an APPROVED subscription offers
@@ -7,7 +8,11 @@ import { logger } from "@/infrastructure/logging/logger";
  * existing assignment is transferred atomically.
  */
 export class SwapService {
-  constructor(private readonly db: PrismaClient) {}
+  private readonly rules: SchedulingRules;
+
+  constructor(private readonly db: PrismaClient) {
+    this.rules = new SchedulingRules(db);
+  }
 
   async offer(input: {
     subscriptionId: string;
@@ -216,6 +221,14 @@ export class SwapService {
       },
     });
     if (conflict) throw new Error("You now have a conflicting shift");
+
+    // Centralised scheduling-rule enforcement for the worker taking over the
+    // shift (min rest, weekly cap, age, time-off) — same guard as the
+    // approve/assign/broadcast paths.
+    await this.rules.assertAssignable(input.decidingUserId, {
+      startsAt: shift.startsAt,
+      endsAt: shift.endsAt,
+    });
 
     await this.db.$transaction([
       this.db.shiftAssignment.deleteMany({

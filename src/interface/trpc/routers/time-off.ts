@@ -4,7 +4,7 @@ import {
   mapServiceError,
   protectedProcedure,
   router,
-  workerProcedure,
+  workerOrManagerProcedure,
 } from "../init";
 import {
   idSchema,
@@ -12,10 +12,10 @@ import {
   timeOffRequestSchema,
   timeOffUpdateSchema,
 } from "../schemas";
-import { requireBusinessId, timeOffService } from "../services";
+import { requireActiveMembership, timeOffService } from "../services";
 
 export const timeOffRouter = router({
-  request: workerProcedure
+  request: workerOrManagerProcedure
     .input(timeOffRequestSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -33,13 +33,19 @@ export const timeOffRouter = router({
   listForBusiness: managerProcedure
     .input(z.object({ status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional() }))
     .query(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       return timeOffService.listForBusiness(businessId, input.status);
     }),
   decide: managerProcedure
     .input(timeOffDecisionSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await timeOffService.decide({
           id: input.id,
@@ -51,7 +57,7 @@ export const timeOffRouter = router({
         mapServiceError(error);
       }
     }),
-  cancel: workerProcedure
+  cancel: workerOrManagerProcedure
     .input(idSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -63,7 +69,7 @@ export const timeOffRouter = router({
         mapServiceError(error);
       }
     }),
-  update: workerProcedure
+  update: workerOrManagerProcedure
     .input(timeOffUpdateSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -81,7 +87,10 @@ export const timeOffRouter = router({
   revoke: managerProcedure
     .input(idSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await timeOffService.revoke({
           id: input.id,

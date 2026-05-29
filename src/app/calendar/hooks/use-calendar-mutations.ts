@@ -16,6 +16,7 @@ export interface CalendarMutationsCallbacks {
   closeAvailabilityDetail?: () => void;
   closeCancelShift?: () => void;
   closeRemoveAvailability?: () => void;
+  closeBulkReschedule?: () => void;
   clearSelectedShift?: () => void;
   clearSelectedAvailability?: () => void;
   refetchAssignments?: () => void;
@@ -52,6 +53,27 @@ export function useCalendarMutations(
   const broadcast = trpc.shift.broadcast.useMutation({
     onSuccess: (data) => {
       toast.success(t("shift.broadcastSent", { count: data?.notified ?? 0 }));
+    },
+    onError,
+  });
+
+  const acceptBroadcast = trpc.shift.acceptBroadcast.useMutation({
+    onSuccess: () => {
+      utils.shift.list.invalidate();
+      utils.shift.openBroadcasts.invalidate();
+      utils.notification.unreadCount.invalidate();
+      callbacks.closeDetail?.();
+      callbacks.clearSelectedShift?.();
+      toast.success(t("applications.broadcastAccepted"));
+    },
+    onError,
+  });
+
+  const bulkReschedule = trpc.shift.bulkReschedule.useMutation({
+    onSuccess: (data) => {
+      shiftListInvalidate();
+      callbacks.closeBulkReschedule?.();
+      toast.success(t("bulk.rescheduled", { count: data?.moved ?? 0 }));
     },
     onError,
   });
@@ -101,6 +123,16 @@ export function useCalendarMutations(
       toast.success(t("toast.shiftPublished"), {
         description: t("calendar.published", { count: data.count }),
       });
+    },
+    onError,
+  });
+
+  const publish = trpc.shift.publish.useMutation({
+    onSuccess: () => {
+      shiftListInvalidate();
+      callbacks.closeDetail?.();
+      callbacks.clearSelectedShift?.();
+      toast.success(t("toast.shiftPublished"));
     },
     onError,
   });
@@ -241,10 +273,13 @@ export function useCalendarMutations(
       update: updateShift,
       delete: deleteShift,
       publishRange,
+      publish,
       duplicateWeek,
       cancelDay,
       assign: assignWorker,
       broadcast,
+      acceptBroadcast,
+      bulkReschedule,
       confirmReschedule,
       declineReschedule,
     },

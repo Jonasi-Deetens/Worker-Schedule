@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@/interface/components/ui/button";
 import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
+import { trpc } from "@/interface/trpc/client";
 import { cn } from "@/lib/utils";
 
 export interface ShiftFormData {
@@ -16,6 +17,9 @@ export interface ShiftFormData {
   roleLabel: string;
   requiredSpots: number;
   notes?: string;
+  requiredSkillId?: string | null;
+  locationId?: string | null;
+  publish?: boolean;
   repeatWeekly?: boolean;
   repeatUntil?: string;
 }
@@ -27,6 +31,8 @@ export interface ShiftFormInitial {
   roleLabel?: string;
   requiredSpots?: number;
   notes?: string;
+  requiredSkillId?: string | null;
+  locationId?: string | null;
 }
 
 interface ShiftFormDialogProps {
@@ -54,9 +60,16 @@ export function ShiftFormDialog({
   const t = useTranslations();
   const formKey = useId();
   const [repeatWeekly, setRepeatWeekly] = useState(false);
+  const [publishNow, setPublishNow] = useState(false);
+
+  const skills = trpc.skill.list.useQuery(undefined, { enabled: open });
+  const locations = trpc.location.list.useQuery(undefined, { enabled: open });
 
   useEffect(() => {
-    if (open) setRepeatWeekly(false);
+    if (open) {
+      setRepeatWeekly(false);
+      setPublishNow(false);
+    }
   }, [open, initialData?.date]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -69,12 +82,18 @@ export function ShiftFormDialog({
       roleLabel: form.get("roleLabel") as string,
       requiredSpots: Number(form.get("requiredSpots")),
       notes: (form.get("notes") as string) || undefined,
+      requiredSkillId: (form.get("requiredSkillId") as string) || null,
+      locationId: (form.get("locationId") as string) || null,
+      publish: mode === "create" ? publishNow : undefined,
       repeatWeekly: repeatWeekly || undefined,
       repeatUntil: repeatWeekly
         ? ((form.get("repeatUntil") as string) || undefined)
         : undefined,
     });
   };
+
+  const selectClass =
+    "flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
 
   const resolvedTitle =
     title ?? (mode === "edit" ? t("shift.edit") : t("shift.create"));
@@ -166,6 +185,56 @@ export function ShiftFormDialog({
                 defaultValue={initialData?.notes ?? ""}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="requiredSkillId">
+                  {t("shift.requiredSkill")}
+                </Label>
+                <select
+                  id="requiredSkillId"
+                  name="requiredSkillId"
+                  defaultValue={initialData?.requiredSkillId ?? ""}
+                  className={selectClass}
+                >
+                  <option value="">{t("shift.noSkill")}</option>
+                  {(skills.data ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="locationId">{t("shift.location")}</Label>
+                <select
+                  id="locationId"
+                  name="locationId"
+                  defaultValue={initialData?.locationId ?? ""}
+                  className={selectClass}
+                >
+                  <option value="">{t("shift.noLocation")}</option>
+                  {(locations.data ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {mode === "create" && (
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                <input
+                  type="checkbox"
+                  name="publish"
+                  checked={publishNow}
+                  onChange={(e) => setPublishNow(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                {t("shift.publishNow")}
+              </label>
+            )}
 
             {allowRecurrence && mode === "create" && (
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">

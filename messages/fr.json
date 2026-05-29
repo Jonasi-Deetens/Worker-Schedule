@@ -6,7 +6,8 @@
   "nav": {
     "settings": "Paramètres",
     "menu": "Ouvrir le menu",
-    "close": "Fermer le menu"
+    "close": "Fermer le menu",
+    "switchBusiness": "Changer d'établissement"
   },
   "me": {
     "greeting": "Aujourd’hui",
@@ -64,7 +65,29 @@
     "businessIdHelp": "Demandez cet identifiant à votre manager.",
     "invalidCredentials": "E-mail ou mot de passe invalide.",
     "noAccount": "Pas de compte?",
-    "alreadyHaveAccount": "Déjà un compte?"
+    "alreadyHaveAccount": "Déjà un compte?",
+    "totpCode": "Code d'authentification",
+    "totpCodeHelp": "Laissez vide sauf si l'authentification à deux facteurs est activée sur votre compte.",
+    "totpRequired": "Saisissez le code à 6 chiffres de votre application d'authentification.",
+    "totpInvalid": "Ce code d'authentification est incorrect ou expiré.",
+    "accountNotActive": "Votre compte n'est pas actif. Veuillez contacter votre responsable.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotTitle": "Réinitialiser votre mot de passe",
+    "forgotSubtitle": "Saisissez votre e-mail et nous vous enverrons un lien pour choisir un nouveau mot de passe.",
+    "sendResetLink": "Envoyer le lien",
+    "sending": "Envoi…",
+    "resetEmailSent": "Si un compte existe pour cet e-mail, un lien de réinitialisation est en route. Vérifiez votre boîte de réception.",
+    "backToLogin": "Retour à la connexion",
+    "resetTitle": "Choisir un nouveau mot de passe",
+    "resetSubtitle": "Choisissez un mot de passe robuste que vous n'utilisez nulle part ailleurs.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "resetCta": "Mettre à jour le mot de passe",
+    "resetting": "Mise à jour…",
+    "resetSuccess": "Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter.",
+    "passwordsDontMatch": "Ces mots de passe ne correspondent pas.",
+    "invalidLink": "Ce lien de réinitialisation est invalide ou incomplet.",
+    "requestNewLink": "Demander un nouveau lien"
   },
   "calendar": {
     "title": "Calendrier",
@@ -129,6 +152,9 @@
     "requiredSpots": "Places requises",
     "requiredSkill": "Compétence requise",
     "noSkill": "Aucune",
+    "location": "Lieu",
+    "noLocation": "Aucun",
+    "draft": "Brouillon",
     "notes": "Notes (optionnel)",
     "notesPlaceholder": "Info complémentaire",
     "broadcast": "Diffuser à tous les éligibles",
@@ -171,7 +197,9 @@
     "markRead": "Marquer comme lu",
     "markAllRead": "Tout marquer comme lu",
     "unreadAria": "Notifications, {count} non lues",
-    "ariaLabel": "Notifications"
+    "ariaLabel": "Notifications",
+    "reminder24hTitle": "Shift dans 24 heures",
+    "reminder24hBody": "{role} à {time}"
   },
   "confirm": {
     "cancelShiftTitle": "Annuler ce shift?",
@@ -214,6 +242,8 @@
     "clockedIn": "Pointage entrée",
     "clockedOut": "Pointage sortie",
     "timeEntriesApproved": "Heures approuvées",
+    "timeEntriesRejected": "Heures refusées",
+    "timeEntryUpdated": "Registre mis à jour",
     "rosterApplied": "Roster appliqué",
     "reconfirmConfirmed": "Shift reconfirmé",
     "reconfirmDeclined": "Shift décliné — le responsable a été prévenu"
@@ -262,7 +292,37 @@
     "noShowsBadge": "{count, plural, one {# absence} other {# absences}}",
     "docsAttention": "Documents à surveiller",
     "docsExpired": "Expiré le {date}",
-    "docsExpiringOn": "Expire le {date}"
+    "docsExpiringOn": "Expire le {date}",
+    "nationalNumber": "Numéro national (NISS)",
+    "nationalNumberHelp": "Numéro de sécurité sociale belge — utilisé pour les exports de paie et les déclarations Dimona.",
+    "expiringTitle": "Documents expirant bientôt",
+    "expiringEmpty": "Aucun document n'expire dans les 30 prochains jours.",
+    "expiringWorker": "{name} · {kind}"
+  },
+  "integrations": {
+    "title": "Intégrations",
+    "subtitle": "Connectez des services externes comme la Dimona belge.",
+    "dimonaTitle": "Dimona (ONSS/RSZ)",
+    "dimonaHelp": "Définissez votre numéro d'employeur et vos identifiants API. Les shifts flexi, extra et étudiant sont alors déclarés automatiquement lors de l'affectation, et annulés lorsqu'un shift est annulé ou un travailleur retiré.",
+    "employerId": "Numéro d'employeur",
+    "token": "Jeton API",
+    "tokenSet": "•••••••• (enregistré)",
+    "tokenPlaceholder": "Collez votre jeton API Dimona",
+    "tokenHelp": "Stocké chiffré (AES-256-GCM). Laissez vide pour conserver le jeton actuel.",
+    "baseUrl": "URL de base de l'API (facultatif)",
+    "save": "Enregistrer l'intégration",
+    "saved": "Paramètres d'intégration enregistrés"
+  },
+  "locations": {
+    "title": "Lieux",
+    "subtitle": "Gérez les endroits où ont lieu les shifts.",
+    "name": "Nom",
+    "address": "Adresse",
+    "add": "Ajouter un lieu",
+    "saved": "Lieu enregistré",
+    "removed": "Lieu supprimé",
+    "empty": "Aucun lieu pour l'instant. Ajoutez le premier ci-dessus.",
+    "delete": "Supprimer le lieu"
   },
   "invite": {
     "title": "Rejoindre votre équipe",
@@ -275,7 +335,8 @@
     "copyLink": "Copier le lien",
     "linkCopied": "Lien copié",
     "sendEmail": "Envoyer par e-mail",
-    "expiresAt": "Expire le {date}"
+    "expiresAt": "Expire le {date}",
+    "emailPlaceholder": "vous@exemple.com"
   },
   "skills": {
     "title": "Compétences",
@@ -308,7 +369,9 @@
     "cancel": "Annuler",
     "revoke": "Révoquer",
     "editTitle": "Modifier la demande de congé",
-    "editHelp": "Modifiez les dates ou le motif. Les demandes approuvées repassent en attente de validation."
+    "editHelp": "Modifiez les dates ou le motif. Les demandes approuvées repassent en attente de validation.",
+    "myRequests": "Mes demandes",
+    "manageRequests": "Gérer les demandes"
   },
   "attendance": {
     "title": "Présence",
@@ -328,6 +391,8 @@
     "title": "Indicateurs",
     "subtitle": "Taux de remplissage, masse salariale et ratio coût/CA.",
     "scheduled": "Planifié",
+    "actual": "Réel",
+    "variance": "Écart",
     "fillRate": "Taux de remplissage",
     "labourCost": "Masse salariale",
     "costRevenue": "Coût / CA",
@@ -335,7 +400,13 @@
     "filled": "Pourvu",
     "cost": "Coût",
     "revenue": "Chiffre d’affaires",
-    "costToRevenue": "Coût/CA"
+    "costToRevenue": "Coût/CA",
+    "noShow": "Absence",
+    "range": "Période",
+    "weeksOption": "{count} semaines",
+    "loading": "Chargement…",
+    "revenueAdd": "Ajouter",
+    "revenueSaved": "Chiffre d’affaires enregistré"
   },
   "myData": {
     "title": "Vos données",
@@ -416,10 +487,20 @@
   },
   "hours": {
     "title": "Mes heures",
-    "subtitle": "Heures planifiées via shifts approuvés.",
+    "subtitle": "Heures planifiées et vos heures travaillées approuvées.",
     "thisWeek": "Cette semaine",
     "thisMonth": "Ce mois",
     "thisYear": "Cette année",
+    "scheduled": "Planifiées",
+    "worked": "Travaillées (approuvées)",
+    "recentEntries": "Registres récents",
+    "noEntries": "Aucun registre ce mois-ci.",
+    "open": "Ouvert",
+    "status": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvé",
+      "REJECTED": "Refusé"
+    },
     "loading": "Chargement…",
     "noBusiness": "Vous n'êtes pas encore lié à un établissement."
   },
@@ -427,6 +508,10 @@
     "title": "Pointage",
     "clockIn": "Pointer entrée",
     "clockOut": "Pointer sortie",
+    "clockInForShift": "Pointer pour ce shift",
+    "clockInPlain": "Pointer sans shift",
+    "forShift": "Pointer pour votre prochain shift",
+    "linkedShift": "Lié à {role} · {window}",
     "running": "En cours depuis {minutes} min",
     "break": "Minutes de pause",
     "notes": "Notes",
@@ -438,9 +523,12 @@
   },
   "payroll": {
     "title": "Paie & heures",
-    "subtitle": "Approuvez les heures et exportez les fichiers de paie.",
+    "subtitle": "Vérifiez les heures et exportez les fichiers de paie.",
     "export": "Télécharger CSV",
-    "exportXlsx": "Télécharger XLSX",
+    "exportTitle": "Exporter vers la paie",
+    "exportHelp": "Téléchargez les heures approuvées en CSV dans le format de votre prestataire de paie.",
+    "provider": "Prestataire",
+    "providerGeneric": "CSV générique",
     "noRows": "Aucune heure approuvée sur cette plage.",
     "grossHours": "{value} brut",
     "breakMinutes": "{value} pause",
@@ -448,7 +536,19 @@
     "tabPending": "En attente",
     "tabApproved": "Approuvées",
     "approvedMeta": "Approuvé par {name} · {date}",
-    "noApproved": "Aucune heure approuvée pour le moment."
+    "noApproved": "Aucune heure approuvée pour le moment.",
+    "rejectSelected": "Refuser la sélection",
+    "rejectReason": "Motif du refus (facultatif)",
+    "rejectReasonPlaceholder": "ex. oubli de pointer la sortie",
+    "filterFrom": "Du",
+    "filterTo": "Au",
+    "clearFilter": "Effacer le filtre",
+    "editClockIn": "Entrée",
+    "editClockOut": "Sortie",
+    "editBreak": "Pause (min)",
+    "editNotes": "Notes",
+    "editCancel": "Annuler",
+    "editSave": "Enregistrer"
   },
   "templates": {
     "title": "Modèles de shifts",
@@ -474,7 +574,57 @@
     "cancelDay": "Annuler aujourd'hui",
     "cancelDayHint": "Annuler tous les shifts qui démarrent aujourd'hui.",
     "confirmCancelToday": "Annuler tous les shifts d'aujourd'hui ?",
-    "cancelled": "{count} shifts annulés"
+    "cancelled": "{count} shifts annulés",
+    "bulkEdit": "Édition groupée",
+    "bulkEditHint": "Sélectionnez plusieurs shifts et déplacez-les tous en une fois.",
+    "selectedCount": "{count, plural, =0 {Aucun shift sélectionné} =1 {1 shift sélectionné} other {# shifts sélectionnés}}",
+    "rescheduleSelected": "Déplacer la sélection",
+    "exitSelect": "Terminé",
+    "rescheduled": "{count} shifts déplacés",
+    "rescheduleTitle": "Déplacer les shifts sélectionnés",
+    "rescheduleBody": "{count, plural, =1 {Décaler le shift sélectionné d'un intervalle fixe.} other {Décaler les # shifts sélectionnés du même intervalle.}}",
+    "rescheduleDirection": "Sens",
+    "rescheduleEarlier": "Plus tôt",
+    "rescheduleLater": "Plus tard",
+    "rescheduleDays": "Jours",
+    "rescheduleHours": "Heures",
+    "rescheduleMinutes": "Minutes",
+    "rescheduleApply": "Appliquer le déplacement"
+  },
+  "reschedule": {
+    "conflictTitle": "Confirmer le déplacement",
+    "conflictBody": "Déplacer ce shift entre en conflit avec un autre shift pour ces travailleurs. Leur affectation passera à « à reconfirmer » et ils devront accepter le nouvel horaire :",
+    "conflictCancel": "Garder l'horaire d'origine",
+    "conflictConfirm": "Déplacer quand même"
+  },
+  "availabilityTemplates": {
+    "title": "Disponibilité récurrente",
+    "subtitle": "Définissez les heures hebdomadaires où vous pouvez généralement travailler, puis appliquez-les aux semaines à venir.",
+    "addTitle": "Ajouter un créneau hebdomadaire",
+    "editTitle": "Modifier le créneau hebdomadaire",
+    "day": "Jour",
+    "start": "Début",
+    "end": "Fin",
+    "add": "Ajouter le créneau",
+    "save": "Enregistrer le créneau",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "empty": "Aucune disponibilité récurrente pour l'instant. Ajoutez votre premier créneau hebdomadaire ci-dessus.",
+    "apply": "Appliquer aux semaines à venir",
+    "applyHelp": "Génère la disponibilité des 4 prochaines semaines à partir de vos modèles. Les entrées existantes sont conservées.",
+    "applied": "{count, plural, =0 {Aucun nouveau créneau — vous étiez déjà couvert} =1 {1 créneau de disponibilité ajouté} other {# créneaux de disponibilité ajoutés}}",
+    "created": "Créneau hebdomadaire ajouté",
+    "updated": "Créneau hebdomadaire mis à jour",
+    "removed": "Créneau hebdomadaire supprimé",
+    "weekdays": {
+      "0": "Dimanche",
+      "1": "Lundi",
+      "2": "Mardi",
+      "3": "Mercredi",
+      "4": "Jeudi",
+      "5": "Vendredi",
+      "6": "Samedi"
+    }
   },
   "audit": {
     "title": "Journal d’audit",
@@ -576,9 +726,9 @@
         "title": "Pointage",
         "intro": "Enregistrez les heures réelles pour que la paie corresponde à la réalité.",
         "steps": {
-          "1": "Travailleurs : depuis /clock ou /me, appuyez 'Pointer' au début, 'Dépointer' à la fin.",
-          "2": "Oublié ? Le gérant peut corriger après coup ; le tampon initial reste dans l'audit.",
-          "3": "Gérants/managers valident les entrées sur /clock ; seules les entrées approuvées partent en paie."
+          "1": "Travailleurs : depuis /clock ou /me, appuyez 'Pointer' au début, 'Dépointer' à la fin. Vous pouvez pointer sur un shift assigné précis.",
+          "2": "Oublié ? Les gérants et managers peuvent corriger après coup ; chaque modification est tracée dans l'audit.",
+          "3": "Gérants/managers consultent, corrigent, approuvent ou refusent les entrées sur /payroll/time-entries ; seules les entrées approuvées partent en paie."
         }
       },
       "timeOff": {
@@ -715,11 +865,11 @@
       },
       "dimona": {
         "title": "Déclarations Dimona",
-        "intro": "Dimona ONSS automatique à l'entrée et la sortie des shifts.",
+        "intro": "Déclarations Dimona ONSS automatiques : une entrée (IN) lors de l'affectation d'un flexi, extra ou étudiant, et une annulation lorsque le shift est annulé ou le travailleur retiré.",
         "steps": {
-          "1": "Saisissez vos identifiants Dimona une fois dans Paramètres → Developers (chiffrés au repos).",
+          "1": "Saisissez votre numéro d'employeur et vos identifiants Dimona une fois dans Paramètres → Intégrations (chiffrés au repos). Chaque travailleur doit avoir un NISS sur son profil.",
           "2": "Mettez DIMONA_ENV à 'sandbox' pour tester sans déclaration réelle, puis 'prod' une fois prêt.",
-          "3": "Les déclarations partent automatiquement ; les jobs de réconciliation retentent les échecs et les remontent dans /audit."
+          "3": "Un job de réconciliation quotidien détecte les écarts et alerte les gérants dans l'app ; les échecs restent visibles dans /audit."
         },
         "tip": "Gardez DIMONA_ENV sur 'mock' en dev — l'app logue l'intention sans contacter l'ONSS."
       },
@@ -791,6 +941,10 @@
     "network": "Problème réseau. Vérifiez votre connexion.",
     "pastShift": "Ce shift a déjà commencé ou est terminé.",
     "availabilityInTimeOff": "Vous avez un congé approuvé sur cette période.",
-    "reconfirmNotNeeded": "Ce shift n'a plus besoin de votre reconfirmation."
+    "reconfirmNotNeeded": "Ce shift n'a plus besoin de votre reconfirmation.",
+    "resetTokenInvalid": "Ce lien de réinitialisation est invalide, expiré ou déjà utilisé.",
+    "weakPassword": "Le mot de passe doit comporter au moins 8 caractères.",
+    "attendanceNoShowHasEntry": "Ce collaborateur a des heures pointées ou approuvées pour ce shift ; il ne peut donc pas être marqué comme absent. Rejetez d'abord la saisie de temps.",
+    "timeEntryShiftNoShow": "Ce shift est marqué comme absence. Vérifiez la présence avant d'approuver ces heures."
   }
 }

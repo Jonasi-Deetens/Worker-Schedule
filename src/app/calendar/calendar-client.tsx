@@ -28,10 +28,15 @@ import {
   type CalendarFilters,
   type CalendarShift,
 } from "@/lib/calendar-events";
+import { BulkRescheduleDialog } from "./components/bulk-reschedule-dialog";
 import { CalendarDialogs } from "./components/calendar-dialogs";
 import { FilterBar } from "./components/filter-bar";
 import { KpiStrip } from "./components/kpi-strip";
 import { OwnerToolbar } from "./components/owner-toolbar";
+import {
+  RescheduleConflictDialog,
+  type RescheduleConflict,
+} from "./components/reschedule-conflict-dialog";
 import { StatusLegend } from "./components/status-dot";
 import { TimeFormatToggle } from "./components/time-format-toggle";
 import { useCalendarMutations } from "./hooks/use-calendar-mutations";
@@ -78,6 +83,25 @@ export function CalendarPageClient({
   const [removeAvailabilityOpen, setRemoveAvailabilityOpen] = useState(false);
   const [filters, setFilters] = useState<CalendarFilters>({});
   const [showAvailabilityOverlay, setShowAvailabilityOverlay] = useState(false);
+
+  // Pending drag-reschedule awaiting owner confirmation because it conflicts
+  // with assigned workers' other shifts. Holds the FullCalendar `revert` so we
+  // can roll the drag back if the owner cancels.
+  const [reschedulePrompt, setReschedulePrompt] = useState<{
+    shiftId: string;
+    newStart: Date;
+    newEnd: Date;
+    revert: () => void;
+    conflicts: ReadonlyArray<RescheduleConflict>;
+  } | null>(null);
+
+  // Bulk-select mode: pick multiple shifts on the calendar and move them all
+  // by one offset via `shift.bulkReschedule`.
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedShiftIds, setSelectedShiftIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [bulkRescheduleOpen, setBulkRescheduleOpen] = useState(false);
 
   // Persist 12h/24h preference per browser. We default to 24h because Belgian
   // horeca norms (and the previous hardcoded format) use it; once a user
@@ -159,6 +183,17 @@ export function CalendarPageClient({
     [reconfirmQuery.data],
   );
 
+  // Workers: open-shift broadcasts the current worker may still claim. Used to
+  // surface an "Accept this open shift" action inside the shift detail dialog.
+  const openBroadcastsQuery = trpc.shift.openBroadcasts.useQuery(undefined, {
+    enabled: !isOwner,
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
+  const broadcastShiftIds = useMemo(
+    () => new Set((openBroadcastsQuery.data ?? []).map((s) => s.id)),
+    [openBroadcastsQuery.data],
+  );
+
   const m = useCalendarMutations({
     closeShiftDialog: () => {
       setShiftDialogOpen(false);
@@ -173,6 +208,11 @@ export function CalendarPageClient({
     closeAvailabilityDetail: () => setAvailDetailOpen(false),
     closeCancelShift: () => setCancelShiftOpen(false),
     closeRemoveAvailability: () => setRemoveAvailabilityOpen(false),
+    closeBulkReschedule: () => {
+      setBulkRescheduleOpen(false);
+      setSelectedShiftIds(new Set());
+      setBulkMode(false);
+    },
     clearSelectedShift: () => setSelectedShift(null),
     clearSelectedAvailability: () => setSelectedAvailability(null),
     refetchAssignments: () => assignmentsQuery.refetch(),
@@ -238,8 +278,22 @@ export function CalendarPageClient({
     return businessQuery.data.workers.map((w) => ({ id: w.id, name: w.name }));
   }, [isOwner, businessQuery.data]);
 
+  const toggleShiftSelection = (shiftId: string) => {
+    setSelectedShiftIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(shiftId)) next.delete(shiftId);
+      else next.add(shiftId);
+      return next;
+    });
+  };
+
   const handleEventClick = (event: CalendarEvent) => {
     const shift = eventToSelectedShift(event);
+    // In bulk-select mode a click toggles selection instead of opening detail.
+    if (bulkMode) {
+      if (shift) toggleShiftSelection(shift.shiftId);
+      return;
+    }
     if (shift) {
       setSelectedShift(shift);
       setDetailOpen(true);
@@ -272,16 +326,42 @@ export function CalendarPageClient({
     }
   };
 
-  const handleEventReschedule = ({
+  const commitReschedule = (
+    shiftId: string,
+    newStart: Date,
+    newEnd: Date,
+    revert: () => void,
+  ) => {
+    m.shift.update.mutate(
+      { id: shiftId, startsAt: newStart, endsAt: newEnd },
+      { onError: () => revert() },
+    );
+  };
+
+  const handleEventReschedule = async ({
     shiftId,
     newStart,
     newEnd,
     revert,
   }: EventReschedule) => {
-    m.shift.update.mutate(
-      { id: shiftId, startsAt: newStart, endsAt: newEnd },
-      { onError: () => revert() },
-    );
+    try {
+      // Surface assigned-worker conflicts *before* committing the move so the
+      // owner can decide knowingly. The server-side update would still gate on
+      // hard rules, but this soft check lets us name who is affected.
+      const conflicts = await utils.shift.rescheduleConflicts.fetch({
+        id: shiftId,
+        startsAt: newStart,
+        endsAt: newEnd,
+      });
+      if (conflicts && conflicts.length > 0) {
+        setReschedulePrompt({ shiftId, newStart, newEnd, revert, conflicts });
+        return;
+      }
+    } catch {
+      // The pre-check failed (permissions/network). Fall through and let the
+      // update mutation surface the real error, reverting the drag on failure.
+    }
+    commitReschedule(shiftId, newStart, newEnd, revert);
   };
 
   const handleNewShiftClick = () => {
@@ -305,6 +385,8 @@ export function CalendarPageClient({
       roleLabel: selectedShift.roleLabel,
       requiredSpots: selectedShift.requiredSpots,
       notes: selectedShift.notes ?? undefined,
+      requiredSkillId: selectedShift.requiredSkillId ?? null,
+      locationId: selectedShift.locationId ?? null,
     });
     setShiftDialogOpen(true);
     setDetailOpen(false);
@@ -317,6 +399,9 @@ export function CalendarPageClient({
     roleLabel: string;
     requiredSpots: number;
     notes?: string;
+    requiredSkillId?: string | null;
+    locationId?: string | null;
+    publish?: boolean;
     repeatWeekly?: boolean;
     repeatUntil?: string;
   }) => {
@@ -328,6 +413,8 @@ export function CalendarPageClient({
         roleLabel: data.roleLabel,
         requiredSpots: data.requiredSpots,
         notes: data.notes ?? null,
+        requiredSkillId: data.requiredSkillId ?? null,
+        locationId: data.locationId ?? null,
       });
       return;
     }
@@ -338,6 +425,9 @@ export function CalendarPageClient({
         roleLabel: data.roleLabel,
         requiredSpots: data.requiredSpots,
         notes: data.notes,
+        requiredSkillId: data.requiredSkillId ?? null,
+        locationId: data.locationId ?? null,
+        publish: data.publish,
         repeatUntil: combineDateTime(data.repeatUntil, "23:59"),
       });
       return;
@@ -348,6 +438,9 @@ export function CalendarPageClient({
       roleLabel: data.roleLabel,
       requiredSpots: data.requiredSpots,
       notes: data.notes,
+      requiredSkillId: data.requiredSkillId ?? null,
+      locationId: data.locationId ?? null,
+      publish: data.publish,
     });
   };
 
@@ -395,6 +488,13 @@ export function CalendarPageClient({
                 isPublishing={m.shift.publishRange.isPending}
                 isDuplicating={m.shift.duplicateWeek.isPending}
                 isCancellingDay={m.shift.cancelDay.isPending}
+                bulkMode={bulkMode}
+                onToggleBulkMode={() => {
+                  setBulkMode((prev) => !prev);
+                  setSelectedShiftIds(new Set());
+                }}
+                selectedCount={selectedShiftIds.size}
+                onOpenBulkReschedule={() => setBulkRescheduleOpen(true)}
               />
             ) : (
               <Button onClick={handleNewAvailabilityClick} size="sm">
@@ -429,6 +529,8 @@ export function CalendarPageClient({
           onDateSelect={handleDateSelect}
           onRangeChange={handleRangeChange}
           onEventReschedule={handleEventReschedule}
+          editable={isOwner && !bulkMode}
+          selectedShiftIds={bulkMode ? selectedShiftIds : undefined}
           isLoading={shiftsQuery.isFetching || availQuery.isFetching}
           isError={shiftsQuery.isError || availQuery.isError}
           errorTitle={t("calendar.errorTitle")}
@@ -438,8 +540,7 @@ export function CalendarPageClient({
             if (!isOwner) availQuery.refetch();
           }}
           emptyLabel={t("calendar.empty")}
-          canSelect
-          editable={isOwner}
+          canSelect={!bulkMode}
           ariaLabel={isOwner ? t("calendar.ownerTitle") : t("calendar.workerTitle")}
           timeFormat={timeFormat}
         />
@@ -476,6 +577,15 @@ export function CalendarPageClient({
         onEditShift={handleEditShift}
         onCancelShiftClick={() => setCancelShiftOpen(true)}
         onOfferSwapClick={() => setOfferSwapOpen(true)}
+        workerBroadcastInvited={
+          !isOwner &&
+          !!selectedShift &&
+          broadcastShiftIds.has(selectedShift.shiftId)
+        }
+        onAcceptBroadcast={() =>
+          selectedShift &&
+          m.shift.acceptBroadcast.mutate({ shiftId: selectedShift.shiftId })
+        }
         workerNeedsReconfirm={
           !isOwner &&
           !!selectedShift &&
@@ -489,6 +599,35 @@ export function CalendarPageClient({
           utils.subscription.listMine.invalidate();
           utils.swap.listMine.invalidate();
         }}
+      />
+
+      <RescheduleConflictDialog
+        open={!!reschedulePrompt}
+        onOpenChange={(open) => {
+          if (!open) setReschedulePrompt(null);
+        }}
+        conflicts={reschedulePrompt?.conflicts ?? []}
+        isPending={m.shift.update.isPending}
+        onConfirm={() => {
+          if (!reschedulePrompt) return;
+          const { shiftId, newStart, newEnd, revert } = reschedulePrompt;
+          commitReschedule(shiftId, newStart, newEnd, revert);
+          setReschedulePrompt(null);
+        }}
+        onCancel={() => reschedulePrompt?.revert()}
+      />
+
+      <BulkRescheduleDialog
+        open={bulkRescheduleOpen}
+        onOpenChange={setBulkRescheduleOpen}
+        count={selectedShiftIds.size}
+        isPending={m.shift.bulkReschedule.isPending}
+        onApply={(deltaMinutes) =>
+          m.shift.bulkReschedule.mutate({
+            ids: [...selectedShiftIds],
+            deltaMinutes,
+          })
+        }
       />
     </div>
   );

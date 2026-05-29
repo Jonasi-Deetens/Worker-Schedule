@@ -145,13 +145,23 @@ export class WorkerService {
     hourlyRate?: number | null;
     weeklyHourCap?: number | null;
     birthDate?: Date | null;
+    nationalNumber?: string | null;
   }) {
     const worker = await this.db.user.findFirst({
       where: { id: input.id, businessId: input.businessId },
     });
     if (!worker) throw new Error("Worker not found");
 
-    return this.db.user.update({
+    // Store the NISS as digits only so downstream payroll/Dimona consumers get
+    // a canonical form regardless of how the manager typed it.
+    const normalizedNiss =
+      input.nationalNumber === undefined
+        ? undefined
+        : input.nationalNumber === null || input.nationalNumber === ""
+          ? null
+          : input.nationalNumber.replace(/\D/g, "");
+
+    const updated = await this.db.user.update({
       where: { id: input.id },
       data: {
         name: input.name,
@@ -160,8 +170,27 @@ export class WorkerService {
         hourlyRate: input.hourlyRate ?? undefined,
         weeklyHourCap: input.weeklyHourCap,
         birthDate: input.birthDate,
+        nationalNumber: normalizedNiss,
       },
     });
+
+    // Audit NISS changes specifically — it's compliance-sensitive PII.
+    if (
+      normalizedNiss !== undefined &&
+      normalizedNiss !== worker.nationalNumber
+    ) {
+      await this.db.auditEvent.create({
+        data: {
+          userId: input.actorId,
+          action: "WORKER_PROFILE_UPDATED",
+          entityType: "User",
+          entityId: worker.id,
+          metadata: { field: "nationalNumber", set: normalizedNiss !== null },
+        },
+      });
+    }
+
+    return updated;
   }
 
   async setStatus(input: {
@@ -180,10 +209,19 @@ export class WorkerService {
       data: { status: input.status },
     });
 
+    // Pick the audit action that matches the target status so reactivating a
+    // worker no longer mislabels the event as a suspension.
+    const action =
+      input.status === "ARCHIVED"
+        ? "WORKER_ARCHIVED"
+        : input.status === "ACTIVE"
+          ? "WORKER_REACTIVATED"
+          : "WORKER_SUSPENDED";
+
     await this.db.auditEvent.create({
       data: {
         userId: input.actorId,
-        action: input.status === "ARCHIVED" ? "WORKER_ARCHIVED" : "WORKER_SUSPENDED",
+        action,
         entityType: "User",
         entityId: worker.id,
         metadata: { status: input.status },

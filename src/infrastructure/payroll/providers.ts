@@ -89,6 +89,64 @@ export const PROVIDERS: Record<string, PayrollProvider> = {
   generic: GENERIC,
 };
 
+/**
+ * Formats a date in a specific IANA timezone as `YYYY-MM-DD`. Using the
+ * business timezone (not UTC) keeps a 22:00–02:00 night shift on its real
+ * calendar day instead of rolling it forward.
+ */
+export function formatPayrollDate(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+export interface PayrollSourceEntry {
+  clockInAt: Date;
+  clockOutAt: Date | null;
+  breakMinutes: number;
+  user: {
+    name: string;
+    email: string;
+    hourlyRate: unknown;
+    nationalNumber: string | null;
+  };
+}
+
+/**
+ * Pure transform from approved time entries to payroll rows. Hours are net of
+ * breaks, the worker identifier is the NISS (never an internal id), and the
+ * date is rendered in the supplied business timezone.
+ */
+export function buildPayrollRows(
+  entries: PayrollSourceEntry[],
+  timeZone: string,
+): PayrollRow[] {
+  return entries.map((entry) => {
+    const hours = entry.clockOutAt
+      ? Math.max(
+          0,
+          (entry.clockOutAt.getTime() - entry.clockInAt.getTime()) /
+            3_600_000 -
+            entry.breakMinutes / 60,
+        )
+      : 0;
+    const rate = entry.user.hourlyRate ? Number(entry.user.hourlyRate) : 0;
+    return {
+      workerExternalId:
+        entry.user.nationalNumber ?? entry.user.email.split("@")[0] ?? "",
+      workerName: entry.user.name,
+      date: formatPayrollDate(entry.clockInAt, timeZone),
+      code: "WORK",
+      hours: Math.round(hours * 100) / 100,
+      rate,
+      gross: Math.round(hours * rate * 100) / 100,
+    };
+  });
+}
+
 function escape(value: string): string {
   if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;

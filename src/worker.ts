@@ -12,7 +12,9 @@ import {
   runDimonaReconcile,
   runInviteCleanup,
   runShiftReminders24h,
+  runWebhookDelivery,
 } from "@/infrastructure/jobs/handlers";
+import type { WebhookDeliveryJob } from "@/application/services/webhook-service";
 import { logger } from "@/infrastructure/logging/logger";
 
 async function main() {
@@ -36,6 +38,16 @@ async function main() {
   });
   await boss.work(JOBS.DIMONA_RECONCILE, async () => {
     await runDimonaReconcile(prisma);
+  });
+
+  // Webhook delivery retries are event-driven (enqueued by WebhookService on a
+  // failed inline attempt), not scheduled. The queue carries the retry policy
+  // configured per-job at enqueue time.
+  await boss.createQueue(JOBS.WEBHOOK_DELIVER);
+  await boss.work<WebhookDeliveryJob>(JOBS.WEBHOOK_DELIVER, async (jobs) => {
+    for (const job of jobs) {
+      await runWebhookDelivery(prisma, job.data);
+    }
   });
 
   await boss.schedule(JOBS.AVAILABILITY_MATERIALISE, "0 2 * * *"); // 02:00 daily

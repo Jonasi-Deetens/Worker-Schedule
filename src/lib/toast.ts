@@ -45,10 +45,21 @@ const ERROR_MAP: ReadonlyArray<readonly [RegExp, string]> = [
   [/(past shift|already ended|before the shift)/i, "errors.pastShift"],
 ];
 
+/** Matches a stable, machine-readable error key like `errors.capacityFull`. */
+const ERROR_KEY_PATTERN = /^errors\.[A-Za-z0-9_]+$/;
+
 /**
  * Map a tRPC client error to a user-facing, localised message. The `t`
  * callback is anything-shaped — we just need `(key) => string`, which is
  * compatible with next-intl's stricter overloaded signature at call sites.
+ *
+ * Resolution order:
+ *  1. If the server already sent a stable `errors.*` key (the preferred,
+ *     regex-free path — see services that throw keyed messages), localise it
+ *     directly.
+ *  2. Otherwise fall back to matching the raw English message against
+ *     {@link ERROR_MAP} for errors not yet migrated to keys.
+ *  3. Otherwise a generic message.
  */
 export function trpcErrorMessage(
   error: unknown,
@@ -57,6 +68,7 @@ export function trpcErrorMessage(
   if (typeof error === "object" && error !== null && "message" in error) {
     const message = String((error as { message?: unknown }).message ?? "");
     if (message) {
+      if (ERROR_KEY_PATTERN.test(message)) return t(message);
       for (const [pattern, key] of ERROR_MAP) {
         if (pattern.test(message)) return t(key);
       }

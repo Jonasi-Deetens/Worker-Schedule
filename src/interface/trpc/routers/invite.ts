@@ -10,18 +10,24 @@ import {
   inviteCreateSchema,
   inviteTokenSchema,
 } from "../schemas";
-import { inviteService, requireBusinessId } from "../services";
+import { inviteService, requireActiveMembership } from "../services";
 
 export const inviteRouter = router({
   list: managerProcedure.query(async ({ ctx }) => {
-    const businessId = requireBusinessId(ctx.session.user.businessId);
+    const businessId = await requireActiveMembership(
+      ctx.session.user.id,
+      ctx.session.user.businessId,
+    );
     return inviteService.listForBusiness(businessId);
   }),
 
   create: managerProcedure
     .input(inviteCreateSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await inviteService.create({
           businessId,
@@ -37,7 +43,10 @@ export const inviteRouter = router({
   revoke: managerProcedure
     .input(idSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         await inviteService.revoke({ id: input.id, businessId });
         return { success: true };

@@ -217,6 +217,34 @@ describe("ShiftService.update (reschedule reconfirmation)", () => {
   });
 });
 
+describe("ShiftService.delete Dimona cancel", () => {
+  it("attempts a Dimona cancel for confirmed auto-declare workers", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      id: "shift-1",
+      roleLabel: "Bar",
+      subscriptions: [],
+    });
+    prisma.shift.update.mockResolvedValue({ id: "shift-1", status: "CANCELLED" });
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      { userId: "w1", status: "CONFIRMED", user: { contractType: "FLEXI" } },
+    ]);
+    // DimonaService.cancel looks up a confirmed declaration; none exists here.
+    prisma.dimonaDeclaration.findFirst.mockResolvedValue(null);
+
+    await service.delete({ id: "shift-1", businessId: BUSINESS_ID, ownerId: OWNER_ID });
+
+    expect(prisma.dimonaDeclaration.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          shiftId: "shift-1",
+          workerId: "w1",
+          status: "CONFIRMED",
+        }),
+      }),
+    );
+  });
+});
+
 describe("ShiftService.delete (cancel-with-notify)", () => {
   it("marks shift as cancelled and notifies pending subscribers", async () => {
     prisma.shift.findFirst.mockResolvedValue({

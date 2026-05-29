@@ -1,25 +1,26 @@
-import {
-  managerProcedure,
-  mapServiceError,
-  ownerProcedure,
-  router,
-} from "../init";
+import { managerProcedure, mapServiceError, router } from "../init";
 import {
   idSchema,
   workerProfileSchema,
   workerSkillsSchema,
   workerStatusSchema,
 } from "../schemas";
-import { requireBusinessId, workerService } from "../services";
+import { requireActiveMembership, workerService } from "../services";
 
 export const workerRouter = router({
   list: managerProcedure.query(async ({ ctx }) => {
-    const businessId = requireBusinessId(ctx.session.user.businessId);
+    const businessId = await requireActiveMembership(
+      ctx.session.user.id,
+      ctx.session.user.businessId,
+    );
     return workerService.list(businessId);
   }),
 
   get: managerProcedure.input(idSchema).query(async ({ ctx, input }) => {
-    const businessId = requireBusinessId(ctx.session.user.businessId);
+    const businessId = await requireActiveMembership(
+      ctx.session.user.id,
+      ctx.session.user.businessId,
+    );
     try {
       return await workerService.get({ id: input.id, businessId });
     } catch (error) {
@@ -28,21 +29,30 @@ export const workerRouter = router({
   }),
 
   stats: managerProcedure.input(idSchema).query(async ({ ctx, input }) => {
-    const businessId = requireBusinessId(ctx.session.user.businessId);
+    const businessId = await requireActiveMembership(
+      ctx.session.user.id,
+      ctx.session.user.businessId,
+    );
     return workerService.stats({ id: input.id, businessId });
   }),
 
   documents: managerProcedure
     .input(idSchema)
     .query(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       return workerService.documents({ id: input.id, businessId });
     }),
 
   update: managerProcedure
     .input(workerProfileSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await workerService.updateProfile({
           businessId,
@@ -54,10 +64,16 @@ export const workerRouter = router({
       }
     }),
 
-  setStatus: ownerProcedure
+  // Suspend/reactivate is a manager capability, consistent with the rest of
+  // worker management (all managerProcedure). The UI already exposes these
+  // buttons to managers; this keeps the API in step with it.
+  setStatus: managerProcedure
     .input(workerStatusSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await workerService.setStatus({
           id: input.id,
@@ -73,7 +89,10 @@ export const workerRouter = router({
   setSkills: managerProcedure
     .input(workerSkillsSchema)
     .mutation(async ({ ctx, input }) => {
-      const businessId = requireBusinessId(ctx.session.user.businessId);
+      const businessId = await requireActiveMembership(
+        ctx.session.user.id,
+        ctx.session.user.businessId,
+      );
       try {
         return await workerService.setSkills({
           userId: input.userId,

@@ -17,6 +17,8 @@ export interface AppSession extends Session {
 
 export interface TRPCContext {
   session: AppSession | null;
+  /** Best-effort client IP, used for rate limiting public procedures. */
+  ip?: string | null;
 }
 
 const t = initTRPC.context<TRPCContext>().create({
@@ -53,6 +55,14 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 export const ownerProcedure = protectedProcedure.use(roleGuard(["OWNER"]));
 export const workerProcedure = protectedProcedure.use(roleGuard(["WORKER"]));
 /**
+ * Self-service procedures (own time-off, own availability) that both WORKER
+ * and MANAGER may use — a manager still has a personal schedule to manage.
+ * Owners are intentionally excluded, matching the existing worker-only flows.
+ */
+export const workerOrManagerProcedure = protectedProcedure.use(
+  roleGuard(["WORKER", "MANAGER"]),
+);
+/**
  * Managers can perform scheduling actions (publish, assign, approve) but
  * cannot change business-level settings such as integrations or billing.
  */
@@ -60,9 +70,29 @@ export const managerProcedure = protectedProcedure.use(
   roleGuard(["OWNER", "MANAGER"]),
 );
 
+/**
+ * Conflict-shaped keyed errors that should surface as HTTP 409 rather than the
+ * default 400. Everything else keyed maps to BAD_REQUEST.
+ */
+const CONFLICT_ERROR_KEYS = new Set<string>([
+  "errors.capacityFull",
+  "errors.overlap",
+  "errors.duplicateApplication",
+  "errors.attendanceNoShowHasEntry",
+]);
+
 export function mapServiceError(error: unknown): never {
   const message =
     error instanceof Error ? error.message : "Unexpected error occurred";
+
+  // Stable, machine-readable keys (`errors.*`) are passed through untouched so
+  // the client can localize them directly — no English-string regex needed.
+  if (/^errors\.[A-Za-z0-9_]+$/.test(message)) {
+    throw new TRPCError({
+      code: CONFLICT_ERROR_KEYS.has(message) ? "CONFLICT" : "BAD_REQUEST",
+      message,
+    });
+  }
 
   if (message.includes("not found")) {
     throw new TRPCError({ code: "NOT_FOUND", message });
@@ -70,7 +100,8 @@ export function mapServiceError(error: unknown): never {
   if (
     message.includes("capacity") ||
     message.includes("overlap") ||
-    message.includes("Already applied")
+    message.includes("Already applied") ||
+    message.includes("Already clocked in")
   ) {
     throw new TRPCError({ code: "CONFLICT", message });
   }

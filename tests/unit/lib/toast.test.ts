@@ -69,4 +69,17 @@ describe("trpcErrorMessage", () => {
       trpcErrorMessage({ message: "errors.availabilityInTimeOff" }, t),
     ).toBe("errors.availabilityInTimeOff");
   });
+
+  it("passes through stable error keys without regex matching", () => {
+    // New keyed errors localize directly via the key, not the English regex.
+    expect(trpcErrorMessage({ message: "errors.resetTokenInvalid" }, t)).toBe(
+      "errors.resetTokenInvalid",
+    );
+    expect(
+      trpcErrorMessage({ message: "errors.attendanceNoShowHasEntry" }, t),
+    ).toBe("errors.attendanceNoShowHasEntry");
+    expect(trpcErrorMessage({ message: "errors.weakPassword" }, t)).toBe(
+      "errors.weakPassword",
+    );
+  });
 });

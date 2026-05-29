@@ -87,6 +87,7 @@ export const documentRouter = router({
           id: input.id,
           userId: ctx.session.user.id,
           isOwnerOrManager,
+          actingBusinessId: ctx.session.user.businessId,
         });
         return { success: true };
       } catch (error) {

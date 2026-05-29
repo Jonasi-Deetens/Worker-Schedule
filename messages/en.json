@@ -6,7 +6,8 @@
   "nav": {
     "settings": "Settings",
     "menu": "Open menu",
-    "close": "Close menu"
+    "close": "Close menu",
+    "switchBusiness": "Switch business"
   },
   "me": {
     "greeting": "Today",
@@ -64,7 +65,29 @@
     "businessIdHelp": "Ask your manager for this ID.",
     "invalidCredentials": "Invalid email or password.",
     "noAccount": "No account?",
-    "alreadyHaveAccount": "Already have an account?"
+    "alreadyHaveAccount": "Already have an account?",
+    "totpCode": "Authentication code",
+    "totpCodeHelp": "Leave blank unless two-factor authentication is enabled on your account.",
+    "totpRequired": "Enter the 6-digit code from your authenticator app.",
+    "totpInvalid": "That authentication code is incorrect or expired.",
+    "accountNotActive": "Your account is not active. Please contact your manager.",
+    "forgotPassword": "Forgot your password?",
+    "forgotTitle": "Reset your password",
+    "forgotSubtitle": "Enter your email and we'll send you a link to choose a new password.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending…",
+    "resetEmailSent": "If an account exists for that email, a password reset link is on its way. Check your inbox.",
+    "backToLogin": "Back to sign in",
+    "resetTitle": "Choose a new password",
+    "resetSubtitle": "Pick a strong password you don't use anywhere else.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "resetCta": "Update password",
+    "resetting": "Updating…",
+    "resetSuccess": "Your password has been updated. You can now sign in.",
+    "passwordsDontMatch": "Those passwords don't match.",
+    "invalidLink": "This password reset link is invalid or incomplete.",
+    "requestNewLink": "Request a new link"
   },
   "calendar": {
     "title": "Calendar",
@@ -129,6 +152,9 @@
     "requiredSpots": "Required spots",
     "requiredSkill": "Required skill",
     "noSkill": "None",
+    "location": "Location",
+    "noLocation": "None",
+    "draft": "Draft",
     "notes": "Notes (optional)",
     "notesPlaceholder": "Any extra info",
     "broadcast": "Broadcast to all eligible",
@@ -171,7 +197,9 @@
     "markRead": "Mark read",
     "markAllRead": "Mark all read",
     "unreadAria": "Notifications, {count} unread",
-    "ariaLabel": "Notifications"
+    "ariaLabel": "Notifications",
+    "reminder24hTitle": "Shift in 24 hours",
+    "reminder24hBody": "{role} at {time}"
   },
   "confirm": {
     "cancelShiftTitle": "Cancel this shift?",
@@ -214,6 +242,8 @@
     "clockedIn": "Clocked in",
     "clockedOut": "Clocked out",
     "timeEntriesApproved": "Time entries approved",
+    "timeEntriesRejected": "Time entries rejected",
+    "timeEntryUpdated": "Time entry updated",
     "rosterApplied": "Roster applied",
     "reconfirmConfirmed": "Shift reconfirmed",
     "reconfirmDeclined": "Shift declined — the owner has been notified"
@@ -262,7 +292,37 @@
     "noShowsBadge": "{count, plural, one {# no-show} other {# no-shows}}",
     "docsAttention": "Documents needing attention",
     "docsExpired": "Expired {date}",
-    "docsExpiringOn": "Expires {date}"
+    "docsExpiringOn": "Expires {date}",
+    "nationalNumber": "National number (NISS)",
+    "nationalNumberHelp": "Belgian social security number — used for payroll exports and Dimona declarations.",
+    "expiringTitle": "Documents expiring soon",
+    "expiringEmpty": "No documents expiring in the next 30 days.",
+    "expiringWorker": "{name} · {kind}"
+  },
+  "integrations": {
+    "title": "Integrations",
+    "subtitle": "Connect external services like Belgian Dimona.",
+    "dimonaTitle": "Dimona (ONSS/RSZ)",
+    "dimonaHelp": "Set your employer number and API credentials. Flexi, extra and student shifts are then declared automatically when you assign a worker, and cancelled when a shift is cancelled or a worker is removed.",
+    "employerId": "Employer number",
+    "token": "API token",
+    "tokenSet": "•••••••• (stored)",
+    "tokenPlaceholder": "Paste your Dimona API token",
+    "tokenHelp": "Stored encrypted (AES-256-GCM). Leave blank to keep the current token.",
+    "baseUrl": "API base URL (optional)",
+    "save": "Save integration",
+    "saved": "Integration settings saved"
+  },
+  "locations": {
+    "title": "Locations",
+    "subtitle": "Manage the places where shifts happen.",
+    "name": "Name",
+    "address": "Address",
+    "add": "Add location",
+    "saved": "Location saved",
+    "removed": "Location removed",
+    "empty": "No locations yet. Add your first one above.",
+    "delete": "Delete location"
   },
   "invite": {
     "title": "Join your team",
@@ -275,7 +335,8 @@
     "copyLink": "Copy invite link",
     "linkCopied": "Link copied",
     "sendEmail": "Send by email",
-    "expiresAt": "Expires {date}"
+    "expiresAt": "Expires {date}",
+    "emailPlaceholder": "you@example.com"
   },
   "skills": {
     "title": "Skills",
@@ -308,7 +369,9 @@
     "cancel": "Cancel",
     "revoke": "Revoke",
     "editTitle": "Edit time-off request",
-    "editHelp": "Change the dates or reason. Approved requests go back to pending for owner review."
+    "editHelp": "Change the dates or reason. Approved requests go back to pending for owner review.",
+    "myRequests": "My requests",
+    "manageRequests": "Manage requests"
   },
   "attendance": {
     "title": "Attendance",
@@ -328,6 +391,8 @@
     "title": "Insights",
     "subtitle": "Fill rate, labour cost and cost-to-revenue trends.",
     "scheduled": "Scheduled",
+    "actual": "Actual",
+    "variance": "Variance",
     "fillRate": "Fill rate",
     "labourCost": "Labour cost",
     "costRevenue": "Cost / revenue",
@@ -335,7 +400,13 @@
     "filled": "Filled",
     "cost": "Cost",
     "revenue": "Revenue",
-    "costToRevenue": "Cost/rev"
+    "costToRevenue": "Cost/rev",
+    "noShow": "No-show",
+    "range": "Range",
+    "weeksOption": "{count} weeks",
+    "loading": "Loading…",
+    "revenueAdd": "Add",
+    "revenueSaved": "Revenue saved"
   },
   "myData": {
     "title": "Your data",
@@ -416,10 +487,20 @@
   },
   "hours": {
     "title": "My hours",
-    "subtitle": "Scheduled hours from approved shifts.",
+    "subtitle": "Scheduled hours and your approved worked hours.",
     "thisWeek": "This week",
     "thisMonth": "This month",
     "thisYear": "This year",
+    "scheduled": "Scheduled",
+    "worked": "Worked (approved)",
+    "recentEntries": "Recent entries",
+    "noEntries": "No time entries this month.",
+    "open": "Open",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
     "loading": "Loading…",
     "noBusiness": "You are not linked to a business yet."
   },
@@ -427,6 +508,10 @@
     "title": "Time clock",
     "clockIn": "Clock in",
     "clockOut": "Clock out",
+    "clockInForShift": "Clock in for this shift",
+    "clockInPlain": "Clock in without a shift",
+    "forShift": "Clock in for your next shift",
+    "linkedShift": "Linked to {role} · {window}",
     "running": "Running for {minutes} min",
     "break": "Break minutes",
     "notes": "Notes",
@@ -438,9 +523,12 @@
   },
   "payroll": {
     "title": "Payroll & time tracking",
-    "subtitle": "Approve worked hours and export pay-period files.",
+    "subtitle": "Review worked hours and export pay-period files.",
     "export": "Download CSV",
-    "exportXlsx": "Download XLSX",
+    "exportTitle": "Export to payroll",
+    "exportHelp": "Download approved hours as a CSV in your payroll provider's layout.",
+    "provider": "Provider",
+    "providerGeneric": "Generic CSV",
     "noRows": "No approved entries in this range.",
     "grossHours": "{value} gross",
     "breakMinutes": "{value} break",
@@ -448,7 +536,19 @@
     "tabPending": "Pending",
     "tabApproved": "Approved",
     "approvedMeta": "Approved by {name} · {date}",
-    "noApproved": "No approved entries yet."
+    "noApproved": "No approved entries yet.",
+    "rejectSelected": "Reject selected",
+    "rejectReason": "Reject reason (optional)",
+    "rejectReasonPlaceholder": "e.g. forgot to clock out",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "clearFilter": "Clear filter",
+    "editClockIn": "Clock in",
+    "editClockOut": "Clock out",
+    "editBreak": "Break (min)",
+    "editNotes": "Notes",
+    "editCancel": "Cancel",
+    "editSave": "Save changes"
   },
   "templates": {
     "title": "Shift templates",
@@ -474,7 +574,57 @@
     "cancelDay": "Cancel today",
     "cancelDayHint": "Cancel every shift starting today.",
     "confirmCancelToday": "Cancel every shift starting today?",
-    "cancelled": "Cancelled {count} shifts"
+    "cancelled": "Cancelled {count} shifts",
+    "bulkEdit": "Bulk edit",
+    "bulkEditHint": "Select multiple shifts and move them all at once.",
+    "selectedCount": "{count, plural, =0 {No shifts selected} =1 {1 shift selected} other {# shifts selected}}",
+    "rescheduleSelected": "Move selected",
+    "exitSelect": "Done",
+    "rescheduled": "Moved {count} shifts",
+    "rescheduleTitle": "Move selected shifts",
+    "rescheduleBody": "{count, plural, =1 {Shift the selected shift by a fixed offset.} other {Shift all # selected shifts by the same offset.}}",
+    "rescheduleDirection": "Direction",
+    "rescheduleEarlier": "Earlier",
+    "rescheduleLater": "Later",
+    "rescheduleDays": "Days",
+    "rescheduleHours": "Hours",
+    "rescheduleMinutes": "Minutes",
+    "rescheduleApply": "Apply move"
+  },
+  "reschedule": {
+    "conflictTitle": "Confirm reschedule",
+    "conflictBody": "Moving this shift clashes with another shift for these workers. They will be dropped to \"needs reconfirmation\" and must accept the new time:",
+    "conflictCancel": "Keep original time",
+    "conflictConfirm": "Move anyway"
+  },
+  "availabilityTemplates": {
+    "title": "Recurring availability",
+    "subtitle": "Set the weekly hours you can usually work, then apply them to upcoming weeks.",
+    "addTitle": "Add a weekly slot",
+    "editTitle": "Edit weekly slot",
+    "day": "Day",
+    "start": "Start",
+    "end": "End",
+    "add": "Add slot",
+    "save": "Save slot",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "empty": "No recurring availability yet. Add your first weekly slot above.",
+    "apply": "Apply to upcoming weeks",
+    "applyHelp": "Generates availability for the next 4 weeks from your templates. Existing entries are kept.",
+    "applied": "{count, plural, =0 {No new slots — you were already covered} =1 {1 availability slot added} other {# availability slots added}}",
+    "created": "Weekly slot added",
+    "updated": "Weekly slot updated",
+    "removed": "Weekly slot removed",
+    "weekdays": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    }
   },
   "audit": {
     "title": "Audit log",
@@ -576,9 +726,9 @@
         "title": "Time clock",
         "intro": "Record actual start and end times so payroll matches reality.",
         "steps": {
-          "1": "Workers: from /clock or /me, tap 'Clock in' once you've started, and 'Clock out' at the end.",
-          "2": "If you forget, your owner can edit the entry afterwards. The original timestamps are preserved in the audit log.",
-          "3": "Owners and managers approve time entries on /clock; only approved entries flow into payroll exports."
+          "1": "Workers: from /clock or /me, tap 'Clock in' once you've started, and 'Clock out' at the end. You can clock in against a specific assigned shift.",
+          "2": "If you forget, owners and managers can edit the entry afterwards; every edit is recorded in the audit log.",
+          "3": "Owners and managers review, edit, approve or reject time entries on /payroll/time-entries; only approved entries flow into payroll exports."
         }
       },
       "timeOff": {
@@ -715,11 +865,11 @@
       },
       "dimona": {
         "title": "Belgian Dimona declarations",
-        "intro": "Automatic ONSS Dimona OUT/IN declarations when shifts start.",
+        "intro": "Automatic ONSS Dimona declarations: an IN is filed when you assign a flexi, extra or student worker, and a cancellation when the shift is cancelled or the worker is removed.",
         "steps": {
-          "1": "Enter your Dimona credentials once under Settings → Developers (they're encrypted at rest).",
+          "1": "Enter your employer number and Dimona credentials once under Settings → Integrations (they're encrypted at rest). Each worker needs a NISS on their profile.",
           "2": "Set DIMONA_ENV to sandbox to test against ONSS without real declarations, then switch to prod when ready.",
-          "3": "Declarations run automatically; reconciliation jobs retry failures and surface them on /audit."
+          "3": "A daily reconciliation job checks for gaps and notifies owners in-app; failures are also visible on /audit."
         },
         "tip": "Keep DIMONA_ENV on 'mock' in development — it logs intended declarations but doesn't hit ONSS."
       },
@@ -791,6 +941,10 @@
     "network": "Network problem. Check your connection.",
     "pastShift": "That shift has already started or ended.",
     "availabilityInTimeOff": "You have approved time-off in this range.",
-    "reconfirmNotNeeded": "This shift no longer needs your reconfirmation."
+    "reconfirmNotNeeded": "This shift no longer needs your reconfirmation.",
+    "resetTokenInvalid": "This password reset link is invalid, expired or already used.",
+    "weakPassword": "Password must be at least 8 characters.",
+    "attendanceNoShowHasEntry": "This worker has clocked or approved hours for this shift, so it can't be marked as a no-show. Reject the time entry first.",
+    "timeEntryShiftNoShow": "This shift is marked as a no-show. Review the attendance before approving these hours."
   }
 }

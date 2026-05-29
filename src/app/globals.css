@@ -391,6 +391,17 @@ body {
   background: rgba(37, 99, 235, 0.12);
 }
 
+/* Bulk-select highlight: a bold indigo ring around chosen shifts so the owner
+ * can see at a glance which events the bulk-reschedule will move. */
+.tg-calendar-shell .tg-event-selected {
+  outline: 3px solid #4f46e5;
+  outline-offset: 1px;
+  border-radius: 8px;
+}
+.tg-calendar-shell .tg-event-selected .tg-event-body {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65);
+}
+
 /* "Now" indicator: bolder red line + small dot at the leftmost edge so the
  * current time is unmistakable even on a busy day. */
 .tg-calendar-shell .fc-timegrid-now-indicator-line {

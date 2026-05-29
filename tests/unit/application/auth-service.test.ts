@@ -47,6 +47,16 @@ describe("AuthService.register", () => {
         data: { businessId: "b-new" },
       }),
     );
+    expect(db.membership.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: "u-new",
+          businessId: "b-new",
+          role: "OWNER",
+          status: "ACTIVE",
+        }),
+      }),
+    );
   });
 
   it("rejects worker registration without a businessId", async () => {
@@ -96,6 +106,16 @@ describe("AuthService.register", () => {
     expect(db.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ role: "WORKER", businessId: "b-1" }),
+      }),
+    );
+    expect(db.membership.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: "u-2",
+          businessId: "b-1",
+          role: "WORKER",
+          status: "ACTIVE",
+        }),
       }),
     );
   });

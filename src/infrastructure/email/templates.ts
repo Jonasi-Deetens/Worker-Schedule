@@ -41,6 +41,31 @@ export function inviteEmail(input: InviteEmailInput): EmailMessage {
   return { to: "", subject, html, text };
 }
 
+export interface PasswordResetEmailInput {
+  recipientName: string;
+  resetUrl: string;
+  expiresAt: Date;
+}
+
+export function passwordResetEmail(input: PasswordResetEmailInput): EmailMessage {
+  const subject = "Reset your Work Calendar password";
+  const expiry = input.expiresAt.toLocaleString("en-GB");
+  const html = shell(
+    subject,
+    `<h1 style="font-size:20px;color:#0f172a">Reset your password</h1>
+     <p style="color:#334155">Hi ${input.recipientName}, we received a request to reset your password.</p>
+     <p style="margin:24px 0">
+       <a href="${input.resetUrl}"
+          style="background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+         Choose a new password
+       </a>
+     </p>
+     <p style="color:#64748b;font-size:13px">This link expires at ${expiry}. If you didn't request this, you can safely ignore this email.</p>`,
+  );
+  const text = `Reset your Work Calendar password: ${input.resetUrl}\nThis link expires at ${expiry}. If you didn't request it, ignore this email.`;
+  return { to: "", subject, html, text };
+}
+
 export interface DecisionEmailInput extends BaseTemplateInput {
   shiftLabel: string;
   shiftDate: string;

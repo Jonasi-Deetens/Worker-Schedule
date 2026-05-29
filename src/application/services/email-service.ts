@@ -62,6 +62,29 @@ export class EmailService {
     });
   }
 
+  /**
+   * Security email — intentionally NOT gated by notification preferences: a
+   * user must always be able to recover their account regardless of opt-outs.
+   */
+  async sendPasswordReset(
+    user: { email: string },
+    args: Parameters<typeof templates.passwordResetEmail>[0],
+  ): Promise<void> {
+    try {
+      await this.transport.send({
+        ...templates.passwordResetEmail(args),
+        to: user.email,
+      });
+    } catch (error) {
+      logger.error({
+        event: "email.send.failed",
+        emailEvent: "PASSWORD_RESET",
+        to: user.email,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+  }
+
   private async send(
     user: UserLike,
     event: EventKey,

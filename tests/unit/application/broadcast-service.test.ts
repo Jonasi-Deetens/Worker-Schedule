@@ -180,4 +180,88 @@ describe("BroadcastService.accept", () => {
       svc.accept({ shiftId: "s1", userId: "u1", businessId: "b1" }),
     ).rejects.toThrow(/overlap/);
   });
+
+  it("rejects when the in-transaction CONFIRMED count is already full", async () => {
+    const db = createPrismaMock();
+    db.shift.findFirst.mockResolvedValue({
+      id: "s1",
+      status: "OPEN",
+      requiredSpots: 1,
+      assignments: [],
+      startsAt: FUTURE_START,
+      endsAt: FUTURE_END,
+    });
+    db.shiftAssignment.findFirst.mockResolvedValue(null); // no overlap
+    db.shiftAssignment.findMany.mockResolvedValue([]); // min-rest / weekly checks
+    db.timeOffRequest.findFirst.mockResolvedValue(null);
+    db.user.findUnique.mockResolvedValue(null);
+    // The atomic re-check inside the transaction sees the shift is now full.
+    db.shiftAssignment.count.mockResolvedValue(1);
+
+    const svc = new BroadcastService(db as unknown as PrismaClient);
+    await expect(
+      svc.accept({ shiftId: "s1", userId: "u1", businessId: "b1" }),
+    ).rejects.toThrow(/capacity/i);
+    expect(db.shiftAssignment.create).not.toHaveBeenCalled();
+  });
+
+  it("serialises a two-worker race onto the last spot (second loses)", async () => {
+    const db = createPrismaMock();
+    db.shift.findFirst.mockResolvedValue({
+      id: "s1",
+      status: "OPEN",
+      requiredSpots: 1,
+      assignments: [],
+      startsAt: FUTURE_START,
+      endsAt: FUTURE_END,
+    });
+    db.shiftAssignment.findFirst.mockResolvedValue(null);
+    db.shiftAssignment.findMany.mockResolvedValue([]);
+    db.timeOffRequest.findFirst.mockResolvedValue(null);
+    db.user.findUnique.mockResolvedValue(null);
+    db.shiftAssignment.create.mockResolvedValue({ id: "a1" });
+    db.shiftSubscription.upsert.mockResolvedValue({ id: "sub1" });
+    // First accept sees 0 confirmed (claims the spot); the racing second accept
+    // sees the spot already taken inside its transaction and is rejected.
+    db.shiftAssignment.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1);
+
+    const svc = new BroadcastService(db as unknown as PrismaClient);
+    const first = await svc.accept({
+      shiftId: "s1",
+      userId: "u1",
+      businessId: "b1",
+    });
+    expect(first.alreadyAssigned).toBe(false);
+
+    await expect(
+      svc.accept({ shiftId: "s1", userId: "u2", businessId: "b1" }),
+    ).rejects.toThrow(/capacity/i);
+    // Only the winner created an assignment.
+    expect(db.shiftAssignment.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("enforces scheduling rules before claiming the spot", async () => {
+    const db = createPrismaMock();
+    db.shift.findFirst.mockResolvedValue({
+      id: "s1",
+      status: "OPEN",
+      requiredSpots: 2,
+      assignments: [],
+      startsAt: FUTURE_START,
+      endsAt: FUTURE_END,
+    });
+    db.shiftAssignment.findFirst.mockResolvedValue(null);
+    db.shiftAssignment.findMany.mockResolvedValue([]);
+    db.user.findUnique.mockResolvedValue(null);
+    // Approved time-off in the slot is surfaced by the centralized guard.
+    db.timeOffRequest.findFirst.mockResolvedValue({ id: "to1" });
+
+    const svc = new BroadcastService(db as unknown as PrismaClient);
+    await expect(
+      svc.accept({ shiftId: "s1", userId: "u1", businessId: "b1" }),
+    ).rejects.toThrow(/time-off/i);
+    expect(db.shiftAssignment.count).not.toHaveBeenCalled();
+  });
 });

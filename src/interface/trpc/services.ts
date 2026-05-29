@@ -16,6 +16,7 @@ import { LocationService } from "@/application/services/location-service";
 import { MeService } from "@/application/services/me-service";
 import { MembershipService } from "@/application/services/membership-service";
 import { NotificationService } from "@/application/services/notification-service";
+import { PasswordResetService } from "@/application/services/password-reset-service";
 import { RosterService } from "@/application/services/roster-service";
 import { ShiftAssignmentService } from "@/application/services/shift-assignment-service";
 import { ShiftMessageService } from "@/application/services/shift-message-service";
@@ -53,6 +54,7 @@ export const locationService = new LocationService(prisma);
 export const meService = new MeService(prisma);
 export const membershipService = new MembershipService(prisma);
 export const notificationService = new NotificationService(prisma);
+export const passwordResetService = new PasswordResetService(prisma);
 export const rosterService = new RosterService(prisma);
 export const shiftAssignmentService = new ShiftAssignmentService(prisma);
 export const shiftMessageService = new ShiftMessageService(prisma);
@@ -78,4 +80,27 @@ export function requireBusinessId(businessId: string | null): string {
     });
   }
   return businessId;
+}
+
+/**
+ * Business-scoped authorization guard. On top of {@link requireBusinessId} it
+ * verifies the user still has an ACTIVE membership in the pinned business, so
+ * suspended/removed members lose access even while their JWT lives on. The
+ * session already pins exactly one businessId, so this is a single indexed
+ * lookup (`@@unique([userId, businessId])`) per business-scoped call.
+ */
+export async function requireActiveMembership(
+  userId: string,
+  businessId: string | null,
+): Promise<string> {
+  const id = requireBusinessId(businessId);
+  try {
+    await membershipService.assertActive(userId, id);
+  } catch {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "No active membership in this business",
+    });
+  }
+  return id;
 }

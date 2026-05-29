@@ -52,7 +52,10 @@ describe("ShiftAssignmentService – direct-assign edge cases", () => {
     const db = createPrismaMock();
     db.shift.findFirst.mockResolvedValue({
       ...baseShift,
-      assignments: [{ userId: "w1" }, { userId: "w2" }],
+      assignments: [
+        { userId: "w1", status: "CONFIRMED" },
+        { userId: "w2", status: "CONFIRMED" },
+      ],
     });
     const svc = new ShiftAssignmentService(asPrisma(db));
     await expect(

@@ -61,6 +61,9 @@ interface CalendarDialogsProps {
   onEditShift: () => void;
   onCancelShiftClick: () => void;
   onOfferSwapClick: () => void;
+  /** True when the current worker is invited to claim the selected shift via an open broadcast. */
+  workerBroadcastInvited?: boolean;
+  onAcceptBroadcast?: () => void;
   /** True when the current worker's assignment on the selected shift awaits reconfirmation. */
   workerNeedsReconfirm?: boolean;
   // Cancel shift confirm
@@ -159,6 +162,7 @@ export function CalendarDialogs(props: CalendarDialogsProps) {
                 subscriptionId: selectedShift.subscriptionId,
                 subscriptionStatus: selectedShift.subscriptionStatus,
                 notes: selectedShift.notes,
+                isDraft: selectedShift.isDraft,
               }
             : null
         }
@@ -196,8 +200,13 @@ export function CalendarDialogs(props: CalendarDialogsProps) {
           m.subscription.rejectMany.mutate({ subscriptionIds: ids })
         }
         onEditShift={props.onEditShift}
+        onPublish={() =>
+          selectedShift && m.shift.publish.mutate({ ids: [selectedShift.shiftId] })
+        }
         onCancelShift={props.onCancelShiftClick}
         onOfferSwap={props.onOfferSwapClick}
+        workerBroadcastInvited={props.workerBroadcastInvited}
+        onAcceptBroadcast={props.onAcceptBroadcast}
         workerNeedsReconfirm={props.workerNeedsReconfirm}
         onConfirmReschedule={() =>
           selectedShift &&

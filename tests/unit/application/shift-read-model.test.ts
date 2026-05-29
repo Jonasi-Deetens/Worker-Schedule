@@ -152,6 +152,42 @@ describe("ShiftReadModel.listForCalendar", () => {
     ]);
   });
 
+  it("only gates OPEN shifts by skill, always including shifts the worker is on", async () => {
+    prisma.shift.findMany.mockResolvedValue([]);
+
+    await readModel.listForCalendar({
+      businessId: BUSINESS_ID,
+      from: new Date("2026-06-01T00:00:00Z"),
+      to: new Date("2026-06-30T00:00:00Z"),
+      workerId: "worker-1",
+      workerSkillIds: ["skill-a"],
+    });
+
+    const where = prisma.shift.findMany.mock.calls[0]![0].where;
+    expect(where.OR).toEqual([
+      { requiredSkillId: null },
+      { requiredSkillId: { in: ["skill-a"] } },
+      { assignments: { some: { userId: "worker-1" } } },
+    ]);
+  });
+
+  it("does not add the assignment escape-hatch when no workerId is given", async () => {
+    prisma.shift.findMany.mockResolvedValue([]);
+
+    await readModel.listForCalendar({
+      businessId: BUSINESS_ID,
+      from: new Date("2026-06-01T00:00:00Z"),
+      to: new Date("2026-06-30T00:00:00Z"),
+      workerSkillIds: ["skill-a"],
+    });
+
+    const where = prisma.shift.findMany.mock.calls[0]![0].where;
+    expect(where.OR).toEqual([
+      { requiredSkillId: null },
+      { requiredSkillId: { in: ["skill-a"] } },
+    ]);
+  });
+
   it("surfaces a shift with only a PENDING_RECONFIRMATION assignment as Pending", async () => {
     prisma.shift.findMany.mockResolvedValue([
       {

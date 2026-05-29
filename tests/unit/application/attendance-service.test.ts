@@ -64,6 +64,46 @@ describe("AttendanceService.mark", () => {
     );
     expect(db.auditEvent.create).toHaveBeenCalled();
   });
+
+  it("refuses NO_SHOW when a clocked/approved time entry exists for the shift", async () => {
+    db.shiftAssignment.findFirst.mockResolvedValue({
+      id: "a1",
+      userId: "w1",
+      shiftId: "s1",
+      shift: { startsAt: new Date(Date.now() - 86_400_000) },
+    });
+    db.timeEntry.findFirst.mockResolvedValue({ id: "te1" });
+    const service = new AttendanceService(db as unknown as PrismaClient);
+    await expect(
+      service.mark({
+        assignmentId: "a1",
+        businessId: "b1",
+        reviewerId: "u1",
+        status: "NO_SHOW",
+      }),
+    ).rejects.toThrow("errors.attendanceNoShowHasEntry");
+    expect(db.shiftAssignment.update).not.toHaveBeenCalled();
+  });
+
+  it("allows NO_SHOW when there is no clocked/approved entry", async () => {
+    db.shiftAssignment.findFirst.mockResolvedValue({
+      id: "a1",
+      userId: "w1",
+      shiftId: "s1",
+      shift: { startsAt: new Date(Date.now() - 86_400_000) },
+    });
+    db.timeEntry.findFirst.mockResolvedValue(null);
+    db.shiftAssignment.update.mockResolvedValue({ id: "a1", attendance: "NO_SHOW" });
+    db.auditEvent.create.mockResolvedValue({ id: "ae1" });
+    const service = new AttendanceService(db as unknown as PrismaClient);
+    const result = await service.mark({
+      assignmentId: "a1",
+      businessId: "b1",
+      reviewerId: "u1",
+      status: "NO_SHOW",
+    });
+    expect(result.attendance).toBe("NO_SHOW");
+  });
 });
 
 describe("AttendanceService.businessSummary", () => {

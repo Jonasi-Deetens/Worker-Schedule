@@ -94,6 +94,12 @@ export class InviteService {
     token: string;
     name: string;
     password: string;
+    /**
+     * Email to register under. Required only for link-only invites created
+     * without a fixed email; for email invites this is ignored in favour of
+     * the address the invite was issued to.
+     */
+    email?: string;
   }) {
     const invite = await this.db.invite.findUnique({
       where: { token: input.token },
@@ -104,9 +110,11 @@ export class InviteService {
     if (invite.expiresAt < new Date()) throw new Error("Invite expired");
 
     const passwordHash = await hash(input.password, 12);
-    const userEmail = invite.email;
+    // Email invites pin the address; link-only invites let the accepting user
+    // supply their own email at accept time.
+    const userEmail = invite.email ?? input.email ?? null;
 
-    if (!userEmail) throw new Error("Invite email missing");
+    if (!userEmail) throw new Error("Email is required to accept this invite");
 
     const existing = await this.db.user.findUnique({
       where: { email: userEmail },
@@ -115,38 +123,53 @@ export class InviteService {
       throw new Error("Email already registered");
     }
 
-    const user = await this.db.user.create({
-      data: {
-        email: userEmail,
-        passwordHash,
-        name: input.name,
-        role: invite.role,
-        businessId: invite.businessId,
-      },
-    });
+    // Create the user, mark the invite accepted, write the audit event, notify
+    // the inviter and record the membership atomically.
+    const user = await this.db.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: userEmail,
+          passwordHash,
+          name: input.name,
+          role: invite.role,
+          businessId: invite.businessId,
+        },
+      });
 
-    await this.db.invite.update({
-      where: { id: invite.id },
-      data: { acceptedAt: new Date() },
-    });
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { acceptedAt: new Date() },
+      });
 
-    await this.db.auditEvent.create({
-      data: {
-        userId: user.id,
-        action: "INVITE_ACCEPTED",
-        entityType: "Invite",
-        entityId: invite.id,
-      },
-    });
+      await tx.membership.create({
+        data: {
+          userId: created.id,
+          businessId: invite.businessId,
+          role: invite.role,
+          status: "ACTIVE",
+        },
+      });
 
-    await this.db.notification.create({
-      data: {
-        userId: invite.invitedById,
-        type: "INVITE_ACCEPTED",
-        title: "Invite accepted",
-        body: `${user.name} joined ${invite.business.name}.`,
-        payload: { userId: user.id },
-      },
+      await tx.auditEvent.create({
+        data: {
+          userId: created.id,
+          action: "INVITE_ACCEPTED",
+          entityType: "Invite",
+          entityId: invite.id,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: invite.invitedById,
+          type: "INVITE_ACCEPTED",
+          title: "Invite accepted",
+          body: `${created.name} joined ${invite.business.name}.`,
+          payload: { userId: created.id },
+        },
+      });
+
+      return created;
     });
 
     return { user, businessId: invite.businessId };

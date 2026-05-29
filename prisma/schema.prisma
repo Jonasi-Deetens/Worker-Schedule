@@ -54,6 +54,10 @@ enum NotificationType {
   SHIFT_SWAP_DECIDED
   SHIFT_BROADCAST
   SHIFT_RESCHEDULED
+  TIME_ENTRY_SUBMITTED
+  TIME_ENTRY_APPROVED
+  TIME_ENTRY_REJECTED
+  DIMONA_GAP_DETECTED
 }
 
 enum AssignmentStatus {
@@ -83,6 +87,7 @@ enum AuditAction {
   INVITE_SENT
   INVITE_ACCEPTED
   WORKER_SUSPENDED
+  WORKER_REACTIVATED
   WORKER_ARCHIVED
   TIMEOFF_REQUESTED
   TIMEOFF_APPROVED
@@ -93,7 +98,12 @@ enum AuditAction {
   SWAP_REQUESTED
   SWAP_DECIDED
   TIME_ENTRY_APPROVED
+  TIME_ENTRY_REJECTED
+  TIME_ENTRY_EDITED
   DIMONA_DECLARED
+  DIMONA_CANCELLED
+  WORKER_PROFILE_UPDATED
+  BUSINESS_SETTINGS_UPDATED
   ATTENDANCE_MARKED
   SHIFT_BROADCAST_SENT
   SHIFT_RESCHEDULE_PENDING
@@ -120,6 +130,12 @@ enum DimonaStatus {
   CONFIRMED
   REJECTED
   CANCELLED
+}
+
+enum TimeEntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Business {
@@ -192,7 +208,7 @@ model User {
   documents             Document[]
   shiftMessages         ShiftMessage[]
   memberships           Membership[]
-  webauthnCredentials   WebAuthnCredential[]
+  passwordResetTokens   PasswordResetToken[]
 
   @@index([businessId])
   @@index([status])
@@ -426,16 +442,19 @@ model TimeEntry {
   shift        Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   clockInAt    DateTime
   clockOutAt   DateTime?
-  breakMinutes Int       @default(0)
+  breakMinutes Int             @default(0)
+  status       TimeEntryStatus @default(PENDING)
   approvedAt   DateTime?
   approvedById String?
-  approvedBy   User?     @relation("TimeEntryReviewer", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedBy   User?           @relation("TimeEntryReviewer", fields: [approvedById], references: [id], onDelete: SetNull)
+  reviewNote   String?
   notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@index([userId, clockInAt])
   @@index([shiftId])
+  @@index([status])
   @@map("time_entries")
 }
 
@@ -600,20 +619,20 @@ model WebhookSubscription {
   @@map("webhook_subscriptions")
 }
 
-model WebAuthnCredential {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  credentialId String    @unique
-  publicKey    Bytes
-  counter      BigInt    @default(0)
-  transports   String[]
-  deviceName   String?
-  createdAt    DateTime  @default(now())
-  lastUsedAt   DateTime?
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // SHA-256 of the random token handed to the user; the raw token is never
+  // stored so a database leak cannot be used to reset passwords.
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
-  @@map("webauthn_credentials")
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model PushSubscription {

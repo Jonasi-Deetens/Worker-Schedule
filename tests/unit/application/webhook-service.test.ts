@@ -47,16 +47,76 @@ describe("WebhookService", () => {
     );
   });
 
-  it("swallows fetch failures", async () => {
+  it("treats a thrown fetch as a failure and enqueues a retry", async () => {
     db.webhookSubscription.findMany.mockResolvedValue([
-      { id: "w1", url: "https://x", secret: "s", events: ["shift.created"] },
+      {
+        id: "w1",
+        url: "https://hook.example.com/abc",
+        secret: "s",
+        events: ["shift.created"],
+      },
     ]);
     const fetcher = vi.fn(async () => {
       throw new Error("boom");
     }) as unknown as typeof fetch;
-    const svc = new WebhookService(db as unknown as PrismaClient, fetcher);
+    const enqueue = vi.fn(async () => {});
+    const svc = new WebhookService(
+      db as unknown as PrismaClient,
+      fetcher,
+      enqueue,
+    );
+
     await expect(
       svc.fan("shift.created", { shiftId: "s1" }, "b1"),
     ).resolves.toBeUndefined();
+    expect(enqueue).toHaveBeenCalledOnce();
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ subscriptionId: "w1", event: "shift.created" }),
+    );
+  });
+
+  it("treats a non-2xx response as a failure and enqueues a retry", async () => {
+    db.webhookSubscription.findMany.mockResolvedValue([
+      {
+        id: "w1",
+        url: "https://hook.example.com/abc",
+        secret: "s",
+        events: ["shift.created"],
+      },
+    ]);
+    const fetcher = vi.fn(
+      async () => new Response("nope", { status: 500 }),
+    ) as unknown as typeof fetch;
+    const enqueue = vi.fn(
+      async (_job: { subscriptionId: string; event: string; body: string }) => {},
+    );
+    const svc = new WebhookService(
+      db as unknown as PrismaClient,
+      fetcher,
+      enqueue,
+    );
+
+    await svc.fan("shift.created", { shiftId: "s1" }, "b1");
+    expect(enqueue).toHaveBeenCalledOnce();
+    const job = enqueue.mock.calls[0]![0];
+    expect(JSON.parse(job.body)).toMatchObject({ event: "shift.created" });
+  });
+
+  it("does not enqueue a retry on a 2xx response", async () => {
+    db.webhookSubscription.findMany.mockResolvedValue([
+      { id: "w1", url: "https://hook.example.com", secret: "s", events: ["shift.created"] },
+    ]);
+    const fetcher = vi.fn(
+      async () => new Response(null, { status: 204 }),
+    ) as unknown as typeof fetch;
+    const enqueue = vi.fn(async () => {});
+    const svc = new WebhookService(
+      db as unknown as PrismaClient,
+      fetcher,
+      enqueue,
+    );
+
+    await svc.fan("shift.created", { shiftId: "s1" }, "b1");
+    expect(enqueue).not.toHaveBeenCalled();
   });
 });

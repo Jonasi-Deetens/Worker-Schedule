@@ -2,14 +2,22 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/infrastructure/auth/auth-options";
 import { prisma } from "@/infrastructure/db/prisma";
-import { PROVIDERS, renderPayrollCsv } from "@/infrastructure/payroll/providers";
+import {
+  buildPayrollRows,
+  PROVIDERS,
+  renderPayrollCsv,
+} from "@/infrastructure/payroll/providers";
 
 /**
- * Owner-only payroll export. Combines approved `TimeEntry` rows with the
- * worker's `hourlyRate` and renders a CSV in the column layout requested by
- * the `?provider=` query (`sdworx`, `securex`, or `generic`).
+ * Owner/manager-only payroll export. Combines approved `TimeEntry` rows with
+ * the worker's `hourlyRate` and renders a CSV in the column layout requested
+ * by the `?provider=` query (`sdworx`, `securex`, or `generic`).
  *
- * Falls back to scheduled assignments when a worker has no time entries yet.
+ * Only approved, closed time entries are exported — there is no fallback to
+ * scheduled assignments. The `employee_id` column uses the worker's payroll
+ * identifier (`nationalNumber`/NISS), never the internal database id, and the
+ * date is formatted in the business timezone so a late-evening shift is not
+ * pushed onto the next calendar day by UTC.
  */
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -32,8 +40,15 @@ export async function GET(request: Request) {
     : new Date(now.getFullYear(), now.getMonth(), 1);
   const to = toParam ? new Date(toParam) : now;
 
+  const business = await prisma.business.findUnique({
+    where: { id: session.user.businessId },
+    select: { timezone: true },
+  });
+  const timeZone = business?.timezone ?? "Europe/Brussels";
+
   const entries = await prisma.timeEntry.findMany({
     where: {
+      status: "APPROVED",
       approvedAt: { not: null },
       clockOutAt: { not: null },
       user: { businessId: session.user.businessId },
@@ -41,29 +56,19 @@ export async function GET(request: Request) {
     },
     include: {
       user: {
-        select: { id: true, name: true, email: true, hourlyRate: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          hourlyRate: true,
+          nationalNumber: true,
+        },
       },
     },
     orderBy: { clockInAt: "asc" },
   });
 
-  const rows = entries.map((entry) => {
-    const hours = Math.max(
-      0,
-      (entry.clockOutAt!.getTime() - entry.clockInAt.getTime()) / 3_600_000 -
-        entry.breakMinutes / 60,
-    );
-    const rate = entry.user.hourlyRate ? Number(entry.user.hourlyRate) : 0;
-    return {
-      workerExternalId: entry.user.id,
-      workerName: entry.user.name,
-      date: entry.clockInAt.toISOString().slice(0, 10),
-      code: "WORK",
-      hours: Math.round(hours * 100) / 100,
-      rate,
-      gross: Math.round(hours * rate * 100) / 100,
-    };
-  });
+  const rows = buildPayrollRows(entries, timeZone);
 
   const body = renderPayrollCsv(provider, rows);
   return new NextResponse(body, {

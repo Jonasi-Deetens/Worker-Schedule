@@ -6,13 +6,51 @@ import {
   canWithdrawSubscription,
   isShiftCapacityAvailable,
 } from "@/domain/rules/scheduling";
+import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { logger } from "@/infrastructure/logging/logger";
+import { EmailService } from "./email-service";
 import { SchedulingRules } from "./scheduling-rules";
 
 export class SubscriptionService {
   private readonly rules: SchedulingRules;
-  constructor(private readonly db: PrismaClient) {
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly emails: EmailService = new EmailService(),
+  ) {
     this.rules = new SchedulingRules(db);
+  }
+
+  /**
+   * Best-effort decision email to the worker, gated by their notification
+   * prefs inside EmailService. No-ops if the business or user is missing so a
+   * failed lookup never blocks the approve/reject path.
+   */
+  private async sendDecisionEmail(
+    businessId: string,
+    user: { email: string; name: string; notificationPrefs?: unknown } | undefined,
+    shift: { roleLabel: string; startsAt: Date } | undefined,
+    approved: boolean,
+  ) {
+    if (!user || !shift) return;
+    const business = await this.db.business.findUnique({
+      where: { id: businessId },
+      select: { name: true },
+    });
+    if (!business) return;
+    await this.emails.sendApplicationDecision(
+      {
+        email: user.email,
+        name: user.name,
+        notificationPrefs: user.notificationPrefs,
+      },
+      {
+        recipientName: user.name,
+        businessName: business.name,
+        shiftLabel: shift.roleLabel,
+        shiftDate: shift.startsAt.toISOString().slice(0, 10),
+        approved,
+      },
+    );
   }
 
   async apply(input: { shiftId: string; userId: string; businessId: string }) {
@@ -83,6 +121,11 @@ export class SubscriptionService {
       },
     });
 
+    publishEvent(input.businessId, {
+      type: "subscription.changed",
+      shiftId: input.shiftId,
+    });
+
     logger.info({
       event: "subscription.applied",
       shiftId: input.shiftId,
@@ -128,6 +171,13 @@ export class SubscriptionService {
       },
     });
 
+    if (subscription.shift.businessId) {
+      publishEvent(subscription.shift.businessId, {
+        type: "subscription.changed",
+        shiftId: subscription.shiftId,
+      });
+    }
+
     return updated;
   }
 
@@ -136,7 +186,7 @@ export class SubscriptionService {
     ownerId: string;
     businessId: string;
   }) {
-    return this.db.$transaction(async (tx) => {
+    const outcome = await this.db.$transaction(async (tx) => {
       const subscription = await tx.shiftSubscription.findFirst({
         where: {
           id: input.subscriptionId,
@@ -152,8 +202,10 @@ export class SubscriptionService {
         throw new Error("Can only approve pending applications");
       }
 
+      // Only CONFIRMED assignments occupy a spot — workers awaiting reschedule
+      // reconfirmation must not be counted against capacity.
       const approvedCount = await tx.shiftAssignment.count({
-        where: { shiftId: subscription.shiftId },
+        where: { shiftId: subscription.shiftId, status: "CONFIRMED" },
       });
 
       if (
@@ -181,15 +233,10 @@ export class SubscriptionService {
         })),
       );
 
-      const ruleViolations = await this.rules.checkAll(subscription.userId, {
+      await this.rules.assertAssignable(subscription.userId, {
         startsAt: subscription.shift.startsAt,
         endsAt: subscription.shift.endsAt,
       });
-      if (ruleViolations.length > 0) {
-        throw new Error(
-          ruleViolations.map((v) => v.message).join("; "),
-        );
-      }
 
       await tx.shiftSubscription.update({
         where: { id: subscription.id },
@@ -233,14 +280,38 @@ export class SubscriptionService {
         },
       });
 
+      publishEvent(input.businessId, {
+        type: "subscription.changed",
+        shiftId: subscription.shiftId,
+      });
+      publishEvent(input.businessId, {
+        type: "assignment.changed",
+        shiftId: subscription.shiftId,
+      });
+
       logger.info({
         event: "subscription.approved",
         subscriptionId: subscription.id,
         shiftId: subscription.shiftId,
       });
 
-      return assignment;
+      return {
+        assignment,
+        user: subscription.user as
+          | { email: string; name: string; notificationPrefs?: unknown }
+          | undefined,
+        shift: subscription.shift,
+      };
     });
+
+    await this.sendDecisionEmail(
+      input.businessId,
+      outcome.user,
+      outcome.shift,
+      true,
+    );
+
+    return outcome.assignment;
   }
 
   async reject(input: {
@@ -253,7 +324,7 @@ export class SubscriptionService {
         id: input.subscriptionId,
         shift: { businessId: input.businessId },
       },
-      include: { shift: true },
+      include: { shift: true, user: true },
     });
 
     if (!subscription) {
@@ -289,6 +360,20 @@ export class SubscriptionService {
         entityId: subscription.id,
       },
     });
+
+    publishEvent(input.businessId, {
+      type: "subscription.changed",
+      shiftId: subscription.shiftId,
+    });
+
+    await this.sendDecisionEmail(
+      input.businessId,
+      subscription.user as
+        | { email: string; name: string; notificationPrefs?: unknown }
+        | undefined,
+      subscription.shift,
+      false,
+    );
 
     return updated;
   }

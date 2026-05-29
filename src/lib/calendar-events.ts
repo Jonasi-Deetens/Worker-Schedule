@@ -37,6 +37,7 @@ export interface CalendarShift {
   publishedAt?: Date | string | null;
   isDraft?: boolean;
   requiredSkill?: { id: string; name: string; color: string } | null;
+  location?: { id: string; name: string } | null;
   _count?: { subscriptions?: number; assignments?: number };
   subscriptions?: Array<{ id: string; status: SubscriptionStatus }>;
   assignments?: Array<{ userId: string; user?: { id: string; name: string; avatarUrl?: string | null } | null }>;
@@ -77,6 +78,8 @@ export interface CalendarEvent {
     isDraft?: boolean;
     requiredSkillId?: string;
     requiredSkillName?: string;
+    locationId?: string;
+    locationName?: string;
     /** Approved workers on this shift, used to render the avatar stack. */
     assignees?: Array<{ id: string; name: string; avatarUrl?: string | null }>;
   };
@@ -150,6 +153,8 @@ export function shiftToCalendarEvent(
       isDraft,
       requiredSkillId: shift.requiredSkill?.id,
       requiredSkillName: shift.requiredSkill?.name,
+      locationId: shift.location?.id,
+      locationName: shift.location?.name,
       assignees: (shift.assignments ?? [])
         .map((a) =>
           a.user

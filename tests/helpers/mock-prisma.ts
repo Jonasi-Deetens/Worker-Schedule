@@ -47,7 +47,7 @@ const MODEL_KEYS = [
   "dimonaDeclaration",
   "apiKey",
   "webhookSubscription",
-  "webAuthnCredential",
+  "passwordResetToken",
   "pushSubscription",
 ] as const;
 

@@ -24,6 +24,24 @@ export class AttendanceService {
     if (assignment.shift.startsAt > new Date()) {
       throw new Error("Cannot mark attendance before the shift starts");
     }
+
+    // Reconciliation guard: a NO_SHOW contradicts a clocked/approved time entry
+    // for the same worker + shift. Refuse it so attendance and payroll can't
+    // disagree; the manager must reject the time entry first.
+    if (input.status === "NO_SHOW") {
+      const conflicting = await this.db.timeEntry.findFirst({
+        where: {
+          userId: assignment.userId,
+          shiftId: assignment.shiftId,
+          OR: [{ status: "APPROVED" }, { clockOutAt: { not: null } }],
+        },
+        select: { id: true },
+      });
+      if (conflicting) {
+        throw new Error("errors.attendanceNoShowHasEntry");
+      }
+    }
+
     const updated = await this.db.shiftAssignment.update({
       where: { id: input.assignmentId },
       data: {

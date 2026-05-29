@@ -125,12 +125,33 @@ export class DocumentService {
     });
   }
 
-  async delete(input: { id: string; userId: string; isOwnerOrManager: boolean }) {
-    const doc = await this.db.document.findUnique({ where: { id: input.id } });
+  async delete(input: {
+    id: string;
+    userId: string;
+    isOwnerOrManager: boolean;
+    /** Business of the acting user — required to scope manager/owner deletes. */
+    actingBusinessId: string | null;
+  }) {
+    const doc = await this.db.document.findUnique({
+      where: { id: input.id },
+      include: { user: { select: { businessId: true } } },
+    });
     if (!doc) throw new Error("Document not found");
-    if (doc.userId !== input.userId && !input.isOwnerOrManager) {
+
+    if (input.isOwnerOrManager) {
+      // Managers/owners may delete documents, but only within their own
+      // business. Cross-business ids are treated as "not found" so we don't
+      // leak the existence of another tenant's document (IDOR fix).
+      if (
+        !input.actingBusinessId ||
+        doc.user.businessId !== input.actingBusinessId
+      ) {
+        throw new Error("Document not found");
+      }
+    } else if (doc.userId !== input.userId) {
       throw new Error("Cannot delete another user's document");
     }
+
     return this.db.document.delete({ where: { id: input.id } });
   }
 }

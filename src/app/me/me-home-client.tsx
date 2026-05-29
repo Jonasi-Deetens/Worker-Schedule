@@ -167,7 +167,7 @@ export function MeHomeClient() {
             )}
             <div className="mt-2 flex flex-wrap gap-2">
               {clockInWindow && (
-                <Link href="/clock">
+                <Link href={`/clock?shiftId=${nextShift.shiftId}`}>
                   <Button size="sm">
                     <Timer className="mr-1.5 h-4 w-4" />
                     {t("me.clockIn")}
@@ -311,6 +311,7 @@ export function MeHomeClient() {
           <QuickLink href="/applications" label={t("applications.title")} icon={<ClipboardList className="h-4 w-4" />} />
           <QuickLink href="/swap" label={t("swap.title")} icon={<Sparkles className="h-4 w-4" />} />
           <QuickLink href="/timeoff" label={t("timeOff.title")} icon={<CalendarDays className="h-4 w-4" />} />
+          <QuickLink href="/settings/availability" label={t("availabilityTemplates.title")} icon={<Timer className="h-4 w-4" />} />
           <QuickLink href="/me/hours" label={t("hours.title")} icon={<Clock className="h-4 w-4" />} />
           <QuickLink href="/settings/profile" label={t("profile.title")} icon={<Bell className="h-4 w-4" />} />
         </div>

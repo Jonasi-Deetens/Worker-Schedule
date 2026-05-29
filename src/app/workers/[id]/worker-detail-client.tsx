@@ -27,6 +27,7 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
   const [hourlyRate, setHourlyRate] = useState<string>("");
   const [weeklyCap, setWeeklyCap] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
+  const [nationalNumber, setNationalNumber] = useState<string>("");
   const [selectedSkills, setSelectedSkills] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
       hourlyRate: { toString(): string } | null;
       weeklyHourCap: number | null;
       birthDate: Date | string | null;
+      nationalNumber: string | null;
       skills: { skill: { id: string } }[];
     };
     setName(w.name ?? "");
@@ -48,6 +50,7 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
     setBirthDate(
       w.birthDate ? new Date(w.birthDate).toISOString().slice(0, 10) : "",
     );
+    setNationalNumber(w.nationalNumber ?? "");
     setSelectedSkills(new Set(w.skills.map((s) => s.skill.id)));
   }, [workerQuery.data]);
 
@@ -78,6 +81,7 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
       hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
       weeklyHourCap: weeklyCap ? parseInt(weeklyCap, 10) : null,
       birthDate: birthDate ? new Date(birthDate) : null,
+      nationalNumber: nationalNumber ? nationalNumber : null,
     });
     setSkills.mutate({
       userId: workerId,
@@ -298,6 +302,21 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
                 value={weeklyCap}
                 onChange={(e) => setWeeklyCap(e.target.value)}
               />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="nationalNumber">
+                {t("workers.nationalNumber")}
+              </Label>
+              <Input
+                id="nationalNumber"
+                value={nationalNumber}
+                onChange={(e) => setNationalNumber(e.target.value)}
+                placeholder="00.00.00-000.00"
+                inputMode="numeric"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                {t("workers.nationalNumberHelp")}
+              </p>
             </div>
           </div>
 

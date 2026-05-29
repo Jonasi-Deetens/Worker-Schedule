@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { NotificationService } from "./notification-service";
+import { SchedulingRules } from "./scheduling-rules";
 
 /**
  * "Open shift broadcast" lets an owner notify every eligible worker about an
@@ -11,9 +12,11 @@ import { NotificationService } from "./notification-service";
  */
 export class BroadcastService {
   private readonly notifications: NotificationService;
+  private readonly rules: SchedulingRules;
 
   constructor(private readonly db: PrismaClient) {
     this.notifications = new NotificationService(db);
+    this.rules = new SchedulingRules(db);
   }
 
   /**
@@ -204,24 +207,46 @@ export class BroadcastService {
     });
     if (overlap) throw new Error("Worker has an overlapping approved shift");
 
+    // Centralised scheduling-rule enforcement (min rest, weekly cap, age,
+    // time-off). Mirrors the approve/assign/swap paths so no entry point can
+    // commit an assignment that breaks a hard rule.
+    await this.rules.assertAssignable(input.userId, {
+      startsAt: shift.startsAt,
+      endsAt: shift.endsAt,
+    });
+
     try {
-      const [assignment] = await this.db.$transaction([
-        this.db.shiftAssignment.create({
+      const assignment = await this.db.$transaction(async (tx) => {
+        // Re-check capacity *inside* the transaction against the live count of
+        // CONFIRMED assignments. Two workers racing onto the last spot will
+        // serialise here so we can never exceed `requiredSpots`.
+        const confirmedCount = await tx.shiftAssignment.count({
+          where: { shiftId: shift.id, status: "CONFIRMED" },
+        });
+        if (confirmedCount >= shift.requiredSpots) {
+          throw new Error("Shift is already at capacity");
+        }
+        const created = await tx.shiftAssignment.create({
           data: { shiftId: shift.id, userId: input.userId },
-        }),
-        this.db.shiftSubscription.upsert({
+        });
+        await tx.shiftSubscription.upsert({
           where: { shiftId_userId: { shiftId: shift.id, userId: input.userId } },
           create: { shiftId: shift.id, userId: input.userId, status: "APPROVED" },
           update: { status: "APPROVED" },
-        }),
-      ]);
+        });
+        return created;
+      });
       publishEvent(input.businessId, {
         type: "assignment.changed",
         shiftId: shift.id,
       });
       return { alreadyAssigned: false, assignmentId: assignment.id };
     } catch (err) {
-      // Unique constraint or capacity race lost — treat as "already filled".
+      // The capacity guard is a real, user-facing conflict — surface it as-is.
+      if (err instanceof Error && /capacity/i.test(err.message)) {
+        throw err;
+      }
+      // Unique constraint or other race lost — treat as "already filled".
       logger.warn({
         event: "shift.broadcast.acceptRace",
         shiftId: shift.id,

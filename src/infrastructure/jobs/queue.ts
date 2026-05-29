@@ -32,6 +32,7 @@ export const JOBS = {
   SHIFT_REMINDER_24H: "shift.reminder.24h",
   INVITE_CLEANUP: "invite.cleanup",
   DIMONA_RECONCILE: "dimona.reconcile",
+  WEBHOOK_DELIVER: "webhook.deliver",
 } as const;
 
 export type JobName = (typeof JOBS)[keyof typeof JOBS];

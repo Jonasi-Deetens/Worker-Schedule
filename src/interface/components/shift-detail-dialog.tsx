@@ -22,6 +22,7 @@ export interface CalendarShiftItem {
   subscriptionId?: string;
   subscriptionStatus?: string;
   notes?: string | null;
+  isDraft?: boolean;
 }
 
 interface ShiftDetailDialogProps {
@@ -49,6 +50,7 @@ interface ShiftDetailDialogProps {
   onReject?: (subscriptionId: string) => void;
   onCancelShift?: () => void;
   onEditShift?: () => void;
+  onPublish?: () => void;
   onAssignWorker?: (workerId: string) => void;
   onMarkAttendance?: (
     assignmentId: string,
@@ -81,6 +83,7 @@ export function ShiftDetailDialog({
   onReject,
   onCancelShift,
   onEditShift,
+  onPublish,
   onAssignWorker,
   onMarkAttendance,
   onBroadcast,
@@ -129,6 +132,11 @@ export function ShiftDetailDialog({
           </Dialog.Title>
           <div className="mt-2 flex items-center gap-2">
             <StatusBadge status={shift.displayStatus} />
+            {isOwner && shift.isDraft && (
+              <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                {t("shift.draft")}
+              </span>
+            )}
             {!isOwner && workerNeedsReconfirm && (
               <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
                 {t("reconfirm.badge")}
@@ -202,6 +210,14 @@ export function ShiftDetailDialog({
                 {t("shift.edit")}
               </Button>
             )}
+            {isOwner &&
+              onPublish &&
+              shift.isDraft &&
+              shift.displayStatus !== "Cancelled" && (
+                <Button onClick={onPublish} disabled={isLoading}>
+                  {t("shift.publish")}
+                </Button>
+              )}
             {isOwner &&
               onBroadcast &&
               shift.displayStatus !== "Cancelled" &&

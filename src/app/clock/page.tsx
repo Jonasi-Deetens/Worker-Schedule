@@ -7,8 +7,13 @@ export const metadata = {
   title: "Time clock — Work Calendar",
 };
 
-export default async function ClockPage() {
+export default async function ClockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ shiftId?: string }>;
+}) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  return <ClockClient />;
+  const { shiftId } = await searchParams;
+  return <ClockClient initialShiftId={shiftId ?? null} />;
 }

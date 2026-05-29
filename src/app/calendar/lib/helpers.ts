@@ -13,6 +13,9 @@ export interface SelectedShift {
   subscriptionId?: string;
   subscriptionStatus?: string;
   notes?: string | null;
+  requiredSkillId?: string | null;
+  locationId?: string | null;
+  isDraft?: boolean;
 }
 
 export function combineDateTime(date: string, time: string): Date {
@@ -46,6 +49,9 @@ export function eventToSelectedShift(event: CalendarEvent): SelectedShift | null
     subscriptionId: props.subscriptionId,
     subscriptionStatus: props.subscriptionStatus,
     notes: props.notes ?? null,
+    requiredSkillId: props.requiredSkillId ?? null,
+    locationId: props.locationId ?? null,
+    isDraft: props.isDraft ?? false,
   };
 }
 

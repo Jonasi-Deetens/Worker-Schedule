@@ -19,12 +19,21 @@ export class ShiftReadModel {
     /** When true, drafts (publishedAt = null) are returned too. Workers never see drafts. */
     includeDrafts?: boolean;
   }) {
+    // The required-skill filter must only gate *open* shifts. A worker who
+    // lacks the skill can still have been assigned/subscribed before the skill
+    // requirement was added (or by an owner override), and must always be able
+    // to see shifts they are already on. So a shift is visible when it has no
+    // required skill, OR the worker has the skill, OR the worker already holds
+    // an assignment on it.
     const skillFilter =
       input.workerSkillIds !== undefined
         ? {
             OR: [
               { requiredSkillId: null },
               { requiredSkillId: { in: input.workerSkillIds } },
+              ...(input.workerId
+                ? [{ assignments: { some: { userId: input.workerId } } }]
+                : []),
             ],
           }
         : {};
@@ -47,6 +56,7 @@ export class ShiftReadModel {
           },
         },
         requiredSkill: { select: { id: true, name: true, color: true } },
+        location: { select: { id: true, name: true } },
         _count: {
           select: {
             subscriptions: { where: { status: "PENDING" } },

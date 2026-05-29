@@ -11,11 +11,47 @@ export const WEBHOOK_EVENTS = [
 ] as const;
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
+/** Payload enqueued for a retried webhook delivery. */
+export interface WebhookDeliveryJob {
+  subscriptionId: string;
+  event: WebhookEvent;
+  /** Exact JSON body that was signed, so the retry signature stays stable. */
+  body: string;
+}
+
+export type WebhookRetryEnqueue = (job: WebhookDeliveryJob) => Promise<void>;
+
+/** Returns only the host of a URL so we never log the full (secret-y) path. */
+export function webhookHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "invalid-url";
+  }
+}
+
+/**
+ * Default retry enqueuer — lazily imports the pg-boss queue so importing this
+ * service (e.g. from a unit test) never opens a Postgres connection. Failed
+ * deliveries are retried with bounded exponential backoff (up to 5 attempts).
+ */
+const defaultEnqueueRetry: WebhookRetryEnqueue = async (job) => {
+  const { getQueue, JOBS } = await import("@/infrastructure/jobs/queue");
+  const boss = await getQueue();
+  await boss.send(JOBS.WEBHOOK_DELIVER, job, {
+    retryLimit: 5,
+    retryDelay: 10,
+    retryBackoff: true,
+  });
+};
+
 export class WebhookService {
   constructor(
     private readonly db: PrismaClient,
     /** Injectable fetch makes the service testable without nock. */
     private readonly fetcher: typeof fetch = fetch,
+    /** Injectable retry enqueuer keeps the pg-boss dependency test-friendly. */
+    private readonly enqueueRetry: WebhookRetryEnqueue = defaultEnqueueRetry,
   ) {}
 
   list(businessId: string) {
@@ -62,9 +98,14 @@ export class WebhookService {
   }
 
   /**
-   * Fire-and-forget delivery to every subscriber. Failures are logged but
-   * never bubble back to the caller because webhooks are a best-effort fan-out.
-   * A future job retries failed deliveries with exponential backoff.
+   * Fan delivery out to every subscriber. The first attempt happens inline; a
+   * non-2xx response or a thrown fetch error is treated as a failure and the
+   * delivery is re-enqueued onto pg-boss for bounded exponential-backoff retry.
+   * Failures never bubble back to the caller — webhooks are best-effort and
+   * must not break the originating mutation.
+   *
+   * Note: we log the subscription id + host only, never the full URL, since
+   * the path/query can carry per-tenant secrets.
    */
   async fan(
     event: WebhookEvent,
@@ -96,7 +137,7 @@ export class WebhookService {
           .update(body)
           .digest("hex");
         try {
-          await this.fetcher(sub.url, {
+          const response = await this.fetcher(sub.url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -105,13 +146,28 @@ export class WebhookService {
             },
             body,
           });
+          if (!response.ok) {
+            throw new Error(`Endpoint returned status ${response.status}`);
+          }
         } catch (err) {
           logger.warn({
             event: "webhook.delivery.failed",
             subscriptionId: sub.id,
-            url: sub.url,
+            host: webhookHost(sub.url),
             error: err instanceof Error ? err.message : String(err),
           });
+          await this.enqueueRetry({ subscriptionId: sub.id, event, body }).catch(
+            (enqueueErr) =>
+              logger.warn({
+                event: "webhook.retry.enqueueFailed",
+                subscriptionId: sub.id,
+                host: webhookHost(sub.url),
+                error:
+                  enqueueErr instanceof Error
+                    ? enqueueErr.message
+                    : String(enqueueErr),
+              }),
+          );
         }
       }),
     );

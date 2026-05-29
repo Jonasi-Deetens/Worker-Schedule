@@ -100,6 +100,50 @@ describe("BulkShiftService", () => {
       expect(call.data.startsAt.getTime()).toBe(startsAt.getTime() + 30 * 60_000);
     });
 
+    it("marks CONFIRMED assignments PENDING_RECONFIRMATION and notifies", async () => {
+      const startsAt = new Date(Date.now() + 86_400_000);
+      const endsAt = new Date(startsAt.getTime() + 3 * 3600_000);
+      db.shift.findMany.mockResolvedValue([
+        {
+          id: "s1",
+          businessId: "b",
+          startsAt,
+          endsAt,
+          roleLabel: "Server",
+          status: "OPEN",
+        },
+      ]);
+      db.shift.update.mockResolvedValue({ id: "s1" });
+      // One CONFIRMED worker on the shift needs to reconfirm the new slot.
+      db.shiftAssignment.findMany.mockResolvedValue([
+        { id: "a1", userId: "w1", status: "CONFIRMED" },
+      ]);
+      db.shiftAssignment.update.mockResolvedValue({ id: "a1" });
+      db.notification.create.mockResolvedValue({ id: "n1" });
+      db.auditEvent.create.mockResolvedValue({ id: "audit" });
+
+      await service.reschedule({
+        businessId: "b",
+        ownerId: "u",
+        ids: ["s1"],
+        deltaMinutes: 60,
+      });
+
+      expect(db.shiftAssignment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { shiftId: "s1", status: "CONFIRMED" },
+        }),
+      );
+      expect(db.shiftAssignment.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: "PENDING_RECONFIRMATION" } }),
+      );
+      expect(db.notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ type: "SHIFT_RESCHEDULED" }),
+        }),
+      );
+    });
+
     it("refuses to move a shift into the past", async () => {
       const startsAt = new Date(Date.now() + 10_000); // 10s in the future
       db.shift.findMany.mockResolvedValue([

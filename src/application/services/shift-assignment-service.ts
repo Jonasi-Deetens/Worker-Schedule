@@ -5,6 +5,7 @@ import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { DimonaService } from "./dimona-service";
 import { NotificationService } from "./notification-service";
+import { SchedulingRules } from "./scheduling-rules";
 
 export interface ShiftConflictWarning {
   userId: string;
@@ -21,9 +22,11 @@ export interface ShiftConflictWarning {
  */
 export class ShiftAssignmentService {
   private readonly notifications: NotificationService;
+  private readonly rules: SchedulingRules;
 
   constructor(private readonly db: PrismaClient) {
     this.notifications = new NotificationService(db);
+    this.rules = new SchedulingRules(db);
   }
 
   /**
@@ -46,7 +49,12 @@ export class ShiftAssignmentService {
     if (shift.status === "CANCELLED") {
       throw new Error("Cannot assign to a cancelled shift");
     }
-    if (shift.assignments.length >= shift.requiredSpots) {
+    // Only CONFIRMED assignments occupy a spot (mirrors the read model and the
+    // approve/broadcast paths) — workers in PENDING_RECONFIRMATION don't count.
+    const confirmedCount = shift.assignments.filter(
+      (a) => a.status === "CONFIRMED",
+    ).length;
+    if (confirmedCount >= shift.requiredSpots) {
       throw new Error("Shift already at capacity");
     }
     if (shift.assignments.some((a) => a.userId === input.workerId)) {
@@ -59,6 +67,18 @@ export class ShiftAssignmentService {
     if (!worker) throw new Error("Worker not found in this business");
     if (worker.status !== "ACTIVE") {
       throw new Error("Worker is not active");
+    }
+
+    // Enforce the shift's required skill on the direct-assign path too — the
+    // apply/broadcast paths already filter on it, but a manager assigning
+    // directly could otherwise bypass the requirement.
+    if (shift.requiredSkillId) {
+      const hasSkill = await this.db.userSkill.findFirst({
+        where: { userId: input.workerId, skillId: shift.requiredSkillId },
+      });
+      if (!hasSkill) {
+        throw new Error("Worker does not have the required skill");
+      }
     }
 
     const overlapping = await this.db.shiftAssignment.findFirst({
@@ -81,6 +101,13 @@ export class ShiftAssignmentService {
       },
     });
     if (timeOff) throw new Error("Worker has approved time-off in this range");
+
+    // Centralised scheduling-rule enforcement (min rest, weekly cap, age,
+    // time-off) — identical guard used by approve/broadcast/swap.
+    await this.rules.assertAssignable(input.workerId, {
+      startsAt: shift.startsAt,
+      endsAt: shift.endsAt,
+    });
 
     const existingSub = await this.db.shiftSubscription.findUnique({
       where: { shiftId_userId: { shiftId: input.shiftId, userId: input.workerId } },
@@ -148,6 +175,88 @@ export class ShiftAssignmentService {
     }
 
     return assignment;
+  }
+
+  /**
+   * Owner/manager removes a worker from a shift. Drops the assignment and the
+   * mirrored subscription, notifies the worker, cancels any Dimona declaration
+   * for auto-declare contracts, and re-opens the shift if it was FILLED.
+   */
+  async unassignWorker(input: {
+    shiftId: string;
+    workerId: string;
+    businessId: string;
+    ownerId: string;
+  }) {
+    const shift = await this.db.shift.findFirst({
+      where: { id: input.shiftId, businessId: input.businessId },
+    });
+    if (!shift) throw new Error("Shift not found");
+
+    const assignment = await this.db.shiftAssignment.findUnique({
+      where: {
+        shiftId_userId: { shiftId: input.shiftId, userId: input.workerId },
+      },
+    });
+    if (!assignment) throw new Error("Assignment not found");
+
+    const worker = await this.db.user.findUnique({
+      where: { id: input.workerId },
+      select: { contractType: true },
+    });
+
+    await this.db.shiftAssignment.delete({ where: { id: assignment.id } });
+    await this.db.shiftSubscription.updateMany({
+      where: { shiftId: input.shiftId, userId: input.workerId },
+      data: { status: "WITHDRAWN" },
+    });
+
+    // A removed worker frees a spot — a FILLED shift becomes OPEN again.
+    if (shift.status === "FILLED") {
+      await this.db.shift.update({
+        where: { id: shift.id },
+        data: { status: "OPEN" },
+      });
+    }
+
+    await this.db.notification.create({
+      data: {
+        userId: input.workerId,
+        type: "SHIFT_CANCELLED",
+        title: "You were removed from a shift",
+        body: `${shift.roleLabel} on ${shift.startsAt.toISOString().slice(0, 10)}`,
+        payload: { shiftId: shift.id },
+      },
+    });
+
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.ownerId,
+        action: "SHIFT_UPDATED",
+        entityType: "Shift",
+        entityId: shift.id,
+        metadata: { unassignedWorkerId: input.workerId },
+      },
+    });
+
+    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
+      await new DimonaService(this.db)
+        .cancel({ shiftId: input.shiftId, workerId: input.workerId })
+        .catch((err) =>
+          logger.warn({
+            event: "dimona.cancel.failed",
+            shiftId: input.shiftId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+    }
+
+    publishEvent(input.businessId, {
+      type: "assignment.changed",
+      shiftId: shift.id,
+    });
+
+    return { success: true };
   }
 
   /**
@@ -353,7 +462,7 @@ export class ShiftAssignmentService {
 
     const worker = await this.db.user.findUnique({
       where: { id: input.userId },
-      select: { name: true },
+      select: { name: true, contractType: true },
     });
 
     await this.db.shiftAssignment.delete({ where: { id: assignment.id } });
@@ -361,6 +470,19 @@ export class ShiftAssignmentService {
       where: { shiftId: input.shiftId, userId: input.userId },
       data: { status: "WITHDRAWN" },
     });
+
+    // The spot is freed — cancel any Dimona declaration for auto-declare types.
+    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
+      await new DimonaService(this.db)
+        .cancel({ shiftId: input.shiftId, workerId: input.userId })
+        .catch((err) =>
+          logger.warn({
+            event: "dimona.cancel.failed",
+            shiftId: input.shiftId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+    }
 
     const business = await this.db.business.findUnique({
       where: { id: input.businessId },

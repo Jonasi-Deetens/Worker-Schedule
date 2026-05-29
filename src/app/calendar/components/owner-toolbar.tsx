@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { Plus, Send } from "lucide-react";
+import { CheckSquare, Plus, Send } from "lucide-react";
 import { startOfWeek } from "date-fns";
 import { Button } from "@/interface/components/ui/button";
 
@@ -11,6 +11,11 @@ interface OwnerToolbarProps {
   isPublishing: boolean;
   isDuplicating: boolean;
   isCancellingDay: boolean;
+  /** Bulk-select mode: lets the owner pick shifts and move them together. */
+  bulkMode: boolean;
+  onToggleBulkMode: () => void;
+  selectedCount: number;
+  onOpenBulkReschedule: () => void;
 }
 
 /**
@@ -27,10 +32,46 @@ export function OwnerToolbar({
   isPublishing,
   isDuplicating,
   isCancellingDay,
+  bulkMode,
+  onToggleBulkMode,
+  selectedCount,
+  onOpenBulkReschedule,
 }: OwnerToolbarProps) {
   const t = useTranslations();
+
+  // In bulk-select mode the toolbar collapses to the selection controls so the
+  // owner can focus on picking shifts and applying one offset to them all.
+  if (bulkMode) {
+    return (
+      <>
+        <span className="text-sm font-medium text-slate-700">
+          {t("bulk.selectedCount", { count: selectedCount })}
+        </span>
+        <Button
+          onClick={onOpenBulkReschedule}
+          size="sm"
+          disabled={selectedCount === 0}
+        >
+          {t("bulk.rescheduleSelected")}
+        </Button>
+        <Button onClick={onToggleBulkMode} size="sm" variant="outline">
+          {t("bulk.exitSelect")}
+        </Button>
+      </>
+    );
+  }
+
   return (
     <>
+      <Button
+        onClick={onToggleBulkMode}
+        size="sm"
+        variant="outline"
+        title={t("bulk.bulkEditHint")}
+      >
+        <CheckSquare className="mr-1 h-4 w-4" />
+        {t("bulk.bulkEdit")}
+      </Button>
       <Button
         onClick={onPublishWeek}
         size="sm"

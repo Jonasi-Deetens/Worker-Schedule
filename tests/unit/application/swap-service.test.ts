@@ -83,3 +83,37 @@ describe("SwapService.findCandidates", () => {
     expect(result).toEqual([{ id: "u2", name: "Bea" }]);
   });
 });
+
+describe("SwapService.decide (accept)", () => {
+  it("enforces scheduling rules on the worker taking over the shift", async () => {
+    const db = createPrismaMock();
+    db.shiftSwap.findFirst.mockResolvedValue({
+      id: "swap1",
+      toUserId: "u2",
+      status: "PENDING",
+      fromSubscriptionId: "sub1",
+      fromSubscription: {
+        userId: "u1",
+        shift: {
+          id: "s1",
+          businessId: "b1",
+          startsAt: new Date("2026-06-01T10:00:00Z"),
+          endsAt: new Date("2026-06-01T14:00:00Z"),
+          roleLabel: "Bartender",
+        },
+      },
+    });
+    // No direct overlapping assignment...
+    db.shiftAssignment.findFirst.mockResolvedValue(null);
+    db.shiftAssignment.findMany.mockResolvedValue([]);
+    db.user.findUnique.mockResolvedValue(null);
+    // ...but the worker has approved time-off in the slot (centralized guard).
+    db.timeOffRequest.findFirst.mockResolvedValue({ id: "to1" });
+
+    const svc = new SwapService(asPrisma(db));
+    await expect(
+      svc.decide({ id: "swap1", decidingUserId: "u2", accept: true }),
+    ).rejects.toThrow(/time-off/i);
+    expect(db.shiftAssignment.create).not.toHaveBeenCalled();
+  });
+});

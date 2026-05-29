@@ -14,17 +14,70 @@ import { toast, trpcErrorMessage } from "@/lib/toast";
 
 export function TimeOffClient({ role }: { role: UserRole }) {
   const t = useTranslations();
-  const isOwner = role === "OWNER" || role === "MANAGER";
+  const isManager = role === "MANAGER";
+  const isApprover = role === "OWNER" || role === "MANAGER";
+
   return (
     <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
         <h1 className="text-2xl font-bold text-slate-900">{t("timeOff.title")}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          {isOwner ? t("timeOff.ownerSubtitle") : t("timeOff.workerSubtitle")}
+          {isApprover ? t("timeOff.ownerSubtitle") : t("timeOff.workerSubtitle")}
         </p>
-        {isOwner ? <OwnerView /> : <WorkerView />}
+        {/* Managers both approve their team's requests and submit their own, so
+            they get both views behind a tab switcher. Owners only approve. */}
+        {isManager ? (
+          <ManagerView />
+        ) : isApprover ? (
+          <OwnerView />
+        ) : (
+          <WorkerView />
+        )}
       </main>
+    </div>
+  );
+}
+
+function ManagerView() {
+  const t = useTranslations();
+  const [tab, setTab] = useState<"manage" | "mine">("manage");
+
+  return (
+    <div className="mt-4">
+      <div
+        role="tablist"
+        aria-label={t("timeOff.title")}
+        className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "manage"}
+          onClick={() => setTab("manage")}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+            tab === "manage"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          {t("timeOff.manageRequests")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "mine"}
+          onClick={() => setTab("mine")}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+            tab === "mine"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          {t("timeOff.myRequests")}
+        </button>
+      </div>
+      {tab === "manage" ? <OwnerView /> : <WorkerView />}
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   timeEntryApproveSchema,
   timeEntryClockInSchema,
   timeEntryClockOutSchema,
+  timeEntryRejectSchema,
+  timeEntryUpdateSchema,
 } from "../schemas";
 import { requireBusinessId, timeClockService } from "../services";
 
@@ -63,6 +65,39 @@ export const timeClockRouter = router({
           ids: input.ids,
           businessId,
           approverId: ctx.session.user.id,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  reject: managerProcedure
+    .input(timeEntryRejectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await timeClockService.rejectMany({
+          ids: input.ids,
+          businessId,
+          reviewerId: ctx.session.user.id,
+          reason: input.reason,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+  update: managerProcedure
+    .input(timeEntryUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await timeClockService.updateEntry({
+          id: input.id,
+          businessId,
+          reviewerId: ctx.session.user.id,
+          clockInAt: input.clockInAt,
+          clockOutAt: input.clockOutAt ?? undefined,
+          breakMinutes: input.breakMinutes,
+          notes: input.notes,
         });
       } catch (error) {
         mapServiceError(error);

@@ -25,10 +25,13 @@ describe("ShiftAssignmentService.assignWorker", () => {
     assignments: [],
   };
 
-  it("rejects when the shift is already at capacity", async () => {
+  it("rejects when the shift is already at capacity (CONFIRMED only)", async () => {
     prisma.shift.findFirst.mockResolvedValue({
       ...baseShift,
-      assignments: [{ userId: "w1" }, { userId: "w2" }],
+      assignments: [
+        { userId: "w1", status: "CONFIRMED" },
+        { userId: "w2", status: "CONFIRMED" },
+      ],
     });
     await expect(
       service.assignWorker({
@@ -38,6 +41,92 @@ describe("ShiftAssignmentService.assignWorker", () => {
         ownerId: OWNER_ID,
       }),
     ).rejects.toThrow(/capacity/i);
+  });
+
+  it("does NOT count PENDING_RECONFIRMATION assignments against capacity", async () => {
+    // requiredSpots 2, one CONFIRMED + one awaiting reconfirmation => a spot is
+    // still free, so the assign must proceed past the capacity gate.
+    prisma.shift.findFirst.mockResolvedValue({
+      ...baseShift,
+      assignments: [
+        { userId: "w1", status: "CONFIRMED" },
+        { userId: "w2", status: "PENDING_RECONFIRMATION" },
+      ],
+    });
+    prisma.user.findFirst.mockResolvedValue({
+      id: "w3",
+      businessId: BUSINESS_ID,
+      status: "ACTIVE",
+      contractType: "EMPLOYEE",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue(null);
+    prisma.timeOffRequest.findFirst.mockResolvedValue(null);
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.shiftSubscription.findUnique.mockResolvedValue(null);
+    prisma.shiftAssignment.create.mockResolvedValue({ id: "a3" });
+    prisma.shiftSubscription.create.mockResolvedValue({ id: "sub3" });
+
+    const result = await service.assignWorker({
+      shiftId: "s1",
+      workerId: "w3",
+      businessId: BUSINESS_ID,
+      ownerId: OWNER_ID,
+    });
+    expect(result).toEqual({ id: "a3" });
+  });
+
+  it("rejects when the worker lacks the shift's required skill", async () => {
+    prisma.shift.findFirst.mockResolvedValue({
+      ...baseShift,
+      requiredSkillId: "skill-1",
+    });
+    prisma.user.findFirst.mockResolvedValue({
+      id: "w1",
+      businessId: BUSINESS_ID,
+      status: "ACTIVE",
+    });
+    prisma.userSkill.findFirst.mockResolvedValue(null);
+    await expect(
+      service.assignWorker({
+        shiftId: "s1",
+        workerId: "w1",
+        businessId: BUSINESS_ID,
+        ownerId: OWNER_ID,
+      }),
+    ).rejects.toThrow(/required skill/i);
+  });
+
+  it("enforces scheduling rules (min rest) on the direct-assign path", async () => {
+    prisma.shift.findFirst.mockResolvedValue(baseShift);
+    prisma.user.findFirst.mockResolvedValue({
+      id: "w1",
+      businessId: BUSINESS_ID,
+      status: "ACTIVE",
+    });
+    prisma.shiftAssignment.findFirst.mockResolvedValue(null);
+    prisma.timeOffRequest.findFirst.mockResolvedValue(null);
+    // A neighbouring shift ending only 2h before the candidate start breaks the
+    // 11h minimum-rest rule enforced by the centralized guard.
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      {
+        shift: {
+          startsAt: new Date("2026-06-01T04:00:00Z"),
+          endsAt: new Date("2026-06-01T08:00:00Z"),
+        },
+      },
+    ]);
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.assignWorker({
+        shiftId: "s1",
+        workerId: "w1",
+        businessId: BUSINESS_ID,
+        ownerId: OWNER_ID,
+      }),
+    ).rejects.toThrow(/rest/i);
+    expect(prisma.shiftAssignment.create).not.toHaveBeenCalled();
   });
 
   it("rejects when the worker is not active", async () => {

@@ -124,7 +124,7 @@ export const shiftRouter = router({
       });
     }),
 
-  rescheduleConflicts: ownerProcedure
+  rescheduleConflicts: managerProcedure
     .input(rescheduleCheckSchema)
     .query(async ({ ctx, input }) => {
       const businessId = requireBusinessId(ctx.session.user.businessId);
@@ -140,7 +140,7 @@ export const shiftRouter = router({
       }
     }),
 
-  update: ownerProcedure
+  update: managerProcedure
     .input(updateShiftSchema)
     .mutation(async ({ ctx, input }) => {
       const businessId = requireBusinessId(ctx.session.user.businessId);
@@ -201,6 +201,22 @@ export const shiftRouter = router({
       const businessId = requireBusinessId(ctx.session.user.businessId);
       try {
         return await shiftAssignmentService.assignWorker({
+          shiftId: input.shiftId,
+          workerId: input.workerId,
+          businessId,
+          ownerId: ctx.session.user.id,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
+
+  unassign: managerProcedure
+    .input(directAssignSchema)
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await shiftAssignmentService.unassignWorker({
           shiftId: input.shiftId,
           workerId: input.workerId,
           businessId,

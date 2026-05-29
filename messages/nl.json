@@ -6,7 +6,8 @@
   "nav": {
     "settings": "Instellingen",
     "menu": "Menu openen",
-    "close": "Menu sluiten"
+    "close": "Menu sluiten",
+    "switchBusiness": "Van zaak wisselen"
   },
   "me": {
     "greeting": "Vandaag",
@@ -64,7 +65,29 @@
     "businessIdHelp": "Vraag je manager om dit ID.",
     "invalidCredentials": "Ongeldige e-mail of wachtwoord.",
     "noAccount": "Nog geen account?",
-    "alreadyHaveAccount": "Heb je al een account?"
+    "alreadyHaveAccount": "Heb je al een account?",
+    "totpCode": "Authenticatiecode",
+    "totpCodeHelp": "Laat dit leeg tenzij tweefactorauthenticatie is ingeschakeld voor je account.",
+    "totpRequired": "Voer de 6-cijferige code uit je authenticator-app in.",
+    "totpInvalid": "Die authenticatiecode is onjuist of verlopen.",
+    "accountNotActive": "Je account is niet actief. Neem contact op met je manager.",
+    "forgotPassword": "Wachtwoord vergeten?",
+    "forgotTitle": "Wachtwoord opnieuw instellen",
+    "forgotSubtitle": "Voer je e-mailadres in en we sturen je een link om een nieuw wachtwoord te kiezen.",
+    "sendResetLink": "Reset-link versturen",
+    "sending": "Versturen…",
+    "resetEmailSent": "Als er een account bestaat voor dat e-mailadres, is er een reset-link onderweg. Controleer je inbox.",
+    "backToLogin": "Terug naar inloggen",
+    "resetTitle": "Kies een nieuw wachtwoord",
+    "resetSubtitle": "Kies een sterk wachtwoord dat je nergens anders gebruikt.",
+    "newPassword": "Nieuw wachtwoord",
+    "confirmPassword": "Wachtwoord bevestigen",
+    "resetCta": "Wachtwoord bijwerken",
+    "resetting": "Bijwerken…",
+    "resetSuccess": "Je wachtwoord is bijgewerkt. Je kunt nu inloggen.",
+    "passwordsDontMatch": "Die wachtwoorden komen niet overeen.",
+    "invalidLink": "Deze reset-link is ongeldig of onvolledig.",
+    "requestNewLink": "Nieuwe link aanvragen"
   },
   "calendar": {
     "title": "Agenda",
@@ -129,6 +152,9 @@
     "requiredSpots": "Benodigde plekken",
     "requiredSkill": "Vereiste skill",
     "noSkill": "Geen",
+    "location": "Locatie",
+    "noLocation": "Geen",
+    "draft": "Concept",
     "notes": "Notities (optioneel)",
     "notesPlaceholder": "Extra info",
     "broadcast": "Naar alle geschikte werknemers sturen",
@@ -171,7 +197,9 @@
     "markRead": "Markeer als gelezen",
     "markAllRead": "Markeer alles als gelezen",
     "unreadAria": "Meldingen, {count} ongelezen",
-    "ariaLabel": "Meldingen"
+    "ariaLabel": "Meldingen",
+    "reminder24hTitle": "Shift over 24 uur",
+    "reminder24hBody": "{role} om {time}"
   },
   "confirm": {
     "cancelShiftTitle": "Deze shift annuleren?",
@@ -214,6 +242,8 @@
     "clockedIn": "Ingeklokt",
     "clockedOut": "Uitgeklokt",
     "timeEntriesApproved": "Uren goedgekeurd",
+    "timeEntriesRejected": "Uren afgewezen",
+    "timeEntryUpdated": "Registratie bijgewerkt",
     "rosterApplied": "Weekrooster toegepast",
     "reconfirmConfirmed": "Shift opnieuw bevestigd",
     "reconfirmDeclined": "Shift afgewezen — de eigenaar is op de hoogte gebracht"
@@ -262,7 +292,37 @@
     "noShowsBadge": "{count, plural, one {# no-show} other {# no-shows}}",
     "docsAttention": "Documenten die opvolging nodig hebben",
     "docsExpired": "Verlopen op {date}",
-    "docsExpiringOn": "Verloopt op {date}"
+    "docsExpiringOn": "Verloopt op {date}",
+    "nationalNumber": "Rijksregisternummer (NISS)",
+    "nationalNumberHelp": "Belgisch rijksregisternummer — gebruikt voor loonexports en Dimona-aangiftes.",
+    "expiringTitle": "Documenten die binnenkort verlopen",
+    "expiringEmpty": "Geen documenten die binnen 30 dagen verlopen.",
+    "expiringWorker": "{name} · {kind}"
+  },
+  "integrations": {
+    "title": "Integraties",
+    "subtitle": "Koppel externe diensten zoals de Belgische Dimona.",
+    "dimonaTitle": "Dimona (RSZ/ONSS)",
+    "dimonaHelp": "Stel je werkgeversnummer en API-gegevens in. Flexi-, extra- en studentenshifts worden dan automatisch aangegeven bij toewijzing en geannuleerd wanneer een shift wordt geannuleerd of een werknemer wordt verwijderd.",
+    "employerId": "Werkgeversnummer",
+    "token": "API-token",
+    "tokenSet": "•••••••• (opgeslagen)",
+    "tokenPlaceholder": "Plak je Dimona API-token",
+    "tokenHelp": "Versleuteld opgeslagen (AES-256-GCM). Laat leeg om het huidige token te behouden.",
+    "baseUrl": "API-basis-URL (optioneel)",
+    "save": "Integratie opslaan",
+    "saved": "Integratie-instellingen opgeslagen"
+  },
+  "locations": {
+    "title": "Locaties",
+    "subtitle": "Beheer de plaatsen waar shifts plaatsvinden.",
+    "name": "Naam",
+    "address": "Adres",
+    "add": "Locatie toevoegen",
+    "saved": "Locatie opgeslagen",
+    "removed": "Locatie verwijderd",
+    "empty": "Nog geen locaties. Voeg hierboven je eerste toe.",
+    "delete": "Locatie verwijderen"
   },
   "invite": {
     "title": "Sluit je aan bij je team",
@@ -275,7 +335,8 @@
     "copyLink": "Kopieer link",
     "linkCopied": "Link gekopieerd",
     "sendEmail": "Versturen via e-mail",
-    "expiresAt": "Vervalt {date}"
+    "expiresAt": "Vervalt {date}",
+    "emailPlaceholder": "jij@voorbeeld.com"
   },
   "skills": {
     "title": "Skills",
@@ -308,7 +369,9 @@
     "cancel": "Annuleren",
     "revoke": "Intrekken",
     "editTitle": "Verlofaanvraag bewerken",
-    "editHelp": "Pas de data of reden aan. Goedgekeurde aanvragen gaan terug naar 'in behandeling' voor herziening."
+    "editHelp": "Pas de data of reden aan. Goedgekeurde aanvragen gaan terug naar 'in behandeling' voor herziening.",
+    "myRequests": "Mijn aanvragen",
+    "manageRequests": "Aanvragen beheren"
   },
   "attendance": {
     "title": "Aanwezigheid",
@@ -328,6 +391,8 @@
     "title": "Inzichten",
     "subtitle": "Bezetting, loonkosten en kost-omzetratio.",
     "scheduled": "Ingepland",
+    "actual": "Werkelijk",
+    "variance": "Verschil",
     "fillRate": "Bezetting",
     "labourCost": "Loonkosten",
     "costRevenue": "Kost / omzet",
@@ -335,7 +400,13 @@
     "filled": "Gevuld",
     "cost": "Kost",
     "revenue": "Omzet",
-    "costToRevenue": "Kost/omzet"
+    "costToRevenue": "Kost/omzet",
+    "noShow": "No-show",
+    "range": "Periode",
+    "weeksOption": "{count} weken",
+    "loading": "Laden…",
+    "revenueAdd": "Toevoegen",
+    "revenueSaved": "Omzet opgeslagen"
   },
   "myData": {
     "title": "Mijn gegevens",
@@ -416,10 +487,20 @@
   },
   "hours": {
     "title": "Mijn uren",
-    "subtitle": "Geplande uren uit goedgekeurde shifts.",
+    "subtitle": "Geplande uren en je goedgekeurde gewerkte uren.",
     "thisWeek": "Deze week",
     "thisMonth": "Deze maand",
     "thisYear": "Dit jaar",
+    "scheduled": "Gepland",
+    "worked": "Gewerkt (goedgekeurd)",
+    "recentEntries": "Recente registraties",
+    "noEntries": "Geen registraties deze maand.",
+    "open": "Open",
+    "status": {
+      "PENDING": "In afwachting",
+      "APPROVED": "Goedgekeurd",
+      "REJECTED": "Afgewezen"
+    },
     "loading": "Laden…",
     "noBusiness": "Je bent nog niet aan een bedrijf gekoppeld."
   },
@@ -427,6 +508,10 @@
     "title": "Tijdsregistratie",
     "clockIn": "Inklokken",
     "clockOut": "Uitklokken",
+    "clockInForShift": "Inklokken voor deze shift",
+    "clockInPlain": "Inklokken zonder shift",
+    "forShift": "Inklokken voor je volgende shift",
+    "linkedShift": "Gekoppeld aan {role} · {window}",
     "running": "Bezig sinds {minutes} min",
     "break": "Pauzeminuten",
     "notes": "Notities",
@@ -438,9 +523,12 @@
   },
   "payroll": {
     "title": "Loon & uren",
-    "subtitle": "Keur uren goed en exporteer loonbestanden.",
+    "subtitle": "Beoordeel uren en exporteer loonbestanden.",
     "export": "CSV downloaden",
-    "exportXlsx": "XLSX downloaden",
+    "exportTitle": "Exporteren naar loon",
+    "exportHelp": "Download goedgekeurde uren als CSV in de indeling van je loonprovider.",
+    "provider": "Provider",
+    "providerGeneric": "Generieke CSV",
     "noRows": "Geen goedgekeurde uren in dit bereik.",
     "grossHours": "{value} bruto",
     "breakMinutes": "{value} pauze",
@@ -448,7 +536,19 @@
     "tabPending": "In afwachting",
     "tabApproved": "Goedgekeurd",
     "approvedMeta": "Goedgekeurd door {name} · {date}",
-    "noApproved": "Nog geen goedgekeurde uren."
+    "noApproved": "Nog geen goedgekeurde uren.",
+    "rejectSelected": "Selectie afwijzen",
+    "rejectReason": "Reden afwijzing (optioneel)",
+    "rejectReasonPlaceholder": "bv. vergeten uit te klokken",
+    "filterFrom": "Van",
+    "filterTo": "Tot",
+    "clearFilter": "Filter wissen",
+    "editClockIn": "Ingeklokt",
+    "editClockOut": "Uitgeklokt",
+    "editBreak": "Pauze (min)",
+    "editNotes": "Notities",
+    "editCancel": "Annuleren",
+    "editSave": "Wijzigingen opslaan"
   },
   "templates": {
     "title": "Shift-sjablonen",
@@ -474,7 +574,57 @@
     "cancelDay": "Vandaag annuleren",
     "cancelDayHint": "Annuleer alle shifts die vandaag starten.",
     "confirmCancelToday": "Alle shifts van vandaag annuleren?",
-    "cancelled": "{count} shifts geannuleerd"
+    "cancelled": "{count} shifts geannuleerd",
+    "bulkEdit": "Bulk bewerken",
+    "bulkEditHint": "Selecteer meerdere shifts en verplaats ze allemaal tegelijk.",
+    "selectedCount": "{count, plural, =0 {Geen shifts geselecteerd} =1 {1 shift geselecteerd} other {# shifts geselecteerd}}",
+    "rescheduleSelected": "Selectie verplaatsen",
+    "exitSelect": "Klaar",
+    "rescheduled": "{count} shifts verplaatst",
+    "rescheduleTitle": "Geselecteerde shifts verplaatsen",
+    "rescheduleBody": "{count, plural, =1 {Verschuif de geselecteerde shift met een vaste tijd.} other {Verschuif alle # geselecteerde shifts met dezelfde tijd.}}",
+    "rescheduleDirection": "Richting",
+    "rescheduleEarlier": "Vroeger",
+    "rescheduleLater": "Later",
+    "rescheduleDays": "Dagen",
+    "rescheduleHours": "Uren",
+    "rescheduleMinutes": "Minuten",
+    "rescheduleApply": "Verplaatsing toepassen"
+  },
+  "reschedule": {
+    "conflictTitle": "Verplaatsing bevestigen",
+    "conflictBody": "Deze shift verplaatsen botst met een andere shift voor deze medewerkers. Hun toewijzing gaat naar \"opnieuw bevestigen\" en ze moeten de nieuwe tijd accepteren:",
+    "conflictCancel": "Originele tijd behouden",
+    "conflictConfirm": "Toch verplaatsen"
+  },
+  "availabilityTemplates": {
+    "title": "Terugkerende beschikbaarheid",
+    "subtitle": "Stel de wekelijkse uren in die je meestal kunt werken en pas ze toe op komende weken.",
+    "addTitle": "Wekelijks blok toevoegen",
+    "editTitle": "Wekelijks blok bewerken",
+    "day": "Dag",
+    "start": "Begin",
+    "end": "Einde",
+    "add": "Blok toevoegen",
+    "save": "Blok opslaan",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "empty": "Nog geen terugkerende beschikbaarheid. Voeg hierboven je eerste wekelijkse blok toe.",
+    "apply": "Toepassen op komende weken",
+    "applyHelp": "Genereert beschikbaarheid voor de komende 4 weken uit je sjablonen. Bestaande items blijven behouden.",
+    "applied": "{count, plural, =0 {Geen nieuwe blokken — je was al gedekt} =1 {1 beschikbaarheidsblok toegevoegd} other {# beschikbaarheidsblokken toegevoegd}}",
+    "created": "Wekelijks blok toegevoegd",
+    "updated": "Wekelijks blok bijgewerkt",
+    "removed": "Wekelijks blok verwijderd",
+    "weekdays": {
+      "0": "Zondag",
+      "1": "Maandag",
+      "2": "Dinsdag",
+      "3": "Woensdag",
+      "4": "Donderdag",
+      "5": "Vrijdag",
+      "6": "Zaterdag"
+    }
   },
   "audit": {
     "title": "Audit-log",
@@ -576,9 +726,9 @@
         "title": "Tijdsregistratie",
         "intro": "Registreer effectieve start- en eindtijden zodat de loonadministratie klopt.",
         "steps": {
-          "1": "Werknemers: tik via /clock of /me op 'Inklokken' bij aankomst en op 'Uitklokken' op het einde.",
-          "2": "Vergeet je het? De zaakvoerder kan de invoer achteraf bewerken; de originele timestamp blijft in het audit-log.",
-          "3": "Zaakvoerders en managers keuren de invoer goed op /clock; enkel goedgekeurde uren gaan naar payroll."
+          "1": "Werknemers: tik via /clock of /me op 'Inklokken' bij aankomst en op 'Uitklokken' op het einde. Je kunt inklokken op een specifiek toegewezen shift.",
+          "2": "Vergeet je het? Zaakvoerders en managers kunnen de invoer achteraf bewerken; elke aanpassing staat in het audit-log.",
+          "3": "Zaakvoerders en managers bekijken, bewerken, keuren goed of weigeren uren op /payroll/time-entries; enkel goedgekeurde uren gaan naar payroll."
         }
       },
       "timeOff": {
@@ -715,11 +865,11 @@
       },
       "dimona": {
         "title": "Dimona-aangiftes",
-        "intro": "Automatische ONSS/RSZ Dimona IN/OUT bij start van shifts.",
+        "intro": "Automatische ONSS/RSZ Dimona-aangiftes: een IN bij toewijzing van een flexi-, extra- of studentmedewerker, en een annulatie wanneer de shift wordt geannuleerd of de medewerker wordt verwijderd.",
         "steps": {
-          "1": "Vul je Dimona-gegevens eenmalig in onder Instellingen → Developers (versleuteld bewaard).",
+          "1": "Vul je werkgeversnummer en Dimona-gegevens eenmalig in onder Instellingen → Integraties (versleuteld bewaard). Elke medewerker heeft een NISS op zijn profiel nodig.",
           "2": "Zet DIMONA_ENV op 'sandbox' om te testen zonder echte aangiftes en wissel naar 'prod' wanneer je klaar bent.",
-          "3": "Aangiftes lopen automatisch; reconciliatiejobs proberen mislukte aangiftes opnieuw en tonen ze in /audit."
+          "3": "Een dagelijkse reconciliatiejob zoekt naar gaten en verwittigt zaakvoerders in de app; fouten zijn ook zichtbaar in /audit."
         },
         "tip": "Laat DIMONA_ENV in development op 'mock' — dan logt de app de aangifte maar contacteert de ONSS niet."
       },
@@ -791,6 +941,10 @@
     "network": "Netwerkprobleem. Controleer je verbinding.",
     "pastShift": "Die shift is al gestart of voorbij.",
     "availabilityInTimeOff": "Je hebt goedgekeurd verlof in deze periode.",
-    "reconfirmNotNeeded": "Deze shift hoeft niet meer opnieuw bevestigd te worden."
+    "reconfirmNotNeeded": "Deze shift hoeft niet meer opnieuw bevestigd te worden.",
+    "resetTokenInvalid": "Deze reset-link is ongeldig, verlopen of al gebruikt.",
+    "weakPassword": "Het wachtwoord moet minstens 8 tekens bevatten.",
+    "attendanceNoShowHasEntry": "Deze medewerker heeft geklokte of goedgekeurde uren voor deze shift, dus die kan niet als no-show worden gemarkeerd. Wijs eerst de tijdregistratie af.",
+    "timeEntryShiftNoShow": "Deze shift is gemarkeerd als no-show. Controleer de aanwezigheid voordat je deze uren goedkeurt."
   }
 }

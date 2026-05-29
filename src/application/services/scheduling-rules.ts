@@ -153,6 +153,25 @@ export class SchedulingRules {
     ]);
     return results.filter((r): r is RuleViolation => r !== null);
   }
+
+  /**
+   * Hard-enforcement entrypoint shared by every path that commits an
+   * assignment (approve, direct assign, broadcast accept, swap accept). Runs
+   * {@link checkAll} and throws when any rule is violated, so callers cannot
+   * accidentally forget to enforce a subset of the rules. The thrown message
+   * is the concatenation of all violation messages and is mapped to a
+   * user-facing error by the tRPC layer.
+   */
+  async assertAssignable(
+    userId: string,
+    candidate: { startsAt: Date; endsAt: Date },
+    options: { excludeShiftId?: string } = {},
+  ): Promise<void> {
+    const violations = await this.checkAll(userId, candidate, options);
+    if (violations.length > 0) {
+      throw new Error(violations.map((v) => v.message).join("; "));
+    }
+  }
 }
 
 function startOfWeek(d: Date): Date {

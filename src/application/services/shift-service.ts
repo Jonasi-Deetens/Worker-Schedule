@@ -1,7 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
+import { DimonaService } from "./dimona-service";
 import { NotificationService } from "./notification-service";
+import { requestShiftReconfirmations } from "./shift-reconfirmation";
 import { WebhookService } from "./webhook-service";
 
 /**
@@ -12,9 +14,11 @@ import { WebhookService } from "./webhook-service";
  */
 export class ShiftService {
   private readonly notifications: NotificationService;
+  private readonly dimona: DimonaService;
 
   constructor(private readonly db: PrismaClient) {
     this.notifications = new NotificationService(db);
+    this.dimona = new DimonaService(db);
   }
 
   async create(input: {
@@ -26,6 +30,7 @@ export class ShiftService {
     requiredSpots: number;
     notes?: string;
     requiredSkillId?: string | null;
+    locationId?: string | null;
     /** When omitted, the shift is created as a draft (publishedAt = null). */
     publish?: boolean;
   }) {
@@ -45,6 +50,7 @@ export class ShiftService {
         requiredSpots: input.requiredSpots,
         notes: input.notes,
         requiredSkillId: input.requiredSkillId ?? null,
+        locationId: input.locationId ?? null,
         publishedAt: input.publish ? new Date() : null,
         publishedById: input.publish ? input.ownerId : null,
       },
@@ -142,6 +148,9 @@ export class ShiftService {
     roleLabel: string;
     requiredSpots: number;
     notes?: string;
+    requiredSkillId?: string | null;
+    locationId?: string | null;
+    publish?: boolean;
     repeatUntil: Date;
   }) {
     if (input.repeatUntil < input.startsAt) {
@@ -161,6 +170,9 @@ export class ShiftService {
         roleLabel: input.roleLabel,
         requiredSpots: input.requiredSpots,
         notes: input.notes,
+        requiredSkillId: input.requiredSkillId ?? null,
+        locationId: input.locationId ?? null,
+        publish: input.publish,
       });
       created.push(shift);
       cursorStart += ONE_WEEK;
@@ -178,6 +190,8 @@ export class ShiftService {
     roleLabel?: string;
     requiredSpots?: number;
     notes?: string | null;
+    requiredSkillId?: string | null;
+    locationId?: string | null;
   }) {
     const existing = await this.db.shift.findFirst({
       where: { id: input.id, businessId: input.businessId },
@@ -206,6 +220,8 @@ export class ShiftService {
         roleLabel: input.roleLabel,
         requiredSpots: input.requiredSpots,
         notes: input.notes,
+        requiredSkillId: input.requiredSkillId,
+        locationId: input.locationId,
       },
     });
 
@@ -235,58 +251,21 @@ export class ShiftService {
    * the worker either re-confirms the new time or declines (freeing the spot).
    * The mirrored `ShiftSubscription` rows are intentionally left untouched —
    * `ShiftAssignment.status` is the single source of truth for reconfirmation.
+   *
+   * Delegates to the shared {@link requestShiftReconfirmations} helper so the
+   * single-shift update, calendar drag-reschedule and bulk reschedule paths all
+   * behave identically.
    */
   private async requestReconfirmations(input: {
     shift: { id: string; startsAt: Date; endsAt: Date; roleLabel: string };
     businessId: string;
     ownerId: string;
   }) {
-    const assignments =
-      (await this.db.shiftAssignment.findMany({
-        where: { shiftId: input.shift.id, status: "CONFIRMED" },
-      })) ?? [];
-    if (assignments.length === 0) return;
-
-    const dateLabel = input.shift.startsAt
-      .toISOString()
-      .slice(0, 16)
-      .replace("T", " ");
-
-    for (const assignment of assignments) {
-      await this.db.shiftAssignment.update({
-        where: { id: assignment.id },
-        data: { status: "PENDING_RECONFIRMATION" },
-      });
-
-      await this.notifications.create({
-        userId: assignment.userId,
-        type: "SHIFT_RESCHEDULED",
-        title: "A shift was rescheduled",
-        body: `${input.shift.roleLabel} is now ${dateLabel}. Please reconfirm you can still make it.`,
-        payload: { shiftId: input.shift.id, kind: "reschedule" },
-        url: `/applications`,
-      });
-
-      await this.db.auditEvent.create({
-        data: {
-          userId: input.ownerId,
-          action: "SHIFT_RESCHEDULE_PENDING",
-          entityType: "Shift",
-          entityId: input.shift.id,
-          metadata: { workerId: assignment.userId },
-        },
-      });
-
-      publishEvent(input.businessId, {
-        type: "assignment.changed",
-        shiftId: input.shift.id,
-      });
-    }
-
-    logger.info({
-      event: "shift.reschedule.reconfirmRequested",
-      shiftId: input.shift.id,
-      count: assignments.length,
+    await requestShiftReconfirmations(this.db, {
+      shift: input.shift,
+      businessId: input.businessId,
+      ownerId: input.ownerId,
+      notifications: this.notifications,
     });
   }
 
@@ -324,6 +303,30 @@ export class ShiftService {
         entityId: shift.id,
       },
     });
+
+    // Cancel any Dimona declarations for confirmed workers on auto-declare
+    // contracts. DimonaService.cancel itself no-ops when the business has no
+    // employer id or no confirmed declaration exists, so this is safe to call.
+    const confirmed =
+      (await this.db.shiftAssignment.findMany({
+        where: { shiftId: input.id, status: "CONFIRMED" },
+        include: { user: { select: { contractType: true } } },
+      })) ?? [];
+    for (const assignment of confirmed) {
+      if (DimonaService.shouldAutoDeclare(assignment.user?.contractType)) {
+        await this.dimona
+          .cancel({ shiftId: input.id, workerId: assignment.userId })
+          .catch((err) =>
+            logger.warn({
+              event: "dimona.cancel.failed",
+              shiftId: input.id,
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          );
+      }
+    }
+
+    publishEvent(input.businessId, { type: "shift.updated", shiftId: shift.id });
 
     return shift;
   }
