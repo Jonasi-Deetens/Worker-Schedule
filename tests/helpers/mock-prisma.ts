@@ -45,6 +45,7 @@ const MODEL_KEYS = [
   "document",
   "shiftMessage",
   "dimonaDeclaration",
+  "workerContract",
   "apiKey",
   "webhookSubscription",
   "passwordResetToken",

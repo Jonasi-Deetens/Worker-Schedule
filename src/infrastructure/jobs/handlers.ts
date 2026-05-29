@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import { AvailabilityService } from "@/application/services/availability-service";
+import type { DimonaDeclareJob } from "@/application/services/dimona-declare-job";
 import { DimonaService } from "@/application/services/dimona-service";
 import { EmailService } from "@/application/services/email-service";
 import { NotificationService } from "@/application/services/notification-service";
@@ -8,6 +9,7 @@ import {
   webhookHost,
   type WebhookDeliveryJob,
 } from "@/application/services/webhook-service";
+import { getDimonaAdapter } from "@/infrastructure/dimona/adapter";
 import { logger } from "@/infrastructure/logging/logger";
 import { getTranslator } from "@/lib/server-i18n";
 
@@ -241,4 +243,58 @@ export async function runDimonaReconcile(
     }
   }
   return { businesses: businesses.length, gaps };
+}
+
+/**
+ * Retries a failed Dimona IN/OUT/CANCEL declaration. Throws on failure so
+ * pg-boss applies the configured retry backoff.
+ */
+export async function runDimonaDeclare(
+  db: PrismaClient,
+  job: DimonaDeclareJob,
+): Promise<void> {
+  const service = new DimonaService(db, getDimonaAdapter(), async () => {
+    /* no nested retries from the worker */
+  });
+
+  if (job.action === "IN") {
+    if (!job.declarationId) {
+      await service.declareIn({ shiftId: job.shiftId, workerId: job.workerId });
+      return;
+    }
+    const existing = await db.dimonaDeclaration.findUnique({
+      where: { id: job.declarationId },
+      include: { shift: { select: { businessId: true } } },
+    });
+    if (!existing?.shift) return;
+    const result = await service.retryDeclareIn({
+      declarationId: job.declarationId,
+      businessId: existing.shift.businessId,
+    });
+    if (result?.status === "REJECTED") {
+      throw new Error(result.errorMessage ?? "Dimona IN retry failed");
+    }
+    return;
+  }
+
+  if (job.action === "OUT") {
+    const result = await service.declareOut({
+      shiftId: job.shiftId,
+      workerId: job.workerId,
+    });
+    if (result && !result.outDeclaredAt) {
+      throw new Error(result.errorMessage ?? "Dimona OUT retry failed");
+    }
+    return;
+  }
+
+  if (job.action === "CANCEL") {
+    const result = await service.cancel({
+      shiftId: job.shiftId,
+      workerId: job.workerId,
+    });
+    if (result?.status !== "CANCELLED") {
+      throw new Error("Dimona CANCEL retry failed");
+    }
+  }
 }

@@ -9,6 +9,7 @@ import { AvailabilityService } from "@/application/services/availability-service
 import { BroadcastService } from "@/application/services/broadcast-service";
 import { BulkShiftService } from "@/application/services/bulk-shift-service";
 import { BusinessService } from "@/application/services/business-service";
+import { DimonaService } from "@/application/services/dimona-service";
 import { DocumentService } from "@/application/services/document-service";
 import { GdprService } from "@/application/services/gdpr-service";
 import { InviteService } from "@/application/services/invite-service";
@@ -31,6 +32,7 @@ import { TimeClockService } from "@/application/services/time-clock-service";
 import { TimeOffService } from "@/application/services/timeoff-service";
 import { TotpAccountService } from "@/application/services/totp-account-service";
 import { WebhookService } from "@/application/services/webhook-service";
+import { WorkerContractService } from "@/application/services/worker-contract-service";
 import { WorkerService } from "@/application/services/worker-service";
 
 /**
@@ -38,6 +40,7 @@ import { WorkerService } from "@/application/services/worker-service";
  * them here keeps the router files thin (composition only) and ensures each
  * service is instantiated exactly once per process.
  */
+export { prisma } from "@/infrastructure/db/prisma";
 export const analyticsService = new AnalyticsService(prisma);
 export const apiKeyService = new ApiKeyService(prisma);
 export const attendanceService = new AttendanceService(prisma);
@@ -47,6 +50,7 @@ export const availabilityService = new AvailabilityService(prisma);
 export const broadcastService = new BroadcastService(prisma);
 export const bulkShiftService = new BulkShiftService(prisma);
 export const businessService = new BusinessService(prisma);
+export const dimonaService = new DimonaService(prisma);
 export const documentService = new DocumentService(prisma);
 export const gdprService = new GdprService(prisma);
 export const inviteService = new InviteService(prisma);
@@ -69,6 +73,7 @@ export const timeClockService = new TimeClockService(prisma);
 export const timeOffService = new TimeOffService(prisma);
 export const totpAccountService = new TotpAccountService(prisma);
 export const webhookService = new WebhookService(prisma);
+export const workerContractService = new WorkerContractService(prisma);
 export const workerService = new WorkerService(prisma);
 
 /** Throws a tRPC FORBIDDEN error if the session has no associated business. */

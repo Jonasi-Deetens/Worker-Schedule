@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { TimeClockService } from "@/application/services/time-clock-service";
+import { declareOutIfAuto } from "@/application/services/dimona-hooks";
 import { asPrisma, createPrismaMock } from "../../helpers/mock-prisma";
+
+vi.mock("@/application/services/dimona-hooks", () => ({
+  declareOutIfAuto: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("TimeClockService", () => {
   it("blocks a second clock-in while one is already open", async () => {
@@ -76,6 +81,55 @@ describe("TimeClockService", () => {
     const svc = new TimeClockService(asPrisma(db));
     const result = await svc.clockIn({ userId: "u1", shiftId: "shift1" });
     expect(result.id).toBe("te1");
+  });
+
+  it("blocks clock-in when business requires a signed contract", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findFirst.mockResolvedValue(null);
+    db.user.findUnique.mockResolvedValue({ businessId: "b1" });
+    db.business.findUnique.mockResolvedValue({ requireSignedContract: true });
+    db.workerContract.findFirst.mockResolvedValue(null);
+    const svc = new TimeClockService(asPrisma(db));
+    await expect(
+      svc.clockIn({ userId: "u1", shiftId: null }),
+    ).rejects.toThrow(/errors\.contractRequired/);
+  });
+
+  it("allows clock-in when a signed contract exists", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findFirst.mockResolvedValue(null);
+    db.user.findUnique.mockResolvedValue({ businessId: "b1" });
+    db.business.findUnique.mockResolvedValue({ requireSignedContract: true });
+    db.workerContract.findFirst.mockResolvedValue({ id: "c1", status: "SIGNED" });
+    db.timeEntry.create.mockResolvedValue({ id: "te1" });
+    const svc = new TimeClockService(asPrisma(db));
+    const result = await svc.clockIn({ userId: "u1", shiftId: null });
+    expect(result.id).toBe("te1");
+  });
+
+  it("declares Dimona OUT on clock-out for a shift-linked entry", async () => {
+    const db = createPrismaMock();
+    db.timeEntry.findFirst.mockResolvedValue({
+      id: "te1",
+      userId: "u1",
+      shiftId: "s1",
+      clockInAt: new Date(Date.now() - 60 * 60_000),
+      clockOutAt: null,
+    });
+    db.timeEntry.update.mockResolvedValue({ id: "te1" });
+    db.user.findUnique.mockResolvedValue({
+      name: "Worker",
+      businessId: "b1",
+    });
+    db.user.findMany.mockResolvedValue([{ id: "m1" }]);
+    db.notification.create.mockResolvedValue({ id: "n1" });
+    const svc = new TimeClockService(asPrisma(db));
+    await svc.clockOut({ id: "te1", userId: "u1", breakMinutes: 0 });
+    expect(declareOutIfAuto).toHaveBeenCalledWith(
+      expect.anything(),
+      "s1",
+      "u1",
+    );
   });
 
   it("rejects a break longer than the worked time on clock-out", async () => {

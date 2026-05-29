@@ -9,11 +9,13 @@ import { prisma } from "@/infrastructure/db/prisma";
 import { getQueue, JOBS } from "@/infrastructure/jobs/queue";
 import {
   runAvailabilityMaterialise,
+  runDimonaDeclare,
   runDimonaReconcile,
   runInviteCleanup,
   runShiftReminders24h,
   runWebhookDelivery,
 } from "@/infrastructure/jobs/handlers";
+import type { DimonaDeclareJob } from "@/application/services/dimona-declare-job";
 import type { WebhookDeliveryJob } from "@/application/services/webhook-service";
 import { logger } from "@/infrastructure/logging/logger";
 
@@ -47,6 +49,13 @@ async function main() {
   await boss.work<WebhookDeliveryJob>(JOBS.WEBHOOK_DELIVER, async (jobs) => {
     for (const job of jobs) {
       await runWebhookDelivery(prisma, job.data);
+    }
+  });
+
+  await boss.createQueue(JOBS.DIMONA_DECLARE);
+  await boss.work<DimonaDeclareJob>(JOBS.DIMONA_DECLARE, async (jobs) => {
+    for (const job of jobs) {
+      await runDimonaDeclare(prisma, job.data);
     }
   });
 

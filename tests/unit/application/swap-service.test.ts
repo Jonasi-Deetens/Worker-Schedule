@@ -1,6 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SwapService } from "@/application/services/swap-service";
+import {
+  cancelIfAuto,
+  declareInIfAuto,
+} from "@/application/services/dimona-hooks";
 import { asPrisma, createPrismaMock } from "../../helpers/mock-prisma";
+
+vi.mock("@/application/services/dimona-hooks", () => ({
+  cancelIfAuto: vi.fn().mockResolvedValue(undefined),
+  declareInIfAuto: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("SwapService", () => {
   it("rejects an offer to yourself", async () => {
@@ -115,5 +124,43 @@ describe("SwapService.decide (accept)", () => {
       svc.decide({ id: "swap1", decidingUserId: "u2", accept: true }),
     ).rejects.toThrow(/time-off/i);
     expect(db.shiftAssignment.create).not.toHaveBeenCalled();
+  });
+
+  it("cancels Dimona for outgoing worker and declares IN for incoming on accept", async () => {
+    const db = createPrismaMock();
+    db.shiftSwap.findFirst.mockResolvedValue({
+      id: "swap1",
+      toUserId: "u2",
+      status: "PENDING",
+      fromSubscriptionId: "sub1",
+      fromSubscription: {
+        userId: "u1",
+        shift: {
+          id: "s1",
+          businessId: "b1",
+          startsAt: new Date("2026-06-01T10:00:00Z"),
+          endsAt: new Date("2026-06-01T14:00:00Z"),
+          roleLabel: "Bartender",
+        },
+      },
+    });
+    db.shiftAssignment.findFirst.mockResolvedValue(null);
+    db.shiftAssignment.findMany.mockResolvedValue([]);
+    db.user.findUnique.mockResolvedValue(null);
+    db.timeOffRequest.findFirst.mockResolvedValue(null);
+    db.$transaction.mockResolvedValue(undefined);
+    db.notification.create.mockResolvedValue({ id: "n1" });
+    db.auditEvent.create.mockResolvedValue({ id: "a1" });
+    db.shiftSwap.findUnique.mockResolvedValue({ id: "swap1", status: "ACCEPTED" });
+
+    const svc = new SwapService(asPrisma(db));
+    await svc.decide({ id: "swap1", decidingUserId: "u2", accept: true });
+
+    expect(cancelIfAuto).toHaveBeenCalledWith(expect.anything(), "s1", "u1");
+    expect(declareInIfAuto).toHaveBeenCalledWith(
+      expect.anything(),
+      "s1",
+      "u2",
+    );
   });
 });

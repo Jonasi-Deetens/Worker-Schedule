@@ -1,6 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import {
+  defaultEnqueueDimonaDeclare,
+  type DimonaDeclareEnqueue,
+  type DimonaDeclareJob,
+} from "./dimona-declare-job";
+import {
   getDimonaAdapter,
   HttpDimonaAdapter,
   type DimonaAdapter,
@@ -37,6 +42,7 @@ export class DimonaService {
   constructor(
     private readonly db: PrismaClient,
     private readonly adapter: DimonaAdapter = getDimonaAdapter(),
+    private readonly enqueueRetry: DimonaDeclareEnqueue = defaultEnqueueDimonaDeclare,
   ) {}
 
   /**
@@ -142,7 +148,148 @@ export class DimonaService {
         metadata: { workerId: input.workerId, ok: result.ok },
       },
     });
+    if (!result.ok) {
+      await this.enqueueRetryJob({
+        shiftId: input.shiftId,
+        workerId: input.workerId,
+        action: "IN",
+        declarationId: declaration.id,
+      });
+    }
     return declaration;
+  }
+
+  /**
+   * Declares OUT for a worker after clock-out when a CONFIRMED IN declaration
+   * exists. Idempotent — skips if OUT was already recorded.
+   */
+  async declareOut(input: { shiftId: string; workerId: string }) {
+    const declaration = await this.db.dimonaDeclaration.findFirst({
+      where: {
+        shiftId: input.shiftId,
+        workerId: input.workerId,
+        status: "CONFIRMED",
+      },
+    });
+    if (!declaration?.dimonaPeriodId) return null;
+    if (declaration.outDeclaredAt) return declaration;
+
+    const [shift, worker] = await Promise.all([
+      this.db.shift.findUnique({
+        where: { id: input.shiftId },
+        include: { business: true },
+      }),
+      this.db.user.findUnique({ where: { id: input.workerId } }),
+    ]);
+    if (!shift?.business.dimonaEmployerId || !worker) return null;
+
+    const request: DimonaDeclarationInput = {
+      workerNiss: worker.nationalNumber ?? "",
+      workerType: mapWorkerType(worker.contractType),
+      startsAt: shift.startsAt,
+      endsAt: shift.endsAt,
+      employerId: shift.business.dimonaEmployerId,
+      action: "OUT",
+      dimonaPeriodId: declaration.dimonaPeriodId,
+    };
+
+    const result = await this.resolveAdapter(shift.business).declare(request);
+    const updated = await this.db.dimonaDeclaration.update({
+      where: { id: declaration.id },
+      data: {
+        outDeclaredAt: result.ok ? new Date() : declaration.outDeclaredAt,
+        outResponsePayload: result as unknown as object,
+        errorMessage: result.ok ? declaration.errorMessage : result.errorMessage,
+      },
+    });
+
+    await this.db.auditEvent.create({
+      data: {
+        action: "DIMONA_OUT_DECLARED",
+        entityType: "Shift",
+        entityId: input.shiftId,
+        metadata: { workerId: input.workerId, ok: result.ok },
+      },
+    });
+
+    if (!result.ok) {
+      await this.enqueueRetryJob({
+        shiftId: input.shiftId,
+        workerId: input.workerId,
+        action: "OUT",
+        declarationId: declaration.id,
+      });
+    }
+
+    return updated;
+  }
+
+  /** Re-run a failed IN declaration (manager retry or background job). */
+  async retryDeclareIn(input: { declarationId: string; businessId: string }) {
+    const existing = await this.db.dimonaDeclaration.findFirst({
+      where: {
+        id: input.declarationId,
+        shift: { businessId: input.businessId },
+      },
+    });
+    if (!existing) throw new Error("Declaration not found");
+    if (existing.status === "CONFIRMED") return existing;
+
+    await this.db.dimonaDeclaration.delete({ where: { id: existing.id } });
+    return this.declareIn({
+      shiftId: existing.shiftId,
+      workerId: existing.workerId,
+    });
+  }
+
+  /** Manual IN for EMPLOYEE contract types (not auto-declared). */
+  async declareManual(input: {
+    shiftId: string;
+    workerId: string;
+    businessId: string;
+    actorId: string;
+  }) {
+    const shift = await this.db.shift.findFirst({
+      where: { id: input.shiftId, businessId: input.businessId },
+    });
+    if (!shift) throw new Error("Shift not found");
+
+    const assignment = await this.db.shiftAssignment.findUnique({
+      where: {
+        shiftId_userId: { shiftId: input.shiftId, userId: input.workerId },
+      },
+    });
+    if (!assignment || assignment.status !== "CONFIRMED") {
+      throw new Error("Worker must have a confirmed assignment on this shift");
+    }
+
+    const declaration = await this.declareIn({
+      shiftId: input.shiftId,
+      workerId: input.workerId,
+    });
+
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.actorId,
+        action: "DIMONA_DECLARED",
+        entityType: "Shift",
+        entityId: input.shiftId,
+        metadata: { workerId: input.workerId, manual: true },
+      },
+    });
+
+    return declaration;
+  }
+
+  private async enqueueRetryJob(job: DimonaDeclareJob): Promise<void> {
+    if (process.env.DIMONA_ENV === "mock" || !process.env.DIMONA_ENV) return;
+    await this.enqueueRetry(job).catch((err) =>
+      logger.warn({
+        event: "dimona.retry.enqueue.failed",
+        shiftId: job.shiftId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
   }
 
   /** Cancel an existing Dimona declaration (e.g. when an assignment is removed). */

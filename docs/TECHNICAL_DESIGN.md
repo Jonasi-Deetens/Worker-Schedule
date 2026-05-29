@@ -153,3 +153,25 @@ See [`docs/API.md`](API.md). All routers live under `/api/trpc` and are typed en
 - Business-scoped queries on every read and write to prevent insecure direct object reference.
 - Structured logging on auth, approval, rejection, and shift mutations.
 - Rate limiting documented at the reverse proxy boundary (e.g., Cloudflare or nginx limit_req for `/api/auth/*` and tRPC mutation endpoints).
+
+## Large-file split strategy
+
+When a file grows past ~450 lines, split incrementally rather than in one big refactor:
+
+1. **Extract side-effects first** — e.g. Dimona hooks live in [`dimona-hooks.ts`](../src/application/services/dimona-hooks.ts) so assignment services stay focused on transactions.
+2. **Sibling folder per oversized file** — create `components/app-header/` or `app/calendar/components/` next to the parent file; move sub-components and hooks there; keep the original path as a thin re-export if needed.
+3. **No behaviour change** — splits are structural only; covered by existing tests before and after.
+4. **Touch-only rule** — only split files modified in the current change set; document other candidates here without refactoring them preemptively.
+
+**Documented candidates (no split required yet):**
+
+| File | Lines (approx.) | Suggested extraction |
+|------|-----------------|----------------------|
+| `app-header.tsx` | 613 | `SettingsMenu`, `MobileDrawer`, `BusinessSwitcher` |
+| `calendar-client.tsx` | 596 | dialog + toolbar hooks |
+| `time-entries-client.tsx` | 536 | filter bar, bulk actions |
+| `me-home-client.tsx` | 488 | already has inline `StatCard`; extract `AvailabilityStrip` |
+| `shift-detail-dialog.tsx` | 465 | tabs: details / chat / assignments |
+
+**Applied in Dimona/contracts pass:** `shift-assignment-service.ts` — Dimona side-effects moved to `dimona-hooks.ts`.
+

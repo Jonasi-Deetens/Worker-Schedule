@@ -8,6 +8,7 @@ import {
 } from "@/domain/rules/scheduling";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { logger } from "@/infrastructure/logging/logger";
+import { declareInIfAuto } from "./dimona-hooks";
 import { EmailService } from "./email-service";
 import { SchedulingRules } from "./scheduling-rules";
 
@@ -309,6 +310,12 @@ export class SubscriptionService {
       outcome.user,
       outcome.shift,
       true,
+    );
+
+    await declareInIfAuto(
+      this.db,
+      outcome.assignment.shiftId,
+      outcome.assignment.userId,
     );
 
     return outcome.assignment;

@@ -308,7 +308,7 @@
     "title": "Integraties",
     "subtitle": "Koppel externe diensten zoals de Belgische Dimona.",
     "dimonaTitle": "Dimona (RSZ/ONSS)",
-    "dimonaHelp": "Stel je werkgeversnummer en API-gegevens in. Flexi-, extra- en studentenshifts worden dan automatisch aangegeven bij toewijzing en geannuleerd wanneer een shift wordt geannuleerd of een werknemer wordt verwijderd.",
+    "dimonaHelp": "Stel je werkgeversnummer en API-gegevens in. Flexi-, extra- en studentenwerknemers worden automatisch aangegeven wanneer hun toewijzing bevestigd is (direct accepteren, goedkeuring, broadcast of swap). Aangiftes worden geannuleerd wanneer de toewijzing eindigt, en een OUT wordt verstuurd bij uitklokken. Werknemerscontracten vereisen een handmatige aangifte via de lijst hieronder.",
     "employerId": "Werkgeversnummer",
     "token": "API-token",
     "tokenSet": "•••••••• (opgeslagen)",
@@ -316,7 +316,46 @@
     "tokenHelp": "Versleuteld opgeslagen (AES-256-GCM). Laat leeg om het huidige token te behouden.",
     "baseUrl": "API-basis-URL (optioneel)",
     "save": "Integratie opslaan",
-    "saved": "Integratie-instellingen opgeslagen"
+    "saved": "Integratie-instellingen opgeslagen",
+    "dimonaDeclarationsTitle": "Recente aangiftes",
+    "dimonaDeclarationsHelp": "IN-aangiftes worden verstuurd wanneer een toewijzing bevestigd is. Probeer mislukte opnieuw of annuleer actieve aangiftes.",
+    "dimonaDeclarationsEmpty": "Nog geen aangiftes.",
+    "dimonaFilterAll": "Alle statussen",
+    "dimonaOutDeclared": "OUT verstuurd",
+    "dimonaRetry": "Opnieuw",
+    "dimonaCancel": "Annuleren",
+    "dimonaRetrySuccess": "Aangifte opnieuw in wachtrij geplaatst",
+    "dimonaCancelSuccess": "Aangifte geannuleerd",
+    "contractPolicyTitle": "Contract e-handtekening",
+    "contractPolicyHelp": "Indien ingeschakeld moeten werknemers een contract ondertekenen voordat ze kunnen inklokken.",
+    "contractPolicyRequire": "Ondertekend contract vereist vóór inklokken",
+    "contractPolicySaved": "Contractbeleid bijgewerkt"
+  },
+  "contracts": {
+    "pendingBanner": "Er wacht een contract op je handtekening",
+    "reviewAndSign": "Bekijken & ondertekenen",
+    "signTitle": "Contract ondertekenen",
+    "signatureName": "Volledige wettelijke naam",
+    "signaturePlaceholder": "Typ je naam zoals op je identiteitskaart",
+    "agreeLabel": "Ik heb dit contract gelezen en ga akkoord met de voorwaarden",
+    "signButton": "Contract ondertekenen",
+    "declineButton": "Weigeren",
+    "viewDocument": "Bijgevoegd document bekijken",
+    "sent": "Contract naar werknemer gestuurd",
+    "signed": "Contract ondertekend",
+    "declined": "Contract geweigerd",
+    "empty": "Nog geen contracten verstuurd.",
+    "sendTitle": "Nieuw contract versturen",
+    "titleLabel": "Titel",
+    "bodyLabel": "Contracttekst (optioneel)",
+    "sendButton": "Ter ondertekening versturen",
+    "workerSectionTitle": "Contracten",
+    "workerSectionHelp": "Stuur contracten ter e-handtekening en volg de status.",
+    "statusDraft": "Concept",
+    "statusSent": "Wacht op handtekening",
+    "statusSigned": "Ondertekend",
+    "statusDeclined": "Geweigerd",
+    "signedAt": "Ondertekend op {date}"
   },
   "locations": {
     "title": "Locaties",
@@ -524,7 +563,8 @@
     "noBusiness": "Je bent nog niet aan een bedrijf gekoppeld.",
     "pendingTitle": "Te beoordelen uren",
     "approveSelected": "Selectie goedkeuren",
-    "noPending": "Niets in afwachting."
+    "noPending": "Niets in afwachting.",
+    "contractRequiredHint": "Onderteken je openstaande contract voordat je inklokt."
   },
   "payroll": {
     "title": "Loon & uren",
@@ -870,11 +910,11 @@
       },
       "dimona": {
         "title": "Dimona-aangiftes",
-        "intro": "Automatische ONSS/RSZ Dimona-aangiftes: een IN bij toewijzing van een flexi-, extra- of studentmedewerker, en een annulatie wanneer de shift wordt geannuleerd of de medewerker wordt verwijderd.",
+        "intro": "Automatische ONSS/RSZ Dimona-aangiftes: een IN wanneer de toewijzing van een flexi-, extra- of studentmedewerker bevestigd is (direct accepteren, goedkeuring, broadcast of swap). Een annulatie wanneer de toewijzing eindigt, en een OUT bij uitklokken.",
         "steps": {
           "1": "Vul je werkgeversnummer en Dimona-gegevens eenmalig in onder Instellingen → Integraties (versleuteld bewaard). Elke medewerker heeft een NISS op zijn profiel nodig.",
           "2": "Zet DIMONA_ENV op 'sandbox' om te testen zonder echte aangiftes en wissel naar 'prod' wanneer je klaar bent.",
-          "3": "Een dagelijkse reconciliatiejob zoekt naar gaten en verwittigt zaakvoerders in de app; fouten zijn ook zichtbaar in /audit."
+          "3": "Een dagelijkse reconciliatiejob zoekt naar gaten en verwittigt zaakvoerders in de app; fouten zijn ook zichtbaar in /audit en in de aangiftelijst onder Integraties."
         },
         "tip": "Laat DIMONA_ENV in development op 'mock' — dan logt de app de aangifte maar contacteert de ONSS niet."
       },
@@ -950,6 +990,7 @@
     "resetTokenInvalid": "Deze reset-link is ongeldig, verlopen of al gebruikt.",
     "weakPassword": "Het wachtwoord moet minstens 8 tekens bevatten.",
     "attendanceNoShowHasEntry": "Deze medewerker heeft geklokte of goedgekeurde uren voor deze shift, dus die kan niet als no-show worden gemarkeerd. Wijs eerst de tijdregistratie af.",
-    "timeEntryShiftNoShow": "Deze shift is gemarkeerd als no-show. Controleer de aanwezigheid voordat je deze uren goedkeurt."
+    "timeEntryShiftNoShow": "Deze shift is gemarkeerd als no-show. Controleer de aanwezigheid voordat je deze uren goedkeurt.",
+    "contractRequired": "Je moet je arbeidscontract ondertekenen voordat je kunt inklokken. Ga naar Mijn profiel of Sollicitaties om te tekenen."
   }
 }

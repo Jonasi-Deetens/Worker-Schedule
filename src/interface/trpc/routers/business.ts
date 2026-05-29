@@ -44,4 +44,19 @@ export const businessRouter = router({
         mapServiceError(error);
       }
     }),
+
+  updateContractPolicy: ownerProcedure
+    .input(z.object({ requireSignedContract: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const businessId = requireBusinessId(ctx.session.user.businessId);
+      try {
+        return await businessService.updateContractPolicy({
+          businessId,
+          actorId: ctx.session.user.id,
+          requireSignedContract: input.requireSignedContract,
+        });
+      } catch (error) {
+        mapServiceError(error);
+      }
+    }),
 });

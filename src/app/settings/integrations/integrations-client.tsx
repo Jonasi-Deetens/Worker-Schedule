@@ -9,6 +9,7 @@ import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
+import { DimonaDeclarationsPanel } from "./dimona-declarations-panel";
 
 export function IntegrationsClient() {
   const t = useTranslations();
@@ -32,6 +33,16 @@ export function IntegrationsClient() {
     },
     onError: (error) => toast.error(trpcErrorMessage(error, t)),
   });
+
+  const updateContractPolicy = trpc.business.updateContractPolicy.useMutation({
+    onSuccess: () => {
+      utils.business.settings.invalidate();
+      toast.success(t("integrations.contractPolicySaved"));
+    },
+    onError: (error) => toast.error(trpcErrorMessage(error, t)),
+  });
+
+  const requireSignedContract = settings.data?.requireSignedContract ?? false;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +120,30 @@ export function IntegrationsClient() {
             {t("integrations.save")}
           </Button>
         </form>
+
+        <DimonaDeclarationsPanel />
+
+        <section className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">
+            {t("integrations.contractPolicyTitle")}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {t("integrations.contractPolicyHelp")}
+          </p>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={requireSignedContract}
+              disabled={updateContractPolicy.isPending || settings.isLoading}
+              onChange={(e) =>
+                updateContractPolicy.mutate({
+                  requireSignedContract: e.target.checked,
+                })
+              }
+            />
+            {t("integrations.contractPolicyRequire")}
+          </label>
+        </section>
       </main>
     </div>
   );

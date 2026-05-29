@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
+import { declareInIfAuto } from "./dimona-hooks";
 import { NotificationService } from "./notification-service";
 import { SchedulingRules } from "./scheduling-rules";
 
@@ -240,6 +241,7 @@ export class BroadcastService {
         type: "assignment.changed",
         shiftId: shift.id,
       });
+      await declareInIfAuto(this.db, shift.id, input.userId);
       return { alreadyAssigned: false, assignmentId: assignment.id };
     } catch (err) {
       // The capacity guard is a real, user-facing conflict — surface it as-is.

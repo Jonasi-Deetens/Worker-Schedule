@@ -19,6 +19,7 @@ import { Button } from "@/interface/components/ui/button";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
 import { formatTimeRange } from "@/lib/calendar-utils";
+import { ContractSigningPanel } from "@/interface/components/contract-signing-panel";
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -114,6 +115,8 @@ export function MeHomeClient() {
         </h1>
         <p className="mt-1 text-sm text-ink-muted">{t("me.subtitle")}</p>
       </header>
+
+      <ContractSigningPanel />
 
       {/* Next shift hero */}
       <section className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-card">

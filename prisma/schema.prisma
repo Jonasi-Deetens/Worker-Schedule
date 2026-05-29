@@ -58,6 +58,7 @@ enum NotificationType {
   TIME_ENTRY_APPROVED
   TIME_ENTRY_REJECTED
   DIMONA_GAP_DETECTED
+  CONTRACT_SENT
 }
 
 enum AssignmentStatus {
@@ -103,6 +104,10 @@ enum AuditAction {
   TIME_ENTRY_EDITED
   DIMONA_DECLARED
   DIMONA_CANCELLED
+  DIMONA_OUT_DECLARED
+  CONTRACT_SENT
+  CONTRACT_SIGNED
+  CONTRACT_DECLINED
   WORKER_PROFILE_UPDATED
   BUSINESS_SETTINGS_UPDATED
   ATTENDANCE_MARKED
@@ -141,6 +146,13 @@ enum TimeEntryStatus {
   REJECTED
 }
 
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  DECLINED
+}
+
 model Business {
   id                String   @id @default(cuid())
   name              String
@@ -150,6 +162,7 @@ model Business {
   weekStartsOn      Int      @default(1)
   dimonaCredentials String?
   dimonaEmployerId  String?
+  requireSignedContract Boolean @default(false)
   revenueWeeklyJson Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -164,6 +177,7 @@ model Business {
   memberships Membership[]
   apiKeys     ApiKey[]
   webhooks    WebhookSubscription[]
+  contracts   WorkerContract[]
 
   @@map("businesses")
 }
@@ -209,6 +223,7 @@ model User {
   timeEntryReviews      TimeEntry[]            @relation("TimeEntryReviewer")
   swapsRequested        ShiftSwap[]            @relation("SwapTarget")
   documents             Document[]
+  workerContracts       WorkerContract[]
   shiftMessages         ShiftMessage[]
   memberships           Membership[]
   passwordResetTokens   PasswordResetToken[]
@@ -573,21 +588,46 @@ model ShiftMessage {
 }
 
 model DimonaDeclaration {
-  id              String       @id @default(cuid())
-  shiftId         String
-  shift           Shift        @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  workerId        String
-  dimonaPeriodId  String?
-  status          DimonaStatus @default(PENDING)
-  requestPayload  Json?
-  responsePayload Json?
-  errorMessage    String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                String       @id @default(cuid())
+  shiftId           String
+  shift             Shift        @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  workerId          String
+  dimonaPeriodId    String?
+  status            DimonaStatus @default(PENDING)
+  requestPayload    Json?
+  responsePayload   Json?
+  errorMessage      String?
+  outDeclaredAt     DateTime?
+  outResponsePayload Json?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([shiftId])
   @@index([workerId, status])
   @@map("dimona_declarations")
+}
+
+model WorkerContract {
+  id            String         @id @default(cuid())
+  businessId    String
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractType  ContractType?
+  title         String
+  body          String?
+  fileUrl       String?
+  status        ContractStatus @default(DRAFT)
+  sentAt        DateTime?
+  signedAt      DateTime?
+  signatureName String?
+  signatureIp   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([businessId, status])
+  @@index([userId, status])
+  @@map("worker_contracts")
 }
 
 model ApiKey {

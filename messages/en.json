@@ -308,7 +308,7 @@
     "title": "Integrations",
     "subtitle": "Connect external services like Belgian Dimona.",
     "dimonaTitle": "Dimona (ONSS/RSZ)",
-    "dimonaHelp": "Set your employer number and API credentials. Flexi, extra and student shifts are then declared automatically when you assign a worker, and cancelled when a shift is cancelled or a worker is removed.",
+    "dimonaHelp": "Set your employer number and API credentials. Flexi, extra and student workers are declared automatically when their assignment is confirmed (direct accept, application approval, broadcast accept, or swap). Declarations are cancelled when the assignment ends, and an OUT is sent on clock-out. Employee contracts require a manual declaration from the list below.",
     "employerId": "Employer number",
     "token": "API token",
     "tokenSet": "•••••••• (stored)",
@@ -316,7 +316,46 @@
     "tokenHelp": "Stored encrypted (AES-256-GCM). Leave blank to keep the current token.",
     "baseUrl": "API base URL (optional)",
     "save": "Save integration",
-    "saved": "Integration settings saved"
+    "saved": "Integration settings saved",
+    "dimonaDeclarationsTitle": "Recent declarations",
+    "dimonaDeclarationsHelp": "IN declarations fire when a worker's assignment becomes confirmed. Retry failed ones or cancel active declarations.",
+    "dimonaDeclarationsEmpty": "No declarations yet.",
+    "dimonaFilterAll": "All statuses",
+    "dimonaOutDeclared": "OUT sent",
+    "dimonaRetry": "Retry",
+    "dimonaCancel": "Cancel",
+    "dimonaRetrySuccess": "Declaration retry queued",
+    "dimonaCancelSuccess": "Declaration cancelled",
+    "contractPolicyTitle": "Contract e-signing",
+    "contractPolicyHelp": "When enabled, workers must sign a contract before they can clock in.",
+    "contractPolicyRequire": "Require a signed contract before clock-in",
+    "contractPolicySaved": "Contract policy updated"
+  },
+  "contracts": {
+    "pendingBanner": "You have a contract waiting for your signature",
+    "reviewAndSign": "Review & sign",
+    "signTitle": "Sign contract",
+    "signatureName": "Full legal name",
+    "signaturePlaceholder": "Type your name as it appears on your ID",
+    "agreeLabel": "I have read this contract and agree to its terms",
+    "signButton": "Sign contract",
+    "declineButton": "Decline",
+    "viewDocument": "View attached document",
+    "sent": "Contract sent to worker",
+    "signed": "Contract signed",
+    "declined": "Contract declined",
+    "empty": "No contracts sent yet.",
+    "sendTitle": "Send a new contract",
+    "titleLabel": "Title",
+    "bodyLabel": "Contract text (optional)",
+    "sendButton": "Send for signature",
+    "workerSectionTitle": "Contracts",
+    "workerSectionHelp": "Send contracts for e-signature and track their status.",
+    "statusDraft": "Draft",
+    "statusSent": "Awaiting signature",
+    "statusSigned": "Signed",
+    "statusDeclined": "Declined",
+    "signedAt": "Signed {date}"
   },
   "locations": {
     "title": "Locations",
@@ -524,7 +563,8 @@
     "noBusiness": "You are not linked to a business yet.",
     "pendingTitle": "Pending time entries",
     "approveSelected": "Approve selected",
-    "noPending": "Nothing waiting for approval."
+    "noPending": "Nothing waiting for approval.",
+    "contractRequiredHint": "Sign your pending contract before clocking in."
   },
   "payroll": {
     "title": "Payroll & time tracking",
@@ -870,11 +910,11 @@
       },
       "dimona": {
         "title": "Belgian Dimona declarations",
-        "intro": "Automatic ONSS Dimona declarations: an IN is filed when you assign a flexi, extra or student worker, and a cancellation when the shift is cancelled or the worker is removed.",
+        "intro": "Automatic ONSS Dimona declarations: an IN is filed when a flexi, extra or student worker's assignment is confirmed (direct accept, approval, broadcast, or swap). A cancellation fires when the assignment ends, and an OUT on clock-out.",
         "steps": {
           "1": "Enter your employer number and Dimona credentials once under Settings → Integrations (they're encrypted at rest). Each worker needs a NISS on their profile.",
           "2": "Set DIMONA_ENV to sandbox to test against ONSS without real declarations, then switch to prod when ready.",
-          "3": "A daily reconciliation job checks for gaps and notifies owners in-app; failures are also visible on /audit."
+          "3": "A daily reconciliation job checks for gaps and notifies owners in-app; failures are also visible on /audit and in the declarations list under Integrations."
         },
         "tip": "Keep DIMONA_ENV on 'mock' in development — it logs intended declarations but doesn't hit ONSS."
       },
@@ -950,6 +990,7 @@
     "resetTokenInvalid": "This password reset link is invalid, expired or already used.",
     "weakPassword": "Password must be at least 8 characters.",
     "attendanceNoShowHasEntry": "This worker has clocked or approved hours for this shift, so it can't be marked as a no-show. Reject the time entry first.",
-    "timeEntryShiftNoShow": "This shift is marked as a no-show. Review the attendance before approving these hours."
+    "timeEntryShiftNoShow": "This shift is marked as a no-show. Review the attendance before approving these hours.",
+    "contractRequired": "You must sign your work contract before clocking in. Open Me or Applications to sign."
   }
 }

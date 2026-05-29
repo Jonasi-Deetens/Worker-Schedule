@@ -33,6 +33,7 @@ export class BusinessService {
         weekStartsOn: true,
         dimonaEmployerId: true,
         dimonaCredentials: true,
+        requireSignedContract: true,
       },
     });
     if (!business) throw new Error("Business not found");
@@ -83,5 +84,28 @@ export class BusinessService {
       dimonaEmployerId: updated.dimonaEmployerId,
       dimonaConfigured: Boolean(updated.dimonaCredentials),
     };
+  }
+
+  async updateContractPolicy(input: {
+    businessId: string;
+    actorId: string;
+    requireSignedContract: boolean;
+  }) {
+    const updated = await this.db.business.update({
+      where: { id: input.businessId },
+      data: { requireSignedContract: input.requireSignedContract },
+    });
+
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.actorId,
+        action: "BUSINESS_SETTINGS_UPDATED",
+        entityType: "Business",
+        entityId: input.businessId,
+        metadata: { requireSignedContract: input.requireSignedContract },
+      },
+    });
+
+    return { requireSignedContract: updated.requireSignedContract };
   }
 }

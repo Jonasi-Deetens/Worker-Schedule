@@ -3,7 +3,7 @@ import { assertNoAssignmentOverlap } from "@/domain/rules/scheduling";
 import type { TimeRange } from "@/domain/types";
 import { logger } from "@/infrastructure/logging/logger";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
-import { DimonaService } from "./dimona-service";
+import { cancelIfAuto, declareInIfAuto } from "./dimona-hooks";
 import { NotificationService } from "./notification-service";
 import { SchedulingRules } from "./scheduling-rules";
 
@@ -194,11 +194,6 @@ export class ShiftAssignmentService {
     });
     if (!assignment) throw new Error("Assignment not found");
 
-    const worker = await this.db.user.findUnique({
-      where: { id: input.workerId },
-      select: { contractType: true },
-    });
-
     await this.db.shiftAssignment.delete({ where: { id: assignment.id } });
     await this.db.shiftSubscription.updateMany({
       where: { shiftId: input.shiftId, userId: input.workerId },
@@ -233,17 +228,7 @@ export class ShiftAssignmentService {
       },
     });
 
-    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
-      await new DimonaService(this.db)
-        .cancel({ shiftId: input.shiftId, workerId: input.workerId })
-        .catch((err) =>
-          logger.warn({
-            event: "dimona.cancel.failed",
-            shiftId: input.shiftId,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-    }
+    await cancelIfAuto(this.db, input.shiftId, input.workerId);
 
     publishEvent(input.businessId, {
       type: "assignment.changed",
@@ -474,22 +459,7 @@ export class ShiftAssignmentService {
       shiftId: shift.id,
     });
 
-    // Declare the Dimona IN now that the worker has actually committed.
-    const worker = await this.db.user.findUnique({
-      where: { id: input.userId },
-      select: { contractType: true },
-    });
-    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
-      await new DimonaService(this.db)
-        .declareIn({ shiftId: shift.id, workerId: input.userId })
-        .catch((err) =>
-          logger.warn({
-            event: "dimona.declare.failed",
-            shiftId: shift.id,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-    }
+    await declareInIfAuto(this.db, shift.id, input.userId);
 
     return updated;
   }
@@ -527,7 +497,7 @@ export class ShiftAssignmentService {
 
     const worker = await this.db.user.findUnique({
       where: { id: input.userId },
-      select: { name: true, contractType: true },
+      select: { name: true },
     });
 
     await this.db.shiftAssignment.delete({ where: { id: assignment.id } });
@@ -536,18 +506,7 @@ export class ShiftAssignmentService {
       data: { status: "WITHDRAWN" },
     });
 
-    // The spot is freed — cancel any Dimona declaration for auto-declare types.
-    if (DimonaService.shouldAutoDeclare(worker?.contractType)) {
-      await new DimonaService(this.db)
-        .cancel({ shiftId: input.shiftId, workerId: input.userId })
-        .catch((err) =>
-          logger.warn({
-            event: "dimona.cancel.failed",
-            shiftId: input.shiftId,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-    }
+    await cancelIfAuto(this.db, input.shiftId, input.userId);
 
     const business = await this.db.business.findUnique({
       where: { id: input.businessId },

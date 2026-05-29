@@ -1,7 +1,12 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { BroadcastService } from "@/application/services/broadcast-service";
+import { declareInIfAuto } from "@/application/services/dimona-hooks";
 import { createPrismaMock, type PrismaMock } from "../../helpers/mock-prisma";
+
+vi.mock("@/application/services/dimona-hooks", () => ({
+  declareInIfAuto: vi.fn().mockResolvedValue(undefined),
+}));
 
 const FUTURE_START = new Date(Date.now() + 86_400_000);
 const FUTURE_END = new Date(Date.now() + 90_000_000);
@@ -234,6 +239,11 @@ describe("BroadcastService.accept", () => {
       businessId: "b1",
     });
     expect(first.alreadyAssigned).toBe(false);
+    expect(declareInIfAuto).toHaveBeenCalledWith(
+      expect.anything(),
+      "s1",
+      "u1",
+    );
 
     await expect(
       svc.accept({ shiftId: "s1", userId: "u2", businessId: "b1" }),

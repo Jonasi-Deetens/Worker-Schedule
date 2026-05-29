@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { logger } from "@/infrastructure/logging/logger";
+import { declareOutIfAuto } from "./dimona-hooks";
 
 export class TimeClockService {
   constructor(private readonly db: PrismaClient) {}
@@ -18,6 +19,29 @@ export class TimeClockService {
       where: { userId: input.userId, clockOutAt: null },
     });
     if (open) throw new Error("Already clocked in");
+
+    const worker = await this.db.user.findUnique({
+      where: { id: input.userId },
+      select: { businessId: true },
+    });
+    if (worker?.businessId) {
+      const business = await this.db.business.findUnique({
+        where: { id: worker.businessId },
+        select: { requireSignedContract: true },
+      });
+      if (business?.requireSignedContract) {
+        const signed = await this.db.workerContract.findFirst({
+          where: {
+            userId: input.userId,
+            businessId: worker.businessId,
+            status: "SIGNED",
+          },
+        });
+        if (!signed) {
+          throw new Error("errors.contractRequired");
+        }
+      }
+    }
 
     // A linked shift must belong to one of the worker's own assignments,
     // otherwise the entry would be attributed to a shift they never worked.
@@ -93,6 +117,10 @@ export class TimeClockService {
         type: "time_entry.created",
         userId: input.userId,
       });
+    }
+
+    if (entry.shiftId) {
+      await declareOutIfAuto(this.db, entry.shiftId, input.userId);
     }
 
     return updated;

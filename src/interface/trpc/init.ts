@@ -79,6 +79,7 @@ const CONFLICT_ERROR_KEYS = new Set<string>([
   "errors.overlap",
   "errors.duplicateApplication",
   "errors.attendanceNoShowHasEntry",
+  "errors.contractRequired",
 ]);
 
 export function mapServiceError(error: unknown): never {

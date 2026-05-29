@@ -308,7 +308,7 @@
     "title": "Intégrations",
     "subtitle": "Connectez des services externes comme la Dimona belge.",
     "dimonaTitle": "Dimona (ONSS/RSZ)",
-    "dimonaHelp": "Définissez votre numéro d'employeur et vos identifiants API. Les shifts flexi, extra et étudiant sont alors déclarés automatiquement lors de l'affectation, et annulés lorsqu'un shift est annulé ou un travailleur retiré.",
+    "dimonaHelp": "Définissez votre numéro d'employeur et vos identifiants API. Les travailleurs flexi, extra et étudiant sont déclarés automatiquement lorsque leur affectation est confirmée (acceptation directe, approbation, broadcast ou échange). Les déclarations sont annulées à la fin de l'affectation, et un OUT est envoyé à la sortie du pointage. Les contrats salariés nécessitent une déclaration manuelle via la liste ci-dessous.",
     "employerId": "Numéro d'employeur",
     "token": "Jeton API",
     "tokenSet": "•••••••• (enregistré)",
@@ -316,7 +316,46 @@
     "tokenHelp": "Stocké chiffré (AES-256-GCM). Laissez vide pour conserver le jeton actuel.",
     "baseUrl": "URL de base de l'API (facultatif)",
     "save": "Enregistrer l'intégration",
-    "saved": "Paramètres d'intégration enregistrés"
+    "saved": "Paramètres d'intégration enregistrés",
+    "dimonaDeclarationsTitle": "Déclarations récentes",
+    "dimonaDeclarationsHelp": "Les déclarations IN sont envoyées lorsqu'une affectation est confirmée. Relancez les échecs ou annulez les déclarations actives.",
+    "dimonaDeclarationsEmpty": "Aucune déclaration pour l'instant.",
+    "dimonaFilterAll": "Tous les statuts",
+    "dimonaOutDeclared": "OUT envoyé",
+    "dimonaRetry": "Réessayer",
+    "dimonaCancel": "Annuler",
+    "dimonaRetrySuccess": "Nouvelle tentative de déclaration en file",
+    "dimonaCancelSuccess": "Déclaration annulée",
+    "contractPolicyTitle": "Signature électronique de contrat",
+    "contractPolicyHelp": "Si activé, les travailleurs doivent signer un contrat avant de pointer.",
+    "contractPolicyRequire": "Exiger un contrat signé avant le pointage",
+    "contractPolicySaved": "Politique de contrat mise à jour"
+  },
+  "contracts": {
+    "pendingBanner": "Un contrat attend votre signature",
+    "reviewAndSign": "Consulter et signer",
+    "signTitle": "Signer le contrat",
+    "signatureName": "Nom légal complet",
+    "signaturePlaceholder": "Saisissez votre nom tel qu'il figure sur votre pièce d'identité",
+    "agreeLabel": "J'ai lu ce contrat et j'accepte ses conditions",
+    "signButton": "Signer le contrat",
+    "declineButton": "Refuser",
+    "viewDocument": "Voir le document joint",
+    "sent": "Contrat envoyé au travailleur",
+    "signed": "Contrat signé",
+    "declined": "Contrat refusé",
+    "empty": "Aucun contrat envoyé pour l'instant.",
+    "sendTitle": "Envoyer un nouveau contrat",
+    "titleLabel": "Titre",
+    "bodyLabel": "Texte du contrat (facultatif)",
+    "sendButton": "Envoyer pour signature",
+    "workerSectionTitle": "Contrats",
+    "workerSectionHelp": "Envoyez des contrats pour signature électronique et suivez leur statut.",
+    "statusDraft": "Brouillon",
+    "statusSent": "En attente de signature",
+    "statusSigned": "Signé",
+    "statusDeclined": "Refusé",
+    "signedAt": "Signé le {date}"
   },
   "locations": {
     "title": "Lieux",
@@ -524,7 +563,8 @@
     "noBusiness": "Vous n'êtes pas encore lié à un établissement.",
     "pendingTitle": "Heures à approuver",
     "approveSelected": "Approuver la sélection",
-    "noPending": "Rien en attente."
+    "noPending": "Rien en attente.",
+    "contractRequiredHint": "Signez votre contrat en attente avant de pointer."
   },
   "payroll": {
     "title": "Paie & heures",
@@ -870,11 +910,11 @@
       },
       "dimona": {
         "title": "Déclarations Dimona",
-        "intro": "Déclarations Dimona ONSS automatiques : une entrée (IN) lors de l'affectation d'un flexi, extra ou étudiant, et une annulation lorsque le shift est annulé ou le travailleur retiré.",
+        "intro": "Déclarations Dimona ONSS automatiques : une entrée (IN) lorsque l'affectation d'un flexi, extra ou étudiant est confirmée (acceptation directe, approbation, broadcast ou échange). Une annulation à la fin de l'affectation, et un OUT à la sortie du pointage.",
         "steps": {
           "1": "Saisissez votre numéro d'employeur et vos identifiants Dimona une fois dans Paramètres → Intégrations (chiffrés au repos). Chaque travailleur doit avoir un NISS sur son profil.",
           "2": "Mettez DIMONA_ENV à 'sandbox' pour tester sans déclaration réelle, puis 'prod' une fois prêt.",
-          "3": "Un job de réconciliation quotidien détecte les écarts et alerte les gérants dans l'app ; les échecs restent visibles dans /audit."
+          "3": "Un job de réconciliation quotidien détecte les écarts et alerte les gérants dans l'app ; les échecs restent visibles dans /audit et dans la liste des déclarations sous Intégrations."
         },
         "tip": "Gardez DIMONA_ENV sur 'mock' en dev — l'app logue l'intention sans contacter l'ONSS."
       },
@@ -950,6 +990,7 @@
     "resetTokenInvalid": "Ce lien de réinitialisation est invalide, expiré ou déjà utilisé.",
     "weakPassword": "Le mot de passe doit comporter au moins 8 caractères.",
     "attendanceNoShowHasEntry": "Ce collaborateur a des heures pointées ou approuvées pour ce shift ; il ne peut donc pas être marqué comme absent. Rejetez d'abord la saisie de temps.",
-    "timeEntryShiftNoShow": "Ce shift est marqué comme absence. Vérifiez la présence avant d'approuver ces heures."
+    "timeEntryShiftNoShow": "Ce shift est marqué comme absence. Vérifiez la présence avant d'approuver ces heures.",
+    "contractRequired": "Vous devez signer votre contrat de travail avant de pointer. Ouvrez Mon profil ou Candidatures pour signer."
   }
 }

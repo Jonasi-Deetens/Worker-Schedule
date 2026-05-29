@@ -18,7 +18,8 @@ export type BusinessEvent =
   | { type: "assignment.changed"; shiftId: string }
   | { type: "timeoff.decided"; userId: string }
   | { type: "time_entry.created"; userId: string }
-  | { type: "shift.message.created"; shiftId: string };
+  | { type: "shift.message.created"; shiftId: string }
+  | { type: "contract.changed"; userId: string };
 
 type Listener = (event: BusinessEvent) => void;
 

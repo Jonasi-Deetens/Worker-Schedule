@@ -32,6 +32,7 @@ export const JOBS = {
   SHIFT_REMINDER_24H: "shift.reminder.24h",
   INVITE_CLEANUP: "invite.cleanup",
   DIMONA_RECONCILE: "dimona.reconcile",
+  DIMONA_DECLARE: "dimona.declare",
   WEBHOOK_DELIVER: "webhook.deliver",
 } as const;
 

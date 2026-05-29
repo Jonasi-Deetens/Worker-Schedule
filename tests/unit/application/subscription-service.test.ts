@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SubscriptionService } from "@/application/services/subscription-service";
 import type { EmailService } from "@/application/services/email-service";
+import { declareInIfAuto } from "@/application/services/dimona-hooks";
 import { subscribe, type BusinessEvent } from "@/infrastructure/events/bus";
 import {
   asPrisma,
   createPrismaMock,
   type PrismaMock,
 } from "../../helpers/mock-prisma";
+
+vi.mock("@/application/services/dimona-hooks", () => ({
+  declareInIfAuto: vi.fn().mockResolvedValue(undefined),
+}));
 
 const BUSINESS_ID = "biz-1";
 const OWNER_USER_ID = "owner-1";
@@ -281,6 +286,41 @@ describe("SubscriptionService.approve", () => {
       expect.objectContaining({
         data: expect.objectContaining({ action: "SUBSCRIPTION_APPROVED" }),
       }),
+    );
+  });
+
+  it("declares Dimona IN after approval", async () => {
+    prisma.shiftSubscription.findFirst.mockResolvedValue({
+      id: "sub-1",
+      shiftId: "shift-1",
+      userId: WORKER_ID,
+      status: "PENDING",
+      shift: {
+        id: "shift-1",
+        startsAt: new Date("2026-06-01T10:00:00Z"),
+        endsAt: new Date("2026-06-01T14:00:00Z"),
+        requiredSpots: 2,
+        roleLabel: "Barista",
+      },
+    });
+    prisma.shiftAssignment.count.mockResolvedValue(0);
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.shiftAssignment.create.mockResolvedValue({
+      id: "assign-1",
+      shiftId: "shift-1",
+      userId: WORKER_ID,
+    });
+
+    await service.approve({
+      subscriptionId: "sub-1",
+      ownerId: OWNER_USER_ID,
+      businessId: BUSINESS_ID,
+    });
+
+    expect(declareInIfAuto).toHaveBeenCalledWith(
+      expect.anything(),
+      "shift-1",
+      WORKER_ID,
     );
   });
 

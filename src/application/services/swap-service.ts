@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/infrastructure/logging/logger";
+import { cancelIfAuto, declareInIfAuto } from "./dimona-hooks";
 import { SchedulingRules } from "./scheduling-rules";
 
 /**
@@ -280,6 +281,9 @@ export class SwapService {
         metadata: { accepted: true },
       },
     });
+
+    await cancelIfAuto(this.db, shift.id, fromUserId);
+    await declareInIfAuto(this.db, shift.id, input.decidingUserId);
 
     return this.db.shiftSwap.findUnique({ where: { id: swap.id } });
   }

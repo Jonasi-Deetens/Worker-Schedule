@@ -137,3 +137,57 @@ describe("DimonaService.cancel", () => {
     );
   });
 });
+
+describe("DimonaService.declareOut", () => {
+  let db: PrismaMock;
+  let adapter: MockDimonaAdapter;
+
+  beforeEach(() => {
+    db = createPrismaMock();
+    adapter = new MockDimonaAdapter();
+  });
+
+  it("records outDeclaredAt on success", async () => {
+    const inResult = await adapter.declare({
+      workerNiss: "90010112345",
+      workerType: "FLX",
+      startsAt: new Date(),
+      endsAt: new Date(),
+      employerId: "RSZ-1",
+      action: "IN",
+    });
+    db.dimonaDeclaration.findFirst.mockResolvedValue({
+      id: "d1",
+      status: "CONFIRMED",
+      dimonaPeriodId: inResult.dimonaPeriodId,
+      outDeclaredAt: null,
+      errorMessage: null,
+    });
+    db.shift.findUnique.mockResolvedValue({
+      id: "s1",
+      startsAt: new Date(),
+      endsAt: new Date(),
+      business: { dimonaEmployerId: "RSZ-1" },
+    });
+    db.user.findUnique.mockResolvedValue({
+      id: "u1",
+      contractType: "FLEXI",
+      nationalNumber: "12.34.56-789.01",
+    });
+    db.dimonaDeclaration.update.mockImplementation(async ({ data }) => ({
+      id: "d1",
+      ...data,
+    }));
+    db.auditEvent.create.mockResolvedValue({});
+
+    const service = new DimonaService(db as unknown as PrismaClient, adapter);
+    const result = await service.declareOut({ shiftId: "s1", workerId: "u1" });
+
+    expect(result?.outDeclaredAt).toBeInstanceOf(Date);
+    expect(db.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "DIMONA_OUT_DECLARED" }),
+      }),
+    );
+  });
+});

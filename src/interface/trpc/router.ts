@@ -7,6 +7,8 @@ import { authRouter } from "./routers/auth";
 import { availabilityRouter } from "./routers/availability";
 import { availabilityTemplateRouter } from "./routers/availability-template";
 import { businessRouter } from "./routers/business";
+import { contractRouter } from "./routers/contract";
+import { dimonaRouter } from "./routers/dimona";
 import { documentRouter } from "./routers/document";
 import { gdprRouter } from "./routers/gdpr";
 import { inviteRouter } from "./routers/invite";
@@ -49,6 +51,8 @@ export const appRouter = router({
   membership: membershipRouter,
   shiftMessage: shiftMessageRouter,
   document: documentRouter,
+  dimona: dimonaRouter,
+  contract: contractRouter,
   analytics: analyticsRouter,
   twoFactor: twoFactorRouter,
   gdpr: gdprRouter,

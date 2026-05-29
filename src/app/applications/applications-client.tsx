@@ -11,6 +11,7 @@ import { trpc } from "@/interface/trpc/client";
 import { subscriptionToDisplayStatus } from "@/domain/rules/scheduling";
 import { toast, trpcErrorMessage } from "@/lib/toast";
 import type { SubscriptionStatus } from "@/domain/types";
+import { ContractSigningPanel } from "@/interface/components/contract-signing-panel";
 
 interface Item {
   id: string;
@@ -83,6 +84,8 @@ export function ApplicationsPageClient() {
         <p className="mt-1 text-sm text-ink-muted">
           {t("applications.subtitle")}
         </p>
+
+        <ContractSigningPanel />
 
         {isLoading && (
           <p className="mt-6 text-sm text-slate-500">

@@ -10,12 +10,14 @@ import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
 import { formatTimeRange } from "@/lib/calendar-utils";
+import { ContractSigningPanel } from "@/interface/components/contract-signing-panel";
 
 export function ClockClient({ initialShiftId }: { initialShiftId: string | null }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const active = trpc.timeClock.active.useQuery();
   const dashboard = trpc.me.dashboard.useQuery();
+  const pendingContracts = trpc.contract.listPendingMine.useQuery();
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -63,6 +65,14 @@ export function ClockClient({ initialShiftId }: { initialShiftId: string | null 
       <AppHeader />
       <main className="mx-auto max-w-md px-4 py-6 sm:px-6">
         <h1 className="text-2xl font-bold text-slate-900">{t("clock.title")}</h1>
+
+        <ContractSigningPanel />
+
+        {(pendingContracts.data?.length ?? 0) > 0 && (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {t("clock.contractRequiredHint")}
+          </p>
+        )}
 
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           {entry ? (

@@ -10,6 +10,7 @@ import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
+import { WorkerContractsSection } from "./worker-contracts-section";
 
 const CONTRACT_TYPES = ["FLEXI", "JOBSTUDENT", "EMPLOYEE", "EXTRA"] as const;
 
@@ -240,6 +241,8 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
             </ul>
           </section>
         )}
+
+        <WorkerContractsSection workerId={workerId} />
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
