@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               href="/login"
-              className="block text-center text-sm font-medium text-indigo-600 hover:underline"
+              className="block text-center text-sm font-medium text-emerald-600 hover:underline"
             >
               {t("backToLogin")}
             </Link>
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
             </Button>
             <Link
               href="/login"
-              className="block text-center text-sm font-medium text-indigo-600 hover:underline"
+              className="block text-center text-sm font-medium text-emerald-600 hover:underline"
             >
               {t("backToLogin")}
             </Link>

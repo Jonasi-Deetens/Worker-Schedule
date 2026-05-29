@@ -57,7 +57,7 @@ export function BulkRescheduleDialog({
               {t("bulk.rescheduleDirection")}
             </legend>
             <div className="mt-2 flex gap-2">
-              <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+              <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
                 <input
                   type="radio"
                   name="bulk-direction"
@@ -67,7 +67,7 @@ export function BulkRescheduleDialog({
                 />
                 {t("bulk.rescheduleEarlier")}
               </label>
-              <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+              <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
                 <input
                   type="radio"
                   name="bulk-direction"

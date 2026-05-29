@@ -252,7 +252,7 @@ function audienceBadge(
     label: labels.join(" · "),
     className: audience.includes("worker") && audience.length === 1
       ? "bg-emerald-100 text-emerald-800"
-      : "bg-indigo-100 text-indigo-800",
+      : "bg-emerald-100 text-emerald-800",
   };
 }
 
@@ -286,7 +286,7 @@ export function HelpClient({ role }: { role: string }) {
               <li key={s.id}>
                 <a
                   href={`#${s.id}`}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-slate-700 hover:bg-white hover:text-indigo-700"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-slate-700 hover:bg-white hover:text-emerald-700"
                 >
                   <span className="text-slate-400">{s.icon}</span>
                   <span className="truncate">
@@ -313,7 +313,7 @@ export function HelpClient({ role }: { role: string }) {
                 className="scroll-mt-20 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-indigo-50 p-1.5 text-indigo-700">
+                  <span className="rounded-md bg-emerald-50 p-1.5 text-emerald-700">
                     {s.icon}
                   </span>
                   <h2 className="text-lg font-semibold text-slate-900">

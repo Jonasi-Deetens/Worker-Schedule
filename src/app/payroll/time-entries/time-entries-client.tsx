@@ -238,7 +238,7 @@ export function TimeEntriesClient() {
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 tab === key
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
@@ -548,7 +548,7 @@ function ExportPanel() {
             id="exportProvider"
             value={provider}
             onChange={(e) => setProvider(e.target.value as Provider)}
-            className="block h-10 rounded-md border border-slate-300 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="block h-10 rounded-md border border-slate-300 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             <option value="generic">{t("payroll.providerGeneric")}</option>
             <option value="sdworx">SD Worx</option>

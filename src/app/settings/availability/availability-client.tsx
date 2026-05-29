@@ -156,7 +156,7 @@ export function AvailabilityTemplatesClient() {
                 id="tpl-day"
                 value={dayOfWeek}
                 onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                className="mt-1 flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="mt-1 flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
                 {WEEKDAYS.map((d) => (
                   <option key={d} value={d}>
@@ -227,7 +227,7 @@ export function AvailabilityTemplatesClient() {
                 className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex min-w-[5.5rem] justify-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                  <span className="inline-flex min-w-[5.5rem] justify-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     {t(`availabilityTemplates.weekdays.${tpl.dayOfWeek}`)}
                   </span>
                   <span className="font-medium text-slate-900">

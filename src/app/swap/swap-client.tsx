@@ -28,7 +28,7 @@ export function SwapClient() {
     <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t("shift.swap")}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink">{t("shift.swap")}</h1>
 
         <section className="mt-6">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -38,10 +38,10 @@ export function SwapClient() {
             {(list.data?.incoming ?? []).map((swap) => (
               <li
                 key={swap.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-hairline bg-white p-4 shadow-card"
               >
-                <div>
-                  <p className="font-medium text-slate-900">
+                <div className="min-w-0">
+                  <p className="font-medium text-ink">
                     {swap.fromSubscription.user.name} →{" "}
                     {swap.fromSubscription.shift.roleLabel}
                   </p>
@@ -87,10 +87,10 @@ export function SwapClient() {
             {(list.data?.outgoing ?? []).map((swap) => (
               <li
                 key={swap.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-hairline bg-white p-4 shadow-card"
               >
-                <div>
-                  <p className="font-medium text-slate-900">
+                <div className="min-w-0">
+                  <p className="font-medium text-ink">
                     {swap.fromSubscription.shift.roleLabel} → {swap.toUser.name}
                   </p>
                   <p className="text-xs text-slate-500">

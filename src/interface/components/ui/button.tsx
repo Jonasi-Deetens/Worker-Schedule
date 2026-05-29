@@ -4,18 +4,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef } from "react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-[color,background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
+        default:
+          "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 active:bg-emerald-800 focus-visible:ring-emerald-500",
         secondary:
-          "bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-400",
+          "bg-slate-100 text-ink hover:bg-slate-200 focus-visible:ring-slate-400",
         outline:
-          "border border-slate-300 bg-white hover:bg-slate-50 focus-visible:ring-indigo-500",
+          "border border-hairline bg-white text-ink hover:bg-slate-50 focus-visible:ring-emerald-500",
         destructive:
-          "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
-        ghost: "hover:bg-slate-100 focus-visible:ring-slate-400",
+          "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-700 focus-visible:ring-red-500",
+        ghost: "text-ink hover:bg-slate-100 focus-visible:ring-slate-400",
       },
       size: {
         default: "h-10 px-4 py-2",

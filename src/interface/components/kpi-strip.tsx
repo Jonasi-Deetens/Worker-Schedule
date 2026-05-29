@@ -51,7 +51,7 @@ export function KpiStrip({ data, isLoading }: KpiStripProps) {
       label: t("calendar.kpi.capacity"),
       value: data ? `${data.capacityPct}%` : undefined,
       icon: Users,
-      tone: "text-indigo-600 bg-indigo-50",
+      tone: "text-emerald-600 bg-emerald-50",
     },
     {
       key: "labourCost",

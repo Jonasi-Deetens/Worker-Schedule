@@ -62,7 +62,7 @@ export function IntegrationsClient() {
           className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
         >
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <ShieldCheck className="h-4 w-4 text-indigo-600" />
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
             {t("integrations.dimonaTitle")}
           </div>
           <p className="text-xs text-slate-500">{t("integrations.dimonaHelp")}</p>

@@ -35,8 +35,8 @@ export function StaffingSuggestionsPanel({
   if (!isLoading && top.length === 0) return null;
 
   return (
-    <section className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/40 p-3">
-      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+    <section className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
+      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
         <Sparkles className="h-3.5 w-3.5" />
         {t("suggestions.title")}
       </div>
@@ -47,12 +47,12 @@ export function StaffingSuggestionsPanel({
         {top.map((c) => (
           <li
             key={c.userId}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 ring-1 ring-indigo-100"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 ring-1 ring-emerald-100"
           >
             <div className="min-w-0">
               <div className="flex items-baseline gap-2 text-sm">
                 <span className="font-medium text-slate-900">{c.name}</span>
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                   {c.score}
                 </span>
               </div>

@@ -137,9 +137,9 @@ export function ShiftDetailDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
-          <Dialog.Title className="text-xl font-semibold text-slate-900">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-hairline bg-white p-6 shadow-card">
+          <Dialog.Title className="text-xl font-semibold text-ink">
             {shift.roleLabel}
           </Dialog.Title>
           <div className="mt-2 flex items-center gap-2">
@@ -185,7 +185,7 @@ export function ShiftDetailDialog({
           )}
 
           {shift.notes && (
-            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+            <div className="mt-3 rounded-xl border border-hairline bg-slate-50 p-3 text-sm text-slate-700">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 {t("shift.notes")}
               </p>
@@ -273,7 +273,7 @@ export function ShiftDetailDialog({
           </div>
 
           {isOwner && shift.isDraft && shift.displayStatus !== "Cancelled" && (
-            <p className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-600">
+            <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-600">
               {t("shift.publishBeforeAssign")}
             </p>
           )}
@@ -282,12 +282,12 @@ export function ShiftDetailDialog({
             !shift.isDraft &&
             onAssignWorker &&
             eligibleAssignees.length > 0 && (
-            <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mt-6 rounded-xl border border-hairline bg-slate-50 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {t("shift.assign")}
               </p>
               <select
-                className="flex h-9 w-full rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm"
+                className="flex h-9 w-full rounded-[10px] border border-hairline bg-white px-3 py-1 text-sm text-ink focus-visible:outline-none focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 defaultValue=""
                 onChange={(e) => {
                   if (e.target.value) {
@@ -325,7 +325,7 @@ export function ShiftDetailDialog({
                 {awaitingAcceptance.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Avatar name={a.userName} url={a.avatarUrl} size="md" />
@@ -388,7 +388,7 @@ export function ShiftDetailDialog({
                 {subscriptions.map((sub) => (
                   <li
                     key={sub.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-hairline p-3"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Avatar
@@ -431,7 +431,7 @@ export function ShiftDetailDialog({
           {isOwner &&
             assignments.length > 0 &&
             new Date(shift.startsAt) < new Date() && (
-              <section className="mt-6 rounded-lg border border-slate-200 bg-white p-3">
+              <section className="mt-6 rounded-xl border border-hairline bg-white p-3">
                 <h3 className="mb-2 text-sm font-semibold text-slate-900">
                   {t("attendance.title")}
                 </h3>
@@ -455,7 +455,7 @@ export function ShiftDetailDialog({
                               disabled={isLoading}
                               className={`rounded-md px-2 py-1 text-xs font-medium transition ${
                                 a.attendance === status
-                                  ? "bg-indigo-600 text-white"
+                                  ? "bg-emerald-700 text-white"
                                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                               }`}
                             >

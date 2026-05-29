@@ -199,7 +199,7 @@ export function ProfileClient() {
 
         <Link
           href="/me/data"
-          className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-300"
+          className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300"
         >
           <span className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-slate-500" />

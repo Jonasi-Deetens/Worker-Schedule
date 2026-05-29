@@ -32,7 +32,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
-      <body className={`${inter.variable} min-h-screen bg-slate-50 font-sans antialiased`}>
+      <body className={`${inter.variable} min-h-screen bg-app font-sans antialiased`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <TRPCProvider>{children}</TRPCProvider>

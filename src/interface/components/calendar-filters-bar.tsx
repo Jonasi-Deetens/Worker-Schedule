@@ -55,7 +55,7 @@ export function CalendarFiltersBar({
       <label className="flex items-center gap-1.5 text-xs">
         <span className="text-slate-600">{t("calendar.filters.role")}</span>
         <select
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
           value={filters.role ?? ""}
           onChange={(e) =>
             onChange({ ...filters, role: e.target.value || undefined })
@@ -73,7 +73,7 @@ export function CalendarFiltersBar({
       <label className="flex items-center gap-1.5 text-xs">
         <span className="text-slate-600">{t("calendar.filters.status")}</span>
         <select
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
           value={filters.statuses?.[0] ?? ""}
           onChange={(e) =>
             onChange({
@@ -97,7 +97,7 @@ export function CalendarFiltersBar({
         <label className="flex items-center gap-1.5 text-xs">
           <span className="text-slate-600">{t("calendar.filters.worker")}</span>
           <select
-            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
             value={filters.workerId ?? ""}
             onChange={(e) =>
               onChange({ ...filters, workerId: e.target.value || undefined })

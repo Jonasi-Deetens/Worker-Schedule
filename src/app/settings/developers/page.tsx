@@ -9,7 +9,7 @@ export default async function DevelopersPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role !== "OWNER") redirect("/calendar");
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-app">
       <AppHeader />
       <DevelopersClient />
     </div>

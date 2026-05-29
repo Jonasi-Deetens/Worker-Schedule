@@ -121,7 +121,7 @@ export default function LoginPage() {
         <p className="mt-4 text-center text-sm text-slate-600">
           <Link
             href="/forgot-password"
-            className="font-medium text-indigo-600 hover:underline"
+            className="font-medium text-emerald-600 hover:underline"
           >
             {t("forgotPassword")}
           </Link>
@@ -131,7 +131,7 @@ export default function LoginPage() {
           {t("noAccount")}{" "}
           <Link
             href="/register"
-            className="font-medium text-indigo-600 hover:underline"
+            className="font-medium text-emerald-600 hover:underline"
           >
             {t("register")}
           </Link>

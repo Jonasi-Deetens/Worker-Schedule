@@ -24,7 +24,7 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps) {
         aria-pressed={value === "24h"}
         className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
           value === "24h"
-            ? "bg-indigo-600 text-white shadow-sm"
+            ? "bg-emerald-700 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
         }`}
       >
@@ -36,7 +36,7 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps) {
         aria-pressed={value === "12h"}
         className={`px-2.5 py-1 font-medium rounded-[5px] transition ${
           value === "12h"
-            ? "bg-indigo-600 text-white shadow-sm"
+            ? "bg-emerald-700 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
         }`}
       >

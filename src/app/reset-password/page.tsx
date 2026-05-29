@@ -47,7 +47,7 @@ function ResetPasswordForm() {
         </p>
         <Link
           href="/forgot-password"
-          className="block text-center text-sm font-medium text-indigo-600 hover:underline"
+          className="block text-center text-sm font-medium text-emerald-600 hover:underline"
         >
           {t("auth.requestNewLink")}
         </Link>

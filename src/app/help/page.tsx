@@ -13,7 +13,7 @@ export default async function HelpPage() {
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-app">
       <AppHeader />
       <HelpClient role={session.user.role} />
     </div>

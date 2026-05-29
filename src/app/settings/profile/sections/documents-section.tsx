@@ -119,8 +119,8 @@ export function DocumentsSection() {
       <label
         className={`flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-6 text-sm transition ${
           dragOver
-            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-            : "border-slate-300 text-slate-600 hover:border-indigo-400"
+            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+            : "border-slate-300 text-slate-600 hover:border-emerald-400"
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -161,7 +161,7 @@ export function DocumentsSection() {
                 href={d.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="truncate text-xs text-indigo-600 hover:underline"
+                className="truncate text-xs text-emerald-600 hover:underline"
               >
                 {d.fileName}
               </a>

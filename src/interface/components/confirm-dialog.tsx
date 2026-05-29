@@ -35,11 +35,11 @@ export function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" />
         <Dialog.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2",
-            "rounded-xl border border-slate-200 bg-white p-6 shadow-xl focus:outline-none",
+            "rounded-2xl border border-hairline bg-white p-6 shadow-card focus:outline-none",
           )}
         >
           <div className="flex items-start gap-3">
@@ -48,18 +48,18 @@ export function ConfirmDialog({
                 "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
                 variant === "destructive"
                   ? "bg-red-100 text-red-600"
-                  : "bg-indigo-100 text-indigo-600",
+                  : "bg-emerald-100 text-emerald-700",
               )}
               aria-hidden
             >
               <AlertTriangle className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-semibold text-slate-900">
+              <Dialog.Title className="text-base font-semibold text-ink">
                 {title}
               </Dialog.Title>
               {description && (
-                <Dialog.Description className="mt-1 text-sm text-slate-600">
+                <Dialog.Description className="mt-1 text-sm text-ink-muted">
                   {description}
                 </Dialog.Description>
               )}

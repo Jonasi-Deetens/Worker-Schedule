@@ -197,7 +197,7 @@ function RevenueCell({
         if (e.key === "Enter") e.currentTarget.blur();
       }}
       placeholder={placeholder}
-      className="w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
     />
   );
 }

@@ -350,7 +350,7 @@ export function WorkerDetailClient({ workerId }: { workerId: string }) {
                   <span>{t("skills.emptyCatalog")}</span>
                   <Link
                     href="/settings/skills"
-                    className="font-medium text-indigo-600 hover:underline"
+                    className="font-medium text-emerald-600 hover:underline"
                   >
                     {t("skills.manageLink")} →
                   </Link>

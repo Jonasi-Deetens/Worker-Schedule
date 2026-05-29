@@ -42,8 +42,8 @@ export default function NotificationsPage() {
     <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
             {t("notifications.title")}
           </h1>
           <Button
@@ -75,7 +75,7 @@ export default function NotificationsPage() {
               className={`rounded-lg border p-4 ${
                 n.readAt
                   ? "border-slate-200 bg-white"
-                  : "border-indigo-200 bg-indigo-50/50"
+                  : "border-emerald-200 bg-emerald-50/50"
               }`}
             >
               <div className="flex items-start justify-between gap-3">

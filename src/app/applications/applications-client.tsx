@@ -77,10 +77,10 @@ export function ApplicationsPageClient() {
     <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">
           {t("applications.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {t("applications.subtitle")}
         </p>
 
@@ -223,11 +223,11 @@ function ApplicationGroup({
           return (
             <li
               key={item.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hairline bg-white p-4 shadow-card"
             >
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-slate-900">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-medium text-ink">
                     {item.shift.roleLabel}
                   </p>
                   <StatusBadge
@@ -245,7 +245,7 @@ function ApplicationGroup({
               </div>
               <Link
                 href="/calendar"
-                className="text-xs font-medium text-indigo-600 hover:underline"
+                className="text-xs font-medium text-emerald-600 hover:underline"
               >
                 {t("applications.viewOnCalendar")} →
               </Link>

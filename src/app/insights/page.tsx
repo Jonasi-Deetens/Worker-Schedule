@@ -11,7 +11,7 @@ export default async function InsightsPage() {
     redirect("/calendar");
   }
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-app">
       <AppHeader />
       <InsightsClient />
     </div>

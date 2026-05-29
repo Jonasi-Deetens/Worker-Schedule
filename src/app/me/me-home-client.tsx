@@ -109,15 +109,15 @@ export function MeHomeClient() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
       <header className="mb-5">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">
           {t("me.greeting")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600">{t("me.subtitle")}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t("me.subtitle")}</p>
       </header>
 
       {/* Next shift hero */}
-      <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+      <section className="rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 to-white p-5 shadow-card">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
           <CalendarDays className="h-4 w-4" />
           {t("me.nextShift")}
         </div>
@@ -129,7 +129,7 @@ export function MeHomeClient() {
             <p className="text-sm text-slate-600">{t("me.noNextShift")}</p>
             <Link
               href="/calendar"
-              className="mt-3 inline-flex text-sm font-medium text-indigo-600 hover:underline"
+              className="mt-3 inline-flex text-sm font-medium text-emerald-600 hover:underline"
             >
               {t("me.findShifts")}
             </Link>
@@ -142,7 +142,7 @@ export function MeHomeClient() {
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
               <span className="inline-flex items-center gap-1">
-                <Clock className="h-4 w-4 text-indigo-600" />
+                <Clock className="h-4 w-4 text-emerald-600" />
                 {startsAt.toLocaleDateString(undefined, {
                   weekday: "short",
                   day: "numeric",
@@ -157,7 +157,7 @@ export function MeHomeClient() {
                 </span>
               )}
             </div>
-            <div className="text-sm font-medium text-indigo-700">
+            <div className="text-sm font-medium text-emerald-700">
               {relative(startsAt, t)}
             </div>
             {nextShift.notes && (
@@ -334,13 +334,13 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-indigo-300 hover:shadow"
+      className="rounded-2xl border border-hairline bg-white p-3 shadow-card transition hover:border-emerald-200 hover:shadow-pop"
     >
       <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
         {icon}
         {label}
       </div>
-      <div className="mt-1 text-2xl font-semibold text-slate-900">{value}</div>
+      <div className="mt-1 text-2xl font-semibold text-ink">{value}</div>
     </Link>
   );
 }
@@ -437,7 +437,7 @@ function AvailabilityStrip() {
 
   return (
     <section className="mt-6">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           {t("me.quickAvailability")}
         </div>
@@ -460,13 +460,13 @@ function AvailabilityStrip() {
                 isOff || setMutation.isPending || deleteMutation.isPending
               }
               aria-label={isOff ? offLabel : undefined}
-              className={`flex min-w-[3.25rem] flex-col items-center rounded-xl border px-2.5 py-3 text-center transition ${
+              className={`flex min-w-13 flex-col items-center rounded-xl border px-2.5 py-3 text-center transition ${
                 isOff
                   ? "cursor-not-allowed border-amber-300 bg-amber-50 text-amber-900"
                   : isAvailable
                     ? "border-emerald-300 bg-emerald-100 text-emerald-900"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
-              } ${isToday ? "ring-2 ring-inset ring-indigo-400" : ""}`}
+                    : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300"
+              } ${isToday ? "ring-2 ring-inset ring-emerald-400" : ""}`}
             >
               <span className="text-[10px] font-semibold uppercase tracking-wide">
                 {d.toLocaleDateString(undefined, { weekday: "short" })}
@@ -502,7 +502,7 @@ function QuickLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+      className="flex items-center gap-2 rounded-2xl border border-hairline bg-white p-3 text-sm font-medium text-slate-700 shadow-card transition hover:border-emerald-200 hover:text-emerald-700"
     >
       {icon}
       {label}

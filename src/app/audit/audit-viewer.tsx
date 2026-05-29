@@ -138,8 +138,8 @@ export function AuditViewer() {
             {t("audit.empty")}
           </p>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <table className="w-full table-fixed border-collapse text-left text-sm">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-hairline bg-white shadow-card">
+            <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="w-1/3 px-3 py-2">{t("audit.action")}</th>

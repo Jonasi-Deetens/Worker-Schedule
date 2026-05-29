@@ -93,7 +93,7 @@ export function ShiftFormDialog({
   };
 
   const selectClass =
-    "flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
+    "flex h-10 w-full rounded-[10px] border border-hairline bg-white px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/40";
 
   const resolvedTitle =
     title ?? (mode === "edit" ? t("shift.edit") : t("shift.create"));
@@ -101,11 +101,11 @@ export function ShiftFormDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" />
         <Dialog.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2",
-            "rounded-xl border border-slate-200 bg-white p-6 shadow-xl focus:outline-none",
+            "rounded-2xl border border-hairline bg-white p-6 shadow-card focus:outline-none",
           )}
         >
           <div className="mb-4 flex items-center justify-between">
@@ -237,7 +237,7 @@ export function ShiftFormDialog({
             )}
 
             {allowRecurrence && mode === "create" && (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="rounded-xl border border-hairline bg-slate-50 p-3">
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
                   <input
                     type="checkbox"
@@ -322,8 +322,8 @@ export function AvailabilityFormDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-hairline bg-white p-6 shadow-card">
           <Dialog.Title className="mb-4 text-lg font-semibold">
             {t("calendar.setAvailability")}
           </Dialog.Title>

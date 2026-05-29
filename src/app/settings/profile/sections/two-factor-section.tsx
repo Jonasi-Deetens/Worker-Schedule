@@ -58,7 +58,7 @@ export function TwoFactorSection() {
           </code>
           <a
             href={setup.otpauthUrl}
-            className="text-xs text-indigo-600 hover:underline"
+            className="text-xs text-emerald-600 hover:underline"
           >
             otpauth://
           </a>
