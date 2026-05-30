@@ -8,6 +8,7 @@ import { availabilityRouter } from "./routers/availability";
 import { availabilityTemplateRouter } from "./routers/availability-template";
 import { businessRouter } from "./routers/business";
 import { contractRouter } from "./routers/contract";
+import { contractTemplateRouter } from "./routers/contract-template";
 import { dimonaRouter } from "./routers/dimona";
 import { documentRouter } from "./routers/document";
 import { gdprRouter } from "./routers/gdpr";
@@ -55,6 +56,7 @@ export const appRouter = router({
   document: documentRouter,
   dimona: dimonaRouter,
   contract: contractRouter,
+  contractTemplate: contractTemplateRouter,
   analytics: analyticsRouter,
   twoFactor: twoFactorRouter,
   gdpr: gdprRouter,

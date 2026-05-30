@@ -35,6 +35,7 @@ import { TimeClockService } from "@/application/services/time-clock-service";
 import { TimeOffService } from "@/application/services/timeoff-service";
 import { TotpAccountService } from "@/application/services/totp-account-service";
 import { WebhookService } from "@/application/services/webhook-service";
+import { ContractTemplateService } from "@/application/services/contract-template-service";
 import { WorkerContractService } from "@/application/services/worker-contract-service";
 import { WorkerService } from "@/application/services/worker-service";
 
@@ -79,6 +80,7 @@ export const timeClockService = new TimeClockService(prisma);
 export const timeOffService = new TimeOffService(prisma);
 export const totpAccountService = new TotpAccountService(prisma);
 export const webhookService = new WebhookService(prisma);
+export const contractTemplateService = new ContractTemplateService(prisma);
 export const workerContractService = new WorkerContractService(prisma);
 export const workerService = new WorkerService(prisma);
 

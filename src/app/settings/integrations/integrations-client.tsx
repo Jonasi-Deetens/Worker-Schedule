@@ -9,6 +9,7 @@ import { Input } from "@/interface/components/ui/input";
 import { Label } from "@/interface/components/ui/label";
 import { trpc } from "@/interface/trpc/client";
 import { toast, trpcErrorMessage } from "@/lib/toast";
+import { ContractTemplatesPanel } from "./contract-templates-panel";
 import { DimonaDeclarationsPanel } from "./dimona-declarations-panel";
 
 export function IntegrationsClient() {
@@ -358,6 +359,8 @@ export function IntegrationsClient() {
             {t("integrations.attestationMaxAgeHelp")}
           </p>
         </section>
+
+        <ContractTemplatesPanel />
 
         <section className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">

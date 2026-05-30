@@ -2,23 +2,51 @@ import { createHash } from "node:crypto";
 import type { ContractStatus, ContractType, PrismaClient } from "@prisma/client";
 import { publish as publishEvent } from "@/infrastructure/events/bus";
 import { logger } from "@/infrastructure/logging/logger";
-import { decryptPiiNullable } from "@/infrastructure/crypto/pii";
 import {
   generateContractPdf,
-  type ContractPdfInput,
+  type ContractTemplateLocale,
 } from "@/infrastructure/contracts/contract-pdf";
+import { fillContractWithSignatures } from "@/infrastructure/contracts/contract-signature-pdf";
+import { loadContractTemplateBytes } from "@/infrastructure/contracts/contract-template-loader";
+import {
+  buildContractPrefill,
+  fieldValuesWithSignedAt,
+  type ContractSendOverrides,
+} from "./contract-field-mapper";
 import { isStorageConfigured } from "./document-service";
-import { contractPdfKey, uploadBytes } from "@/infrastructure/storage/s3-upload";
+import {
+  contractEmployerSignatureKey,
+  contractPdfKey,
+  contractStudentSignatureKey,
+  uploadBytes,
+} from "@/infrastructure/storage/s3-upload";
+import { parseSignaturePngBase64, loadSignaturePngBytes } from "@/lib/signature-image";
 import { NotificationService } from "./notification-service";
 
-/**
- * Belgian student contracts may not exceed 12 uninterrupted months. Returns
- * true when [start, end] is within that window (inclusive).
- */
 function withinTwelveMonths(start: Date, end: Date): boolean {
   const maxEnd = new Date(start);
   maxEnd.setMonth(maxEnd.getMonth() + 12);
   return end.getTime() <= maxEnd.getTime();
+}
+
+async function storeSignaturePng(
+  contractId: string,
+  role: "student" | "employer",
+  pngBytes: Uint8Array,
+): Promise<string> {
+  if (isStorageConfigured()) {
+    const key =
+      role === "student"
+        ? contractStudentSignatureKey(contractId)
+        : contractEmployerSignatureKey(contractId);
+    return uploadBytes({
+      key,
+      body: pngBytes,
+      contentType: "image/png",
+    });
+  }
+  const b64 = Buffer.from(pngBytes).toString("base64");
+  return `data:image/png;base64,${b64}`;
 }
 
 export class WorkerContractService {
@@ -42,6 +70,16 @@ export class WorkerContractService {
     });
   }
 
+  listPendingEmployerSignature(businessId: string) {
+    return this.db.workerContract.findMany({
+      where: { businessId, status: "WORKER_SIGNED" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { studentSignedAt: "desc" },
+    });
+  }
+
   listForBusiness(businessId: string, userId?: string) {
     return this.db.workerContract.findMany({
       where: {
@@ -55,12 +93,25 @@ export class WorkerContractService {
     });
   }
 
+  async prefillForWorker(input: {
+    businessId: string;
+    userId: string;
+    overrides?: ContractSendOverrides;
+    locale?: ContractTemplateLocale;
+  }) {
+    return buildContractPrefill(this.db, {
+      businessId: input.businessId,
+      userId: input.userId,
+      overrides: input.overrides,
+      locale: input.locale,
+    });
+  }
+
   async send(input: {
     businessId: string;
     userId: string;
     actorId: string;
-    title: string;
-    body?: string;
+    title?: string;
     fileUrl?: string;
     contractType?: ContractType;
     startDate?: Date | null;
@@ -68,6 +119,8 @@ export class WorkerContractService {
     scheduleText?: string | null;
     hourlyWageCents?: number | null;
     jobDescription?: string | null;
+    locale?: ContractTemplateLocale;
+    skipCompletenessCheck?: boolean;
   }) {
     const membership = await this.db.membership.findFirst({
       where: {
@@ -78,85 +131,52 @@ export class WorkerContractService {
     });
     if (!membership) throw new Error("Worker not found in this business");
 
-    // Belgian rule: a student contract may not exceed 12 uninterrupted months.
-    if (
-      input.startDate &&
-      input.endDate &&
-      !withinTwelveMonths(input.startDate, input.endDate)
-    ) {
+    const prefill = await buildContractPrefill(this.db, {
+      businessId: input.businessId,
+      userId: input.userId,
+      overrides: {
+        title: input.title,
+        contractType: input.contractType,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        scheduleText: input.scheduleText,
+        hourlyWageCents: input.hourlyWageCents,
+        jobDescription: input.jobDescription,
+      },
+      locale: input.locale,
+    });
+
+    if (!input.skipCompletenessCheck && !prefill.completeness.ready) {
+      throw new Error("errors.contractIncomplete");
+    }
+
+    if (!withinTwelveMonths(prefill.startDate, prefill.endDate)) {
       throw new Error("errors.contractTooLong");
     }
 
-    // Snapshot the legally-relevant employer + student data at send time so the
-    // signed record is self-contained even if profiles change later.
-    const [business, student] = await Promise.all([
-      this.db.business.findUnique({
-        where: { id: input.businessId },
-        select: {
-          name: true,
-          dimonaEmployerId: true,
-          addressLine: true,
-          postalCode: true,
-          city: true,
-          cbeNumber: true,
-        },
-      }),
-      this.db.user.findUnique({
-        where: { id: input.userId },
-        select: {
-          name: true,
-          nationalNumber: true,
-          addressLine: true,
-          postalCode: true,
-          city: true,
-        },
-      }),
-    ]);
+    const business = await this.db.business.findUnique({
+      where: { id: input.businessId },
+      select: {
+        contractTemplateUrlNl: true,
+        contractTemplateUrlFr: true,
+      },
+    });
+    const locale = input.locale ?? "nl";
+    const templateBytes = business
+      ? await loadContractTemplateBytes(business, locale)
+      : await loadContractTemplateBytes({}, locale);
 
-    const studentAddress = [
-      student?.addressLine,
-      [student?.postalCode, student?.city].filter(Boolean).join(" "),
-    ]
-      .filter(Boolean)
-      .join(", ");
+    const employerSnapshot = prefill.pdfInput.employer;
+    const studentSnapshot = prefill.pdfInput.student;
 
-    const employerAddress = [
-      business?.addressLine,
-      [business?.postalCode, business?.city].filter(Boolean).join(" "),
-    ]
-      .filter(Boolean)
-      .join(", ");
-    const employerSnapshot = {
-      name: business?.name ?? null,
-      enterpriseNumber:
-        business?.cbeNumber ?? business?.dimonaEmployerId ?? null,
-      address: employerAddress || null,
-    };
-    const studentSnapshot = {
-      name: student?.name ?? null,
-      nationalNumber: decryptPiiNullable(student?.nationalNumber ?? null),
-      address: studentAddress || null,
-    };
-
-    // Generate the contract PDF server-side and persist its sha256 hash. When
-    // object storage is configured we upload it and store the URL; otherwise we
-    // degrade gracefully — the hash is still recorded so the document is
-    // verifiable once storage is set up.
-    const pdfInput: ContractPdfInput = {
-      title: input.title,
-      employer: employerSnapshot,
-      student: studentSnapshot,
-      startDate: input.startDate ?? null,
-      endDate: input.endDate ?? null,
-      scheduleText: input.scheduleText ?? null,
-      hourlyWageCents: input.hourlyWageCents ?? null,
-      jobDescription: input.jobDescription ?? null,
-      contractType: input.contractType ?? null,
-    };
     let pdfUrl: string | null = input.fileUrl ?? null;
     let pdfHash: string | null = null;
     try {
-      const bytes = await generateContractPdf(pdfInput);
+      const bytes = await generateContractPdf({
+        pdfInput: prefill.pdfInput,
+        fieldValues: prefill.fieldValues,
+        templateBytes,
+      });
       pdfHash = createHash("sha256").update(bytes).digest("hex");
       if (isStorageConfigured()) {
         pdfUrl = await uploadBytes({
@@ -177,17 +197,17 @@ export class WorkerContractService {
       data: {
         businessId: input.businessId,
         userId: input.userId,
-        title: input.title,
-        body: input.body,
+        title: prefill.title,
+        body: null,
         fileUrl: input.fileUrl,
-        contractType: input.contractType,
+        contractType: prefill.contractType,
         status: "SENT",
         sentAt: new Date(),
-        startDate: input.startDate ?? null,
-        endDate: input.endDate ?? null,
-        scheduleText: input.scheduleText ?? null,
-        hourlyWageCents: input.hourlyWageCents ?? null,
-        jobDescription: input.jobDescription ?? null,
+        startDate: prefill.startDate,
+        endDate: prefill.endDate,
+        scheduleText: prefill.scheduleText,
+        hourlyWageCents: prefill.hourlyWageCents,
+        jobDescription: prefill.jobDescription,
         employerSnapshot,
         studentSnapshot,
         pdfUrl,
@@ -199,9 +219,9 @@ export class WorkerContractService {
       userId: input.userId,
       type: "CONTRACT_SENT",
       title: "Contract awaiting your signature",
-      body: input.title,
+      body: prefill.title,
       payload: { contractId: contract.id },
-      url: "/me",
+      url: "/me/contracts",
     });
 
     await this.db.auditEvent.create({
@@ -210,7 +230,7 @@ export class WorkerContractService {
         action: "CONTRACT_SENT",
         entityType: "WorkerContract",
         entityId: contract.id,
-        metadata: { workerId: input.userId },
+        metadata: { workerId: input.userId, templated: Boolean(templateBytes) },
       },
     });
 
@@ -218,17 +238,14 @@ export class WorkerContractService {
     return contract;
   }
 
-  async sign(input: {
+  async signAsWorker(input: {
     contractId: string;
     userId: string;
     businessId: string;
-    signatureName: string;
+    signaturePngBase64: string;
+    signerLabel?: string | null;
     signatureIp?: string | null;
   }) {
-    // Only a SENT contract can be signed. Because a SIGNED contract never
-    // returns from this query, the signature is effectively immutable — there
-    // is no path to re-sign or edit it; a correction must be a brand-new
-    // contract version sent via `send`.
     const contract = await this.db.workerContract.findFirst({
       where: {
         id: input.contractId,
@@ -239,33 +256,185 @@ export class WorkerContractService {
     });
     if (!contract) throw new Error("Contract not found or not awaiting signature");
 
-    const trimmed = input.signatureName.trim();
-    if (trimmed.length < 2) {
-      throw new Error("Signature name is too short");
+    const pngBytes = parseSignaturePngBase64(input.signaturePngBase64);
+    const studentSignedAt = new Date();
+    const studentSignatureUrl = await storeSignaturePng(
+      contract.id,
+      "student",
+      pngBytes,
+    );
+    const label = input.signerLabel?.trim() || null;
+
+    const updated = await this.db.workerContract.update({
+      where: { id: contract.id },
+      data: {
+        status: "WORKER_SIGNED",
+        studentSignatureUrl,
+        studentSignedAt,
+        studentSignatureIp: input.signatureIp ?? null,
+        studentSignerLabel: label,
+      },
+    });
+
+    const business = await this.db.business.findUnique({
+      where: { id: input.businessId },
+      select: { ownerId: true, name: true },
+    });
+
+    if (business?.ownerId) {
+      await this.notifications.create({
+        userId: business.ownerId,
+        type: "CONTRACT_WORKER_SIGNED",
+        title: "Contract awaiting employer signature",
+        body: contract.title,
+        payload: { contractId: contract.id, workerId: input.userId },
+        url: "/contracts",
+      });
     }
 
-    const signedAt = new Date();
+    await this.db.auditEvent.create({
+      data: {
+        userId: input.userId,
+        action: "CONTRACT_WORKER_SIGNED",
+        entityType: "WorkerContract",
+        entityId: contract.id,
+        metadata: { studentSignedAt: studentSignedAt.toISOString() },
+      },
+    });
+
+    publishEvent(input.businessId, { type: "contract.changed", userId: input.userId });
+    return updated;
+  }
+
+  async signAsEmployer(input: {
+    contractId: string;
+    actorId: string;
+    businessId: string;
+    signaturePngBase64: string;
+    signerLabel?: string | null;
+    signatureIp?: string | null;
+    locale?: ContractTemplateLocale;
+  }) {
+    const contract = await this.db.workerContract.findFirst({
+      where: {
+        id: input.contractId,
+        businessId: input.businessId,
+        status: "WORKER_SIGNED",
+      },
+    });
+    if (!contract) {
+      throw new Error("Contract not found or not awaiting employer signature");
+    }
+    if (!contract.studentSignatureUrl) {
+      throw new Error("Student signature is missing");
+    }
+
+    const employerPng = parseSignaturePngBase64(input.signaturePngBase64);
+    const employerSignedAt = new Date();
+    const signedAt = employerSignedAt;
+    const employerSignatureUrl = await storeSignaturePng(
+      contract.id,
+      "employer",
+      employerPng,
+    );
+    const label = input.signerLabel?.trim() || null;
+    const locale = input.locale ?? "nl";
+
+    let pdfUrl = contract.pdfUrl;
+    let pdfHash = contract.pdfHash;
+
+    try {
+      const studentPng = await loadSignaturePngBytes(contract.studentSignatureUrl);
+      const prefill = await buildContractPrefill(this.db, {
+        businessId: input.businessId,
+        userId: contract.userId,
+        overrides: {
+          title: contract.title,
+          contractType: contract.contractType ?? undefined,
+          startDate: contract.startDate,
+          endDate: contract.endDate,
+          scheduleText: contract.scheduleText,
+          hourlyWageCents: contract.hourlyWageCents,
+          jobDescription: contract.jobDescription,
+        },
+        locale,
+      });
+
+      const signedFields = fieldValuesWithSignedAt(prefill.fieldValues, signedAt);
+
+      const business = await this.db.business.findUnique({
+        where: { id: input.businessId },
+        select: {
+          contractTemplateUrlNl: true,
+          contractTemplateUrlFr: true,
+        },
+      });
+      const templateBytes = business
+        ? await loadContractTemplateBytes(business, locale)
+        : await loadContractTemplateBytes({}, locale);
+
+      const bytes = await fillContractWithSignatures({
+        templateBytes,
+        fieldValues: signedFields,
+        locale,
+        studentSignaturePng: studentPng,
+        employerSignaturePng: employerPng,
+        flatten: true,
+      });
+      pdfHash = createHash("sha256").update(bytes).digest("hex");
+      if (isStorageConfigured()) {
+        pdfUrl = await uploadBytes({
+          key: contractPdfKey(contract.userId),
+          body: bytes,
+          contentType: "application/pdf",
+        });
+      }
+    } catch (err) {
+      logger.warn({
+        event: "contract.pdf.employer-sign.failed",
+        contractId: contract.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
     const updated = await this.db.workerContract.update({
       where: { id: contract.id },
       data: {
         status: "SIGNED",
         signedAt,
-        signatureName: trimmed,
-        signatureIp: input.signatureIp ?? null,
+        employerSignatureUrl,
+        employerSignedAt,
+        employerSignatureIp: input.signatureIp ?? null,
+        employerSignerId: input.actorId,
+        employerSignerLabel: label,
+        pdfUrl,
+        pdfHash,
       },
+    });
+
+    await this.notifications.create({
+      userId: contract.userId,
+      type: "CONTRACT_FULLY_SIGNED",
+      title: "Contract fully signed",
+      body: contract.title,
+      payload: { contractId: contract.id },
+      url: "/me/contracts",
     });
 
     await this.db.auditEvent.create({
       data: {
-        userId: input.userId,
-        action: "CONTRACT_SIGNED",
+        userId: input.actorId,
+        action: "CONTRACT_EMPLOYER_SIGNED",
         entityType: "WorkerContract",
         entityId: contract.id,
         metadata: { signedAt: signedAt.toISOString() },
       },
     });
 
-    publishEvent(input.businessId, { type: "contract.changed", userId: input.userId });
+    publishEvent(input.businessId, {
+      type: "contract.changed",
+      userId: contract.userId,
+    });
     return updated;
   }
 

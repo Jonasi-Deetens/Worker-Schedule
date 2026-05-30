@@ -67,6 +67,8 @@ enum NotificationType {
   TIME_ENTRY_CORRECTED
   DIMONA_GAP_DETECTED
   CONTRACT_SENT
+  CONTRACT_WORKER_SIGNED
+  CONTRACT_FULLY_SIGNED
 }
 
 enum AssignmentStatus {
@@ -115,6 +117,8 @@ enum AuditAction {
   DIMONA_OUT_DECLARED
   CONTRACT_SENT
   CONTRACT_SIGNED
+  CONTRACT_WORKER_SIGNED
+  CONTRACT_EMPLOYER_SIGNED
   CONTRACT_DECLINED
   WORKER_PROFILE_UPDATED
   BUSINESS_SETTINGS_UPDATED
@@ -159,6 +163,7 @@ enum TimeEntryStatus {
 enum ContractStatus {
   DRAFT
   SENT
+  WORKER_SIGNED
   SIGNED
   DECLINED
 }
@@ -178,6 +183,9 @@ model Business {
   postalCode        String?
   city              String?
   cbeNumber         String?
+  // Fillable PDF contract templates (AcroForm) per locale — auto-filled on send.
+  contractTemplateUrlNl String?
+  contractTemplateUrlFr String?
   // When true, blocks JOBSTUDENT assignments that would exceed the 650h quota.
   studentQuotaHardStop Boolean @default(false)
   // Safety margin (hours) subtracted from the 650h cap before the hard stop
@@ -770,6 +778,15 @@ model WorkerContract {
   signedAt      DateTime?
   signatureName String?
   signatureIp   String?
+  studentSignatureUrl   String?
+  studentSignedAt       DateTime?
+  studentSignatureIp    String?
+  studentSignerLabel    String?
+  employerSignatureUrl  String?
+  employerSignedAt      DateTime?
+  employerSignatureIp   String?
+  employerSignerId      String?
+  employerSignerLabel   String?
   startDate       DateTime?
   endDate         DateTime?
   scheduleText    String?

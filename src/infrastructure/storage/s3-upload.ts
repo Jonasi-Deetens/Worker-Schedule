@@ -47,3 +47,11 @@ export async function uploadBytes(input: {
 export function contractPdfKey(userId: string): string {
   return `contracts/${userId}/${randomUUID()}.pdf`;
 }
+
+export function contractStudentSignatureKey(contractId: string): string {
+  return `contracts/${contractId}/signature-student.png`;
+}
+
+export function contractEmployerSignatureKey(contractId: string): string {
+  return `contracts/${contractId}/signature-employer.png`;
+}

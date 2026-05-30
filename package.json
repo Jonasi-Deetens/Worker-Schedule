@@ -24,6 +24,7 @@
     "storage:up": "docker compose up -d minio",
     "storage:setup": "tsx scripts/setup-storage.ts",
     "storage:init": "npm run storage:up && npm run storage:setup",
+    "contracts:generate-templates": "tsx scripts/generate-contract-templates.ts",
     "postinstall": "prisma generate",
     "validate": "npm run lint && npm run typecheck && npm run test",
     "ci": "npm run lint && npm run typecheck && npm run test"

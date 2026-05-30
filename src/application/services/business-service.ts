@@ -42,6 +42,8 @@ export class BusinessService {
         studentQuotaHardStopBufferHours: true,
         requireStudentAttestation: true,
         attestationMaxAgeDays: true,
+        contractTemplateUrlNl: true,
+        contractTemplateUrlFr: true,
       },
     });
     if (!business) throw new Error("Business not found");

@@ -1,4 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type { ContractTemplateFieldValues } from "./contract-template-fields";
+import { CONTRACT_TEMPLATE_FIELDS as F } from "./contract-template-fields";
+import { createDefaultFillableTemplate } from "./create-default-template";
 
 export interface ContractPdfInput {
   title: string;
@@ -18,6 +21,10 @@ export interface ContractPdfInput {
   hourlyWageCents?: number | null;
   jobDescription?: string | null;
   contractType?: string | null;
+  studentBirthDate?: Date | null;
+  studentIban?: string | null;
+  studentEmergencyName?: string | null;
+  studentEmergencyPhone?: string | null;
 }
 
 function fmtDate(d?: Date | null): string {
@@ -30,16 +37,76 @@ function fmtWage(cents?: number | null): string {
   return `€ ${(cents / 100).toFixed(2)} / h`;
 }
 
+/** Maps structured input to template field values when only pdfInput is available. */
+export function pdfInputToFieldValues(
+  input: ContractPdfInput,
+): ContractTemplateFieldValues {
+  return {
+    [F.contractTitle]: input.title,
+    [F.contractType]: input.contractType ?? "",
+    [F.employerName]: input.employer.name ?? "",
+    [F.employerAddress]: input.employer.address ?? "",
+    [F.employerCbe]: input.employer.enterpriseNumber ?? "",
+    [F.studentName]: input.student.name ?? "",
+    [F.studentNiss]: input.student.nationalNumber ?? "",
+    [F.studentAddress]: input.student.address ?? "",
+    [F.studentBirthDate]: input.studentBirthDate
+      ? fmtDate(input.studentBirthDate)
+      : "",
+    [F.studentIban]: input.studentIban ?? "",
+    [F.studentEmergencyName]: input.studentEmergencyName ?? "",
+    [F.studentEmergencyPhone]: input.studentEmergencyPhone ?? "",
+    [F.startDate]: fmtDate(input.startDate),
+    [F.endDate]: fmtDate(input.endDate),
+    [F.hourlyWage]: fmtWage(input.hourlyWageCents),
+    [F.schedule]: input.scheduleText ?? "",
+    [F.jobDescription]: input.jobDescription ?? "",
+  };
+}
+
 /**
- * Renders a simple but complete Belgian student-contract PDF with pdf-lib.
- * Deliberately self-contained (standard fonts only) so it runs anywhere Node
- * does, including tests, without external assets.
+ * Fills an AcroForm PDF template with the provided field map. Unknown fields
+ * are skipped so partially-compatible templates still work.
  */
-export async function generateContractPdf(
+export async function fillContractTemplate(
+  templateBytes: Uint8Array,
+  fields: ContractTemplateFieldValues,
+  options?: { flatten?: boolean },
+): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(templateBytes);
+  const form = doc.getForm();
+
+  for (const [name, value] of Object.entries(fields)) {
+    if (value == null || value === "") continue;
+    try {
+      const field = form.getTextField(name);
+      field.setText(value);
+    } catch {
+      // Field not present on this template — ignore.
+    }
+  }
+
+  try {
+    form.updateFieldAppearances();
+  } catch {
+    // Some minimal templates may lack font resources — still save filled values.
+  }
+
+  if (options?.flatten) {
+    form.flatten();
+  }
+
+  return doc.save();
+}
+
+/**
+ * Renders a simple summary PDF (fallback when no business template is set).
+ */
+export async function generateSimpleContractPdf(
   input: ContractPdfInput,
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  const page = doc.addPage([595.28, 841.89]); // A4 portrait
+  const page = doc.addPage([595.28, 841.89]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
@@ -122,3 +189,27 @@ export async function generateContractPdf(
 
   return doc.save();
 }
+
+export type ContractTemplateLocale = "nl" | "fr";
+
+/**
+ * Generates a contract PDF: uses the business template when configured,
+ * otherwise the built-in fillable default, otherwise the simple summary layout.
+ */
+export async function generateContractPdf(input: {
+  pdfInput: ContractPdfInput;
+  fieldValues?: ContractTemplateFieldValues;
+  templateBytes?: Uint8Array | null;
+}): Promise<Uint8Array> {
+  const fields = input.fieldValues ?? pdfInputToFieldValues(input.pdfInput);
+
+  if (input.templateBytes && input.templateBytes.length > 0) {
+    return fillContractTemplate(input.templateBytes, fields, { flatten: true });
+  }
+
+  const defaultTemplate = await createDefaultFillableTemplate();
+  return fillContractTemplate(defaultTemplate, fields, { flatten: true });
+}
+
+/** @deprecated Use {@link generateSimpleContractPdf} — kept for tests importing the old name. */
+export const generateContractPdfLegacy = generateSimpleContractPdf;

@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Clock,
+  FileSignature,
   HelpCircle,
   Home,
   LayoutTemplate,
@@ -36,6 +37,7 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ReactNode;
+  badge?: number;
 };
 
 export function AppHeader() {
@@ -44,6 +46,23 @@ export function AppHeader() {
   const { data: unread } = trpc.notification.unreadCount.useQuery(undefined, {
     refetchInterval: 30000,
   });
+
+  const isOwnerOrManagerRole =
+    session?.user?.role === "OWNER" || session?.user?.role === "MANAGER";
+
+  const { data: pendingEmployerCount } =
+    trpc.contract.pendingEmployerCount.useQuery(undefined, {
+      enabled: Boolean(session?.user) && isOwnerOrManagerRole,
+      refetchInterval: 60000,
+    });
+
+  const { data: pendingContracts } = trpc.contract.listPendingMine.useQuery(
+    undefined,
+    {
+      enabled: Boolean(session?.user) && !isOwnerOrManagerRole,
+      refetchInterval: 60000,
+    },
+  );
 
   const { data: memberships } = trpc.membership.listMine.useQuery(undefined, {
     enabled: Boolean(session?.user),
@@ -76,6 +95,28 @@ export function AppHeader() {
             href: "/applications",
             label: t("applications.title"),
             icon: <ClipboardList className="h-5 w-5" />,
+          },
+          {
+            href: "/me/contracts",
+            label: t("contracts.navTitle"),
+            icon: <FileSignature className="h-5 w-5" />,
+            badge:
+              (pendingContracts?.length ?? 0) > 0
+                ? pendingContracts!.length
+                : undefined,
+          },
+        ]
+      : []),
+    ...(isOwnerOrManager
+      ? [
+          {
+            href: "/contracts",
+            label: t("contracts.inboxNav"),
+            icon: <FileSignature className="h-5 w-5" />,
+            badge:
+              (pendingEmployerCount ?? 0) > 0
+                ? pendingEmployerCount
+                : undefined,
           },
         ]
       : []),
@@ -211,7 +252,12 @@ export function AppHeader() {
         {/* Desktop navigation */}
         <div className="hidden items-center gap-1 md:flex">
           {primaryItems.map((item) => (
-            <NavLink key={item.href} href={item.href} label={item.label}>
+            <NavLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              badge={item.badge}
+            >
               {item.icon}
             </NavLink>
           ))}
@@ -278,10 +324,12 @@ function NavLink({
   href,
   label,
   children,
+  badge,
 }: {
   href: string;
   label: string;
   children: React.ReactNode;
+  badge?: number;
 }) {
   const active = useIsActive(href);
   return (
@@ -296,7 +344,14 @@ function NavLink({
       aria-label={label}
       title={label}
     >
-      {children}
+      <span className="relative">
+        {children}
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
@@ -501,6 +556,7 @@ function MobileDrawer({
                     href={item.href}
                     label={item.label}
                     icon={item.icon}
+                    badge={item.badge}
                     onNavigate={() => setOpen(false)}
                   />
                 ))}
